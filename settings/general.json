@@ -1,0 +1,11 @@
+{
+    "clientid": "340988108222758934",
+    "token": "",
+    "admins": ["135401616214982656"],
+    "database": "mongodb://localhost:27017/amusement",
+    "botperm": "125952",
+    "botcolor": "f426d5",
+    "logpath": "C:/log/amusement-club/",
+
+    "cardprice": [ 50, 75, 100, 150, 300]
+}
