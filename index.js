@@ -189,6 +189,14 @@ function showHelp(message) {
 			value: "Shows your cards, or some other [user]",
 			inline: false
         }, {
+			name: "->pay [user] [amount]",
+			value: "Sends 🍅 Tomatoes to [user]",
+			inline: false
+        }, {
+			name: "->daily",
+			value: "Claims daily amount of 🍅 Tomatoes",
+			inline: false
+        }, {
 			name: "->sell [card]",
 			value: "Sells a card. ⭐=50🍅 | ⭐⭐=75🍅 | ⭐⭐⭐=100🍅",
 			inline: false
