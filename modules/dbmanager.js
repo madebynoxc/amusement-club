@@ -267,6 +267,7 @@ function sell(user, card, callback) {
         for(var i = 0; i < cards.length; i++) {
             if (cards[i].name.includes(check)) {
                 let exp = settings.cardprice[cards[i].level - 1];
+                let tg = cards[i];
                 cards.splice(i, 1);
                 collection.update(
                     { discord_id: user.id },
@@ -276,7 +277,7 @@ function sell(user, card, callback) {
                     }
                 );
 
-                let name = toTitleCase(cards[i].name.replace(/_/g, " "));
+                let name = toTitleCase(tg.name.replace(/_/g, " "));
                 callback("**" + user.username + "** sold **" + name + "** for **" + exp + "** 🍅 Tomatoes");
                 return;
             }
