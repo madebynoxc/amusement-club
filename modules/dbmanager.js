@@ -209,6 +209,7 @@ function transfer(from, to, card, callback) {
                 collection.find({ discord_id: to }).toArray((err, u2) => {
                     if(u2.length == 0) return;
 
+                    let tg = cards[i];
                     cards.splice(i, 1);
                     collection.update(
                         { discord_id: from.id },
@@ -219,11 +220,11 @@ function transfer(from, to, card, callback) {
                     collection.update(
                         { discord_id: to },
                         {
-                            $push: {cards: cards[i] }
+                            $push: {cards: tg }
                         }
                     );
 
-                    let name = toTitleCase(cards[i].name.replace(/_/g, " "));
+                    let name = toTitleCase(tg.name.replace(/_/g, " "));
                     callback("**" + from.username + "** sent **" + name + "** to **" + u2[0].username + "**");
                 });
                 return;
@@ -333,9 +334,11 @@ function countDuplicates(arr) {
     var current = null;
     var cnt = 0;
     for (var i = 0; i < arr.length; i++) {
+        if(!arr[i]) continue;
         if (!current || arr[i].name != current.name) {
             if (cnt > 0) {
-                res.push(nameCard(current, cnt));
+                let c = nameCard(current, cnt);
+                if(c) res.push(c);
             }
             current = arr[i];
             cnt = 1;
@@ -344,7 +347,8 @@ function countDuplicates(arr) {
         }
     }
     if (cnt > 0) {
-        res.push(nameCard(current, cnt));
+        let c = nameCard(current, cnt);
+        if(c) res.push(c);
     }
     res.sort().reverse();
 
@@ -361,15 +365,18 @@ function removeCard(target, collection) {
 }
 
 function nameCard(card, count) {
-    let res = "[";
+    try {
+        let res = "[";
 
-    for(let i=0; i<parseInt(card.level); i++)
-        res += "★";
+        for(let i=0; i<parseInt(card.level); i++)
+            res += "★";
 
-    res += "]  ";
-    res += toTitleCase(card.name.replace(/_/g, " "));
-    res += " (x" + count + ")";
-    return res;
+        res += "]  ";
+        res += toTitleCase(card.name.replace(/_/g, " "));
+        res += " (x" + count + ")";
+        return res;
+    } catch (e) {}
+    return null;
 }
 
 function dynamicSort(property) {
