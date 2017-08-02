@@ -58,7 +58,7 @@ function log(message) {
 }
 
 function getCommand(m, callback) {
-    dbManager.addXP(m.author, m.content.length / 10);
+    dbManager.addXP(m.author, m.content.length / 12);
 
     if(m.content.startsWith('->')) {
         let cnt = m.content.substring(2).split(' ');
@@ -102,6 +102,15 @@ function getCommand(m, callback) {
                     });
                 }
                 return;
+            case 'pay':
+                let tusr = getUserID(cnt.shift());
+                let tom = parseInt(cnt);
+                if(tusr && tom){
+                    dbManager.pay(m.author.id, tusr, tom, (text) =>{
+                        callback(text);
+                    });
+                }
+                return;
             case 'cards':
                 let targetUsr = getUserID(cnt.shift());
                 let author = targetUsr? targetUsr : m.author.id;
@@ -111,6 +120,11 @@ function getCommand(m, callback) {
                 return;
             case 'sell':
                 dbManager.sell(m.author, cd, (text) =>{
+                    callback(text);
+                });
+                return;
+            case 'daily':
+                dbManager.daily(m.author.id, (text) =>{
                     callback(text);
                 });
                 return;

@@ -1,5 +1,5 @@
 module.exports = {
-    connect, disconnect, claim, addXP, getXP, getCards, summon, transfer, sell, award
+    connect, disconnect, claim, addXP, getXP, getCards, summon, transfer, sell, award, pay, daily
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -11,6 +11,7 @@ const fs = require('fs');
 const assert = require('assert');
 const logger = require('./log.js');
 const _ = require("lodash");
+const randomColor = require('randomcolor');
 const settings = require('../settings/general.json');
 
 function disconnect() {
@@ -208,10 +209,11 @@ function transfer(from, to, card, callback) {
                 collection.find({ discord_id: to }).toArray((err, u2) => {
                     if(u2.length == 0) return;
 
+                    cards.splice(i, 1);
                     collection.update(
                         { discord_id: from.id },
                         {
-                            $pull: {cards: {name: cards[i].name} }
+                            $set: {cards: cards }
                         }
                     );
                     collection.update(
@@ -231,6 +233,24 @@ function transfer(from, to, card, callback) {
     });
 }
 
+function pay(from, to, amount, callback) {
+    let collection = mongodb.collection('users');
+    collection.find({ discord_id: from }).toArray((err, u) => {
+        if(u.length == 0) return;
+
+        if(u[0].exp >= amount) {
+            collection.find({ discord_id: to }).toArray((err, u2) => {
+                if(u2.length == 0) return;
+                collection.update({ discord_id: from }, {$inc: {exp: -amount }});
+                collection.update({ discord_id: to }, {$inc: {exp: amount }});
+                callback("**" + u[0].username + "** sent **" + amount + "** 🍅 Tomatoes to **" + u2[0].username + "**");
+            });
+            return;
+        }
+        callback("**" + u[0].username + "**, you don't have enough funds");
+    });
+}
+
 function sell(user, card, callback) {
     let collection = mongodb.collection('users');
     collection.find({ discord_id: user.id }).toArray((err, u) => {
@@ -246,10 +266,11 @@ function sell(user, card, callback) {
         for(var i = 0; i < cards.length; i++) {
             if (cards[i].name.includes(check)) {
                 let exp = settings.cardprice[cards[i].level - 1];
+                cards.splice(i, 1);
                 collection.update(
                     { discord_id: user.id },
                     {
-                        $pull: {cards: {name: cards[i].name} },
+                        $set: {cards: cards },
                         $inc: {exp: exp}
                     }
                 );
@@ -263,10 +284,32 @@ function sell(user, card, callback) {
     });
 }
 
+function daily(uID, callback) {
+    let collection = mongodb.collection('users');
+    collection.findOne({ discord_id: uID }).then((user) => {
+        if(!user) return;
+
+        let mil = new Date() - user.lastdaily;
+        let hours = 20 - Math.floor(mil / (1000*60*60));
+        if(!hours || hours <= 0) {
+            collection.update(
+                { discord_id: uID },
+                {
+                    $set: {lastdaily: new Date()},
+                    $inc: {exp: 100}
+                }
+            );
+        } else {
+            callback("**" + user.username + "**, you can claim daily 🍅 in **" + hours + " hours**");
+            return;
+        }
+        callback("**" + user.username + "** recieved daily **100** 🍅 Your color of the day is " + randomColor());
+    });
+}
+
 function award(uID, amout, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: uID }).then((user) => {
-        console.log(user);
         collection.update(
             { discord_id: uID },
             {
@@ -284,15 +327,15 @@ function toTitleCase(str) {
 
 function countDuplicates(arr) {
     arr.sort(dynamicSort("name"));
-    arr.sort(dynamicSort("-level"));
+    //arr.sort(dynamicSort("-level"));
 
-    var res = '';
+    var res = [];
     var current = null;
     var cnt = 0;
     for (var i = 0; i < arr.length; i++) {
         if (!current || arr[i].name != current.name) {
             if (cnt > 0) {
-                res += nameCard(current, cnt) + "\n";
+                res.push(nameCard(current, cnt));
             }
             current = arr[i];
             cnt = 1;
@@ -301,10 +344,20 @@ function countDuplicates(arr) {
         }
     }
     if (cnt > 0) {
-        res += nameCard(current, cnt);
+        res.push(nameCard(current, cnt));
     }
+    res.sort().reverse();
 
-    return res;
+    return res.join('\n');
+}
+
+function removeCard(target, collection) {
+    for(let i=0; i<collection.length; i++) {
+        if(collection[i].name == target.name) {
+            collection.splice(i, 1);
+            return collection;
+        }
+    }
 }
 
 function nameCard(card, count) {
