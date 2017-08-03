@@ -61,7 +61,7 @@ function getCommand(m, callback) {
     dbManager.addXP(m.author, m.content.length / 12);
 
     if(m.content.startsWith('->')) {
-        let cnt = m.content.substring(2).split(' ');
+        let cnt = m.content.toLowerCase().substring(2).split(' ');
         let sb = cnt.shift();
         let cd = cnt.join(' ').trim();
 
@@ -146,6 +146,12 @@ function getCommand(m, callback) {
                     callback(m.author.username + ", 'award' is admin-only command");
                 }
                 return;
+            case 'leaderboards':
+            case 'lead':
+                dbManager.leaderboard(cnt, m.guild, (text) =>{
+                    callback(text);
+                });
+                break;
             case 'kill': 
                 if(isAdmin(m.author.id)) {
                     callback("Shutting down now");
@@ -199,6 +205,10 @@ function showHelp(message) {
         }, {
 			name: "->sell [card]",
 			value: "Sells a card. ⭐=50🍅 | ⭐⭐=75🍅 | ⭐⭐⭐=100🍅",
+			inline: false
+        }, {
+            name: "->lead [?global]",
+			value: "Shows top 5 users by overall card star amount",
 			inline: false
         },
         /*{

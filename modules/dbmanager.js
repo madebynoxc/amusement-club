@@ -1,5 +1,7 @@
 module.exports = {
-    connect, disconnect, claim, addXP, getXP, getCards, summon, transfer, sell, award, pay, daily
+    connect, disconnect, claim, addXP, getXP, 
+    getCards, summon, transfer, sell, award, 
+    pay, daily, leaderboard
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -309,6 +311,39 @@ function daily(uID, callback) {
     });
 }
 
+function leaderboard(arg, guild, callback) {
+    let global = arg == 'global';
+    let collection = mongodb.collection('users');
+    collection.aggregate(
+        { $unwind : '$cards' },
+        { $group : { _id : '$username', 'levels' : { $sum : '$cards.level' }}}, 
+        { $sort : { 'levels': -1 } }
+        ).toArray((err, users) => {
+            users.sort(dynamicSort('-levels'));
+            if(!users || users.length == 0) return;
+
+            if(global) {
+                callback("**Global TOP5 Card Owners:**\n" + nameOwners(users));
+            } else if(guild) {
+                let includedUsers = [];
+                try {
+                    users.forEach((elem) => {
+                        guild.members.forEach((mem) => {
+                            if(mem.user.username == elem._id) {
+                                includedUsers.push(elem);
+                            }
+                            if(includedUsers.length >= 5) throw BreakException;
+                        }, this);
+                    }, this);
+                } catch(e) {}
+
+                if(includedUsers.length > 0) {
+                    callback("**Local TOP5 Card Owners:**\n" + nameOwners(includedUsers));
+                }
+            }
+    });
+}
+
 function award(uID, amout, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: uID }).then((user) => {
@@ -363,6 +398,17 @@ function removeCard(target, collection) {
             return collection;
         }
     }
+}
+
+function nameOwners(col) {
+    let res = '';
+    for(let i=0; i<col.length; i++) {
+        res += (i+1).toString() + ". ";
+        res += "**" + col[i]._id + "**";
+        res += " (" + col[i].levels + " stars)\n";
+        if(i >= 4) break;
+    }
+    return res;
 }
 
 function nameCard(card, count) {
