@@ -1,7 +1,7 @@
 module.exports = {
     connect, disconnect, claim, addXP, getXP, 
     getCards, summon, transfer, sell, award, 
-    pay, daily, leaderboard
+    pay, daily, leaderboard, fixUserCards
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -69,7 +69,7 @@ function insertCards(names, collection) {
         let c = {
             "name": names[i].substr(2),
             "collection": collection,
-            "level": names[i][0]
+            "level": parseInt(names[i][0])
         }
         cards.push(c);
     }
@@ -436,4 +436,23 @@ function dynamicSort(property) {
         var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
         return result * sortOrder;
     }
+}
+
+function fixUserCards(){
+    let newUsers = []
+    let collection = mongodb.collection('users');
+    collection.find({}).toArray((err, users) => {
+        users.forEach(function(u) {
+            if(u.cards) {
+                u.cards.forEach(function(elem) {
+                    elem.level = parseInt(elem.level);
+                }, this);
+            }
+            newUsers.push(u);
+
+            collection.remove({ _id: u._id }).then(()=>{
+                collection.insertOne(u);
+            });
+        }, this);
+    });
 }

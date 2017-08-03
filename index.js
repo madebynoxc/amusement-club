@@ -152,6 +152,11 @@ function getCommand(m, callback) {
                     callback(text);
                 });
                 break;
+            case 'fix':
+                if(isAdmin(m.author.id)) {
+                    dbManager.fixUserCards();
+                }
+                return;
             case 'kill': 
                 if(isAdmin(m.author.id)) {
                     callback("Shutting down now");
