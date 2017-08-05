@@ -46,10 +46,12 @@ function scanCards() {
 
                 let files = fs.readdirSync(path);
                 for (let i in files) {
-                    let name = files[i].split('.')[0];
+                    let split = files[i].split('.');
+                    let name = split[0];
+                    let ext = split[1];
                     
                     if (res.filter((e) => e.name == name.substr(2)).length == 0) {
-                        newCards.push(name);
+                        newCards.push(split);
                     }
                 }
 
@@ -67,9 +69,10 @@ function insertCards(names, collection) {
 
     for (let i in names) {
         let c = {
-            "name": names[i].substr(2),
+            "name": names[i][0].substr(2),
             "collection": collection,
-            "level": parseInt(names[i][0])
+            "level": parseInt(names[i][0][0]),
+            "animated": names[i][1] == "gif"
         }
         cards.push(c);
     }
@@ -94,7 +97,8 @@ function claim(user, callback) {
         collection.find({}).toArray((err, i) => {
             let res = _.sample(i);
             let name = toTitleCase(res.name.replace(/_/g, " "));
-            let file = './cards/' + res.collection + '/' + res.level + "_" + res.name + '.png';
+            let ext = res.animated? '.gif' : '.png';
+            let file = './cards/' + res.collection + '/' + res.level + "_" + res.name + ext;
             console.log(file);
             callback("Congratulations! You got " + name, file);
 
@@ -187,7 +191,8 @@ function summon(user, card, callback) {
         for(var i = 0; i < cards.length; i++) {
             if (cards[i].name.toLowerCase().includes(check)) {
                 let name = toTitleCase(cards[i].name.replace(/_/g, " "));
-                let file = './cards/' + cards[i].collection + '/' + + cards[i].level + "_" + cards[i].name + '.png';
+                let ext = cards[i].animated? '.gif' : '.png';
+                let file = './cards/' + cards[i].collection + '/' + + cards[i].level + "_" + cards[i].name + ext;
                 callback("**" + user.username + "** summons **" + name + "!**", file);
                 return;
             }
