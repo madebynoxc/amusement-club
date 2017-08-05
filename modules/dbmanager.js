@@ -153,7 +153,7 @@ function getXP(user, callback) {
     });
 }
 
-function getCards(user, callback) {
+function getCards(user, type, callback) {
     let collection = mongodb.collection('users');
     collection.find({ discord_id: user }).toArray((err, i) => {
         if(i.length == 0) return;
@@ -161,8 +161,10 @@ function getCards(user, callback) {
         let usr = i[0]; 
         let cards = usr.cards;
         if(cards && cards.length > 0){ 
-            let resp = "**" + usr.username + " has:** \n";
-            resp += countDuplicates(cards);
+            let cur = "(showing only " + type + "-star cards) \n"
+            let resp = "**" + usr.username + "** has " + cards.length + " cards: \n";
+            if(type != 0) resp += cur;
+            resp += countDuplicates(cards, type);
             callback(resp);
         } else {
             callback("**" + usr.username + "** has no any cards");
@@ -183,7 +185,7 @@ function summon(user, card, callback) {
         }
 
         for(var i = 0; i < cards.length; i++) {
-            if (cards[i].name.includes(check)) {
+            if (cards[i].name.toLowerCase().includes(check)) {
                 let name = toTitleCase(cards[i].name.replace(/_/g, " "));
                 let file = './cards/' + cards[i].collection + '/' + + cards[i].level + "_" + cards[i].name + '.png';
                 callback("**" + user.username + "** summons **" + name + "!**", file);
@@ -207,7 +209,7 @@ function transfer(from, to, card, callback) {
         }
 
         for(var i = 0; i < cards.length; i++) {
-            if (cards[i].name.includes(check)) {
+            if (cards[i].name.toLowerCase().includes(check)) {
                 collection.find({ discord_id: to }).toArray((err, u2) => {
                     if(u2.length == 0) return;
 
@@ -267,7 +269,7 @@ function sell(user, card, callback) {
         }
 
         for(var i = 0; i < cards.length; i++) {
-            if (cards[i].name.includes(check)) {
+            if (cards[i].name.toLowerCase().includes(check)) {
                 let exp = settings.cardprice[cards[i].level - 1];
                 let tg = cards[i];
                 cards.splice(i, 1);
@@ -362,7 +364,7 @@ function toTitleCase(str) {
     return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
 }
 
-function countDuplicates(arr) {
+function countDuplicates(arr, type) {
     arr.sort(dynamicSort("name"));
     //arr.sort(dynamicSort("-level"));
 
@@ -372,7 +374,7 @@ function countDuplicates(arr) {
     for (var i = 0; i < arr.length; i++) {
         if(!arr[i]) continue;
         if (!current || arr[i].name != current.name) {
-            if (cnt > 0) {
+            if (cnt > 0 && (current.level == type || type == 0)) {
                 let c = nameCard(current, cnt);
                 if(c) res.push(c);
             }
@@ -382,7 +384,7 @@ function countDuplicates(arr) {
             cnt++;
         }
     }
-    if (cnt > 0) {
+    if (cnt > 0 && (current.level == type || type == 0)) {
         let c = nameCard(current, cnt);
         if(c) res.push(c);
     }

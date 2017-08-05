@@ -112,9 +112,11 @@ function getCommand(m, callback) {
                 }
                 return;
             case 'cards':
-                let targetUsr = getUserID(cnt.shift());
+                let firstArg = cnt.shift();
+                let targetUsr = getUserID(firstArg);
                 let author = targetUsr? targetUsr : m.author.id;
-                dbManager.getCards(author, (text) =>{
+                let typeArg = targetUsr? parseInt(cnt.shift()) : parseInt(firstArg);
+                dbManager.getCards(author, typeArg? typeArg : 0, (text) =>{
                     callback(text);
                 });
                 return;
@@ -128,8 +130,8 @@ function getCommand(m, callback) {
                     callback(text);
                 });
                 return;
-            case 'er': 
-                callback("1 🍅 Tomato is now 10 Mekos");
+            case 'baka': 
+                callback(m.author.username + ", **you** baka! (￣^￣ﾒ)");
                 return;
             case 'award': 
                 if(isAdmin(m.author.id)) {
