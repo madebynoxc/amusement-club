@@ -58,7 +58,7 @@ function log(message) {
 }
 
 function getCommand(m, callback) {
-    if(m.channel)
+    if(m.channel.name)
         dbManager.addXP(m.author, m.content.length / 12, 
             (mes) => callback(mes));
 
