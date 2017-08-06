@@ -7,36 +7,31 @@
     {
         "name" : "claim10",
         "description" : "Claim at least 10 cards today",
-        "award" : 500
+        "award" : 400
     },
     {
         "name" : "send2",
         "description" : "Send a 2-star card to anyone else",
-        "award" : 300
+        "award" : 200
     },
     {
         "name" : "send3",
         "description" : "Send a 3-star card to anyone else",
-        "award" : 500
+        "award" : 300
     },
     {
         "name" : "gain1000",
-        "description" : "Get 1000 tomatoes on your balance",
+        "description" : "Get 1000 tomatoes balance",
         "award" : 500
     },
     {
         "name" : "gain2000",
-        "description" : "Get 2000 tomatoes on your balance",
+        "description" : "Get 2000 tomatoes balance",
         "award" : 800
     },
     {
         "name" : "sum5",
         "description" : "Summon at least 5 cards",
         "award" : 200
-    },
-    {
-        "name" : "top5",
-        "description" : "Get into top5 of local rating",
-        "award" : 100
     }
 ]

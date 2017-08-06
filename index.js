@@ -58,7 +58,9 @@ function log(message) {
 }
 
 function getCommand(m, callback) {
-    dbManager.addXP(m.author, m.content.length / 12);
+    if(m.channel)
+        dbManager.addXP(m.author, m.content.length / 12, 
+            (mes) => callback(mes));
 
     if(m.content.startsWith('->')) {
         let cnt = m.content.toLowerCase().substring(2).split(' ');
@@ -71,13 +73,14 @@ function getCommand(m, callback) {
                 return;
             case 'cl': 
             case 'claim': 
-                dbManager.claim(m.author, (text, img) => {
+                let amon = parseInt(cnt);
+                dbManager.claim(m.author, amon, (text, img) => {
                     callback(text, {file: img });
                 });
                 return;
-            case 'summon':
             case 'sum': 
-                if(cd.length < 4) 
+            case 'summon':
+                if(cd.length < 3) 
                     callback("Please, specify card name");
                 else {
                     dbManager.summon(m.author, cd, (text, img) => {
@@ -94,6 +97,7 @@ function getCommand(m, callback) {
                 });
                 return;
             case 'give':
+            case 'transfer':
                 let usr = getUserID(cnt.shift());
                 let cdname = cnt.join(' ').trim();
                 if(usr){
@@ -111,6 +115,7 @@ function getCommand(m, callback) {
                     });
                 }
                 return;
+            case 'list':
             case 'cards':
                 let firstArg = cnt.shift();
                 let targetUsr = getUserID(firstArg);
@@ -133,6 +138,12 @@ function getCommand(m, callback) {
             case 'baka': 
                 callback(m.author.username + ", **you** baka! (￣^￣ﾒ)");
                 return;
+            case 'quest':
+            case 'quests':
+                dbManager.getQuests(m.author, (text) =>{
+                    callback(text);
+                });
+                return;
             case 'award': 
                 if(isAdmin(m.author.id)) {
                     let tusr = getUserID(cnt.shift());
@@ -148,8 +159,9 @@ function getCommand(m, callback) {
                     callback(m.author.username + ", 'award' is admin-only command");
                 }
                 return;
-            case 'leaderboards':
             case 'lead':
+            case 'leaderboard':
+            case 'leaderboards':
                 dbManager.leaderboard(cnt, m.guild, (text) =>{
                     callback(text);
                 });

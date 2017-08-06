@@ -10,6 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "discord.js": "^11.1.0",
+    "js-levenshtein": "^1.1.2",
     "lodash": "^4.17.4",
     "mkdirp": "^0.5.1",
     "mongod": "^2.0.0",

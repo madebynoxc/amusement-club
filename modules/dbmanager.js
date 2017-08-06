@@ -1,7 +1,7 @@
 module.exports = {
     connect, disconnect, claim, addXP, getXP, 
     getCards, summon, transfer, sell, award, 
-    pay, daily, leaderboard, fixUserCards
+    pay, daily, leaderboard, fixUserCards, getQuests
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -12,6 +12,7 @@ var cooldownList = [];
 const fs = require('fs');
 const assert = require('assert');
 const logger = require('./log.js');
+const quest = require('./quest.js');
 const _ = require("lodash");
 const randomColor = require('randomcolor');
 const settings = require('../settings/general.json');
@@ -26,6 +27,7 @@ function connect(callback) {
     MongoClient.connect(settings.database, function(err, db) {
         assert.equal(null, err);
         mongodb = db;
+        quest.connect(db);
         isConnected = true;
         logger.message("Connected correctly to database");   
         if(callback) callback();   
@@ -84,7 +86,7 @@ function insertCards(names, collection) {
     console.log(collection + " update finished");
 }
 
-function claim(user, callback) {
+function claim(user, amount, callback) {
     let ucollection = mongodb.collection('users');
     ucollection.find({ discord_id: user.id }).toArray((err, result) => {
 
@@ -93,27 +95,39 @@ function claim(user, callback) {
             return;
         }
 
+        if(result[0].dailystats && result[0].dailystats.claim > 10) {
+            callback("**" + user.username + "**, you reached a limit of your daily claim."
+                + " It will be reset next time you successfully run '->daily'");
+            return;
+        }
+
         let collection = mongodb.collection('cards');
         collection.find({}).toArray((err, i) => {
             let res = _.sample(i);
             let name = toTitleCase(res.name.replace(/_/g, " "));
             let ext = res.animated? '.gif' : '.png';
+            let stat = result[0].dailystats;
             let file = './cards/' + res.collection + '/' + res.level + "_" + res.name + ext;
-            console.log(file);
             callback("Congratulations! You got " + name, file);
+
+            if(!stat) stat = {summon:0, send: 0, claim: 0};
+            stat.claim++;
 
             ucollection.update(
                 { discord_id: user.id },
                 {
                     $push: {cards: res },
-                    $inc: {exp: -100},
+                    $set: {dailystats: stat},
+                    $inc: {exp: -100}
                 }
-            );
+            ).then(() => {
+                quest.checkClaim(result[0], (mes)=>{callback(mes)});
+            });
         });
     });
 }
 
-function addXP(user, amount) {
+function addXP(user, amount, callback) {
     if(cooldownList.includes(user.id)) return;
 
     if(amount > 8) amount = 8;
@@ -125,7 +139,9 @@ function addXP(user, amount) {
                 { discord_id: user.id},
                 {$inc: {exp: amount}},
                 { upsert: true }
-            );
+            ).then((u)=>{
+                quest.checkXP(res, (mes)=>{callback(mes)});
+            });
         } else {
             collection.update( { discord_id: user.id},
                 {
@@ -152,8 +168,28 @@ function removeFromCooldown(userID) {
 
 function getXP(user, callback) {
     let collection = mongodb.collection('users');
-    collection.find({ discord_id: user.id }).toArray((err, i) => {
-        if(i.length > 0) callback(i[0].exp);
+    collection.findOne({ discord_id: user.id }).then((u) => {
+        if(u) callback(u.exp);
+    });
+}
+
+function getQuests(user, callback) {
+    let collection = mongodb.collection('users');
+    collection.findOne({ discord_id: user.id }).then((u) => {
+        if(u) {
+            if(!u.quests || u.quests.length <= 0){
+                callback("**" + user.username + "**, you don't have any quests. \n"
+                    + "New quests will appear after successfull '->daily' command");
+                return;
+            }
+
+            let res = "**" + user.username + "**, your quests for today: \n";
+            for(let i=0; i<u.quests.length; i++) {
+                res += (i+1).toString() + ". " + u.quests[i].description;
+                res += " [" + u.quests[i].award + "🍅] \n";
+            }
+            callback(res);
+        }
     });
 }
 
@@ -164,12 +200,16 @@ function getCards(user, type, callback) {
 
         let usr = i[0]; 
         let cards = usr.cards;
-        if(cards && cards.length > 0){ 
-            let cur = "(showing only " + type + "-star cards) \n"
-            let resp = "**" + usr.username + "** has " + cards.length + " cards: \n";
-            if(type != 0) resp += cur;
-            resp += countDuplicates(cards, type);
-            callback(resp);
+        if(cards && cards.length > 0){
+            if(cards.length > 15 && type <= 0) {
+                callback("Card list is too long. Please use ->cards [tier] to list stars of certain star amount");
+            } else {
+                let cur = "(showing only " + type + "-star cards) \n"
+                let resp = "**" + usr.username + "** has " + cards.length + " cards: \n";
+                if(type > 0) resp += cur;
+                resp += countDuplicates(cards, type);
+                callback(resp);
+            }
         } else {
             callback("**" + usr.username + "** has no any cards");
         }
@@ -192,8 +232,21 @@ function summon(user, card, callback) {
             if (cards[i].name.toLowerCase().includes(check)) {
                 let name = toTitleCase(cards[i].name.replace(/_/g, " "));
                 let ext = cards[i].animated? '.gif' : '.png';
+                let stat = u[0].dailystats;
                 let file = './cards/' + cards[i].collection + '/' + + cards[i].level + "_" + cards[i].name + ext;
                 callback("**" + user.username + "** summons **" + name + "!**", file);
+
+                if(!stat) stat = {summon:0, send: 0, claim: 0};
+                stat.summon++;
+
+                collection.update(
+                    { discord_id: user.id },
+                    {
+                        $set: {dailystats: stat}
+                    }
+                ).then((e) => {
+                    quest.checkSummon(u[0], (mes)=>{callback(mes)});
+                });
                 return;
             }
         }
@@ -213,19 +266,32 @@ function transfer(from, to, card, callback) {
             return;
         }
 
+        if(from.id == to) {
+            callback(from.username + ", you can't send card to yourself");
+            return;
+        }
+
         for(var i = 0; i < cards.length; i++) {
             if (cards[i].name.toLowerCase().includes(check)) {
                 collection.find({ discord_id: to }).toArray((err, u2) => {
                     if(u2.length == 0) return;
 
                     let tg = cards[i];
+                    let stat = u[0].dailystats;
                     cards.splice(i, 1);
+
+                    if(!stat) stat = {summon:0, send: 0, claim: 0};
+                    stat.send++;
+
                     collection.update(
                         { discord_id: from.id },
                         {
-                            $set: {cards: cards }
+                            $set: {cards: cards, dailystats: stat }
                         }
-                    );
+                    ).then(() => {
+                        quest.checkSend(u[0], tg.level, (mes)=>{callback(mes)});
+                    });
+
                     collection.update(
                         { discord_id: to },
                         {
@@ -306,7 +372,8 @@ function daily(uID, callback) {
             collection.update(
                 { discord_id: uID },
                 {
-                    $set: {lastdaily: new Date()},
+                    $set: {lastdaily: new Date(), quests: quest.getRandomQuests()},
+                    $unset: {dailystats: ""},
                     $inc: {exp: 100}
                 }
             );
@@ -314,7 +381,8 @@ function daily(uID, callback) {
             callback("**" + user.username + "**, you can claim daily 🍅 in **" + hours + " hours**");
             return;
         }
-        callback("**" + user.username + "** recieved daily **100** 🍅 Your color of the day is " + randomColor());
+        callback("**" + user.username + "** recieved daily **100** 🍅 Your color of the day is " + randomColor() + "\n"
+    + "You also got **2 daily quests**. To view them use ->quests");
     });
 }
 
@@ -371,6 +439,7 @@ function toTitleCase(str) {
 
 function countDuplicates(arr, type) {
     arr.sort(dynamicSort("name"));
+    if(type < 0) type = 0;
     //arr.sort(dynamicSort("-level"));
 
     var res = [];
@@ -407,7 +476,7 @@ function removeCard(target, collection) {
     }
 }
 
-function nameOwners(col) {
+function nameOwners(col, auth) {
     let res = '';
     for(let i=0; i<col.length; i++) {
         res += (i+1).toString() + ". ";
