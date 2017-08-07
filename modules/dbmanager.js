@@ -136,7 +136,7 @@ function claim(user, callback) {
 function addXP(user, amount, callback) {
     if(cooldownList.includes(user.id)) return;
 
-    if(amount > 8) amount = 8;
+    if(amount > 5) amount = 5;
 
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: user.id}).then((res) => {
@@ -163,7 +163,7 @@ function addXP(user, amount, callback) {
     
 
     cooldownList.push(user.id);
-    setTimeout(() => removeFromCooldown(user.id), 5000);
+    setTimeout(() => removeFromCooldown(user.id), 6000);
 }
 
 function removeFromCooldown(userID) {
