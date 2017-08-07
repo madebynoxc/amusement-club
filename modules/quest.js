@@ -10,6 +10,9 @@ const levenshtein = require('js-levenshtein');
 
 function getRandomQuests() {
     let res = _.sampleSize(questList, 2);
+    while(res[0].name.substr(0, 3) == res[1].name.substr(0, 3)) {
+        res[1] = _.sample(questList);
+    }
     return res;
 }
 
@@ -32,8 +35,8 @@ function checkClaim(user, callback) {
     let q = getQuest(user, 'claim');
     if(!q || !user.dailystats) return;
 
-    if((q.name == 'claim5' && user.dailystats.claim >= 5) || 
-    (q.name == 'claim10' && user.dailystats.claim >= 10)) {
+    if((q.name == 'claim4' && user.dailystats.claim >= 4) || 
+    (q.name == 'claim8' && user.dailystats.claim >= 8)) {
         callback(completeMsg(user, q));
         removeQuest(user, q);
     }

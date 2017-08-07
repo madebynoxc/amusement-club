@@ -73,8 +73,7 @@ function getCommand(m, callback) {
                 return;
             case 'cl': 
             case 'claim': 
-                let amon = parseInt(cnt);
-                dbManager.claim(m.author, amon, (text, img) => {
+                dbManager.claim(m.author, (text, img) => {
                     callback(text, {file: img });
                 });
                 return;
@@ -91,13 +90,11 @@ function getCommand(m, callback) {
             case 'bal': 
             case 'balance': 
                 dbManager.getXP(m.author, (bal) =>{
-                    let msg = "**" + m.author.username + "** has **" + Math.floor(bal) + "** 🍅 Tomatoes!";
-                    if(bal > 100) msg += " Can claim " + Math.floor(bal/100) + " cards! Use ->claim";
-                    callback(msg);
+                    callback(bal);
                 });
                 return;
             case 'give':
-            case 'transfer':
+            case 'send':
                 let usr = getUserID(cnt.shift());
                 let cdname = cnt.join(' ').trim();
                 if(usr){

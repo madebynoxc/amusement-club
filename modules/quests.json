@@ -1,13 +1,13 @@
 [
     {
-        "name" : "claim5",
-        "description" : "Claim at least 5 cards today",
-        "award" : 200
+        "name" : "claim4",
+        "description" : "Claim at least 4 cards today",
+        "award" : 400
     },
     {
-        "name" : "claim10",
-        "description" : "Claim at least 10 cards today",
-        "award" : 400
+        "name" : "claim8",
+        "description" : "Claim at least 8 cards today",
+        "award" : 800
     },
     {
         "name" : "send2",
@@ -27,7 +27,7 @@
     {
         "name" : "gain2000",
         "description" : "Get 2000 tomatoes balance",
-        "award" : 800
+        "award" : 900
     },
     {
         "name" : "sum5",

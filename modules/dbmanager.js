@@ -86,12 +86,17 @@ function insertCards(names, collection) {
     console.log(collection + " update finished");
 }
 
-function claim(user, amount, callback) {
+function claim(user, callback) {
     let ucollection = mongodb.collection('users');
     ucollection.find({ discord_id: user.id }).toArray((err, result) => {
 
-        if(result.length == 0 || result[0].exp < 100) {
-            callback("**" + user.username + "**, you don't have enough 🍅 Tomatoes to claim a card");
+        let stat = result[0].dailystats;
+        if(!stat) stat = {summon:0, send: 0, claim: 0};
+
+        let claimCost = (stat.claim + 1) * 50;
+        if(result.length == 0 || result[0].exp < claimCost) {
+            callback("**" + user.username + "**, you don't have enough 🍅 Tomatoes to claim a card \n" 
+                + "You need at least " + claimCost + ", but you have " + result[0].exp);
             return;
         }
 
@@ -106,11 +111,12 @@ function claim(user, amount, callback) {
             let res = _.sample(i);
             let name = toTitleCase(res.name.replace(/_/g, " "));
             let ext = res.animated? '.gif' : '.png';
-            let stat = result[0].dailystats;
             let file = './cards/' + res.collection + '/' + res.level + "_" + res.name + ext;
-            callback("Congratulations! You got " + name, file);
 
-            if(!stat) stat = {summon:0, send: 0, claim: 0};
+            let phrase = "Congratulations! You got **" + name + "** \n";
+            if(claimCost == 500) phrase + "This is your last claim for today";
+            else phrase += "Your next claim will cost **" + (claimCost + 50).toString() + "**🍅";
+            callback(phrase, file);
             stat.claim++;
 
             ucollection.update(
@@ -118,7 +124,7 @@ function claim(user, amount, callback) {
                 {
                     $push: {cards: res },
                     $set: {dailystats: stat},
-                    $inc: {exp: -100}
+                    $inc: {exp: -claimCost}
                 }
             ).then(() => {
                 quest.checkClaim(result[0], (mes)=>{callback(mes)});
@@ -163,13 +169,28 @@ function addXP(user, amount, callback) {
 function removeFromCooldown(userID) {
     let i = cooldownList.indexOf(userID);
     cooldownList.splice(i, 1);
-    console.log("Removed user from cooldown");
+    //console.log("Removed user from cooldown");
 }
 
 function getXP(user, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: user.id }).then((u) => {
-        if(u) callback(u.exp);
+        if(u) {
+            let stat = u.dailystats;
+            if(!stat) stat = {summon:0, send: 0, claim: 0};
+
+            let bal = u.exp;
+            let claimCost = (stat.claim + 1) * 50;
+            let msg = "**" + user.username + "**, you have **" + Math.floor(bal) + "** 🍅 Tomatoes! \n";
+            if(stat.claim >= 10) {
+                msg += "You can't claim more cards, as you reached your daily claim limit."
+            } else {
+                if(bal > claimCost) 
+                    msg += "You can claim " + getClaimsAmount(stat.claim, bal) + " cards today! Use ->claim \n";
+                msg += "Your claim now costs " + claimCost + " 🍅 Tomatoes";
+            }
+            callback(msg);
+        } 
     });
 }
 
@@ -514,7 +535,18 @@ function dynamicSort(property) {
     }
 }
 
-function fixUserCards(){
+function getClaimsAmount(claims, exp) {
+    let res = 0;
+    let total = claims * 50;
+    while(exp >= total) {
+        claims++;
+        res++;
+        total += claims * 50;
+    }
+    return res;
+}
+
+function fixUserCards() {
     let newUsers = []
     let collection = mongodb.collection('users');
     collection.find({}).toArray((err, users) => {
