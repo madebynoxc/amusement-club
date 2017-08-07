@@ -96,7 +96,7 @@ function claim(user, callback) {
         let claimCost = (stat.claim + 1) * 50;
         if(result.length == 0 || result[0].exp < claimCost) {
             callback("**" + user.username + "**, you don't have enough 🍅 Tomatoes to claim a card \n" 
-                + "You need at least " + claimCost + ", but you have " + result[0].exp);
+                + "You need at least " + claimCost + ", but you have " + Math.floor(result[0].exp));
             return;
         }
 
@@ -114,7 +114,7 @@ function claim(user, callback) {
             let file = './cards/' + res.collection + '/' + res.level + "_" + res.name + ext;
 
             let phrase = "Congratulations! You got **" + name + "** \n";
-            if(claimCost == 500) phrase + "This is your last claim for today";
+            if(claimCost >= 500) phrase + "This is your last claim for today";
             else phrase += "Your next claim will cost **" + (claimCost + 50).toString() + "**🍅";
             callback(phrase, file);
             stat.claim++;
