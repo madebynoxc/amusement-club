@@ -36,7 +36,7 @@ function checkClaim(user, callback) {
     if(!q || !user.dailystats) return;
 
     if((q.name == 'claim4' && user.dailystats.claim >= 4) || 
-    (q.name == 'claim8' && user.dailystats.claim >= 8)) {
+    (q.name == 'claim6' && user.dailystats.claim >= 6)) {
         callback(completeMsg(user, q));
         removeQuest(user, q);
     }
@@ -57,7 +57,8 @@ function checkSummon(user, callback) {
     let q = getQuest(user, 'sum');
     if(!q || !user.dailystats) return;
 
-    if(q.name == 'sum5' && user.dailystats.summon >= 5) {
+    if((q.name == 'sum6' && user.dailystats.summon >= 6) ||
+        (q.name == 'sum4' && user.dailystats.summon >= 4)) {
         callback(completeMsg(user, q));
         removeQuest(user, q);
     }
@@ -68,7 +69,7 @@ function checkXP(user, callback) {
     if(!q) return;
 
     if((q.name == 'gain1000' && user.exp >= 1000) || 
-    (q.name == 'gain2000' && user.exp >= 2000)) {
+    (q.name == 'gain1500' && user.exp >= 1500)) {
         callback(completeMsg(user, q));
         removeQuest(user, q);
     }
