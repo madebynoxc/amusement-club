@@ -159,7 +159,7 @@ function getCommand(m, callback) {
             case 'lead':
             case 'leaderboard':
             case 'leaderboards':
-                dbManager.leaderboard(cnt, m.guild, (text) =>{
+                dbManager.leaderboard_new(cnt, m.guild, (text) =>{
                     callback(text);
                 });
                 break;

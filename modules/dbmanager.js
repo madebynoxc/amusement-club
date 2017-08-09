@@ -1,7 +1,8 @@
 module.exports = {
     connect, disconnect, claim, addXP, getXP, 
     getCards, summon, transfer, sell, award, 
-    pay, daily, leaderboard, fixUserCards, getQuests
+    pay, daily, leaderboard, fixUserCards, getQuests,
+    leaderboard_new
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -440,6 +441,44 @@ function leaderboard(arg, guild, callback) {
     });
 }
 
+function leaderboard_new(arg, guild, callback) {
+    let global = arg == 'global';
+    let collection = mongodb.collection('users');
+    collection.find({}).toArray((err, users) => {
+        let usrLevels = [];
+        users.forEach(function(element) {
+            if(element.cards) {
+                usrLevels.push({
+                    id: element.discord_id,
+                    name: element.username,
+                    levels: countCardLevels(element.cards)
+                });
+            }
+        }, this);
+
+        usrLevels.sort(dynamicSort('-levels'));
+        if(global) {
+            callback("**Global TOP5 Card Owners:**\n" + nameOwners(usrLevels));
+        } else if(guild) {
+            let includedUsers = [];
+            try {
+                usrLevels.forEach((elem) => {
+                    guild.members.forEach((mem) => {
+                        if(mem.user.id == elem.id) {
+                            includedUsers.push(elem);
+                        }
+                        if(includedUsers.length >= 5) throw BreakException;
+                    }, this);
+                }, this);
+            } catch(e) {}
+
+            if(includedUsers.length > 0) {
+                callback("**Local TOP5 Card Owners:**\n" + nameOwners(includedUsers));
+            }
+        }
+    });
+}
+
 function award(uID, amout, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: uID }).then((user) => {
@@ -488,6 +527,14 @@ function countDuplicates(arr, type) {
     return res.join('\n');
 }
 
+function difference(user, target, callback) {
+
+}
+
+function forge(user, card1, card2, callback) {
+
+}
+
 function removeCard(target, collection) {
     for(let i=0; i<collection.length; i++) {
         if(collection[i].name == target.name) {
@@ -497,11 +544,11 @@ function removeCard(target, collection) {
     }
 }
 
-function nameOwners(col, auth) {
+function nameOwners(col) {
     let res = '';
     for(let i=0; i<col.length; i++) {
         res += (i+1).toString() + ". ";
-        res += "**" + col[i]._id + "**";
+        res += "**" + col[i].name + "**";
         res += " (" + col[i].levels + " stars)\n";
         if(i >= 4) break;
     }
@@ -537,13 +584,28 @@ function dynamicSort(property) {
 
 function getClaimsAmount(claims, exp) {
     let res = 0;
-    let total = claims * 50;
+    let total = 0;
+    for(let i=0; i<claims; i++) 
+        total += (1+1) * 50;
+    
     while(exp >= total) {
         claims++;
         res++;
         total += claims * 50;
     }
     return res;
+}
+
+function countCardLevels(cards) {
+    let sum = 0;
+    let metCards = [];
+    cards.forEach(function(element) {
+        if(!metCards.includes(element.name)) {
+            sum += element.level;
+            metCards.push(element.name);
+        }
+    }, this);
+    return sum;
 }
 
 function fixUserCards() {

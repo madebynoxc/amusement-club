@@ -40,13 +40,8 @@
         "award" : 1000
     },
     {
-        "name" : "sum4",
-        "description" : "Summon at least 5 cards",
-        "award" : 400
-    },
-    {
-        "name" : "sum6",
-        "description" : "Summon at least 6 cards",
-        "award" : 600
+        "name" : "sum2",
+        "description" : "Summon at least 2 cards",
+        "award" : 200
     }
 ]

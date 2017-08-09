@@ -57,8 +57,7 @@ function checkSummon(user, callback) {
     let q = getQuest(user, 'sum');
     if(!q || !user.dailystats) return;
 
-    if((q.name == 'sum6' && user.dailystats.summon >= 6) ||
-        (q.name == 'sum4' && user.dailystats.summon >= 4)) {
+    if(q.name == 'sum2' && user.dailystats.summon >= 2) {
         callback(completeMsg(user, q));
         removeQuest(user, q);
     }
