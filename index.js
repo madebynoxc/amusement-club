@@ -62,7 +62,7 @@ function getCommand(m, callback) {
         dbManager.addXP(m.author, m.content.length / 12, 
             (mes) => callback(mes));
 
-    if(m.content.startsWith('=>')) {
+    if(m.content.startsWith('->')) {
         let cnt = m.content.toLowerCase().substring(2).split(' ');
         let sb = cnt.shift();
         let cd = cnt.join(' ').trim();
