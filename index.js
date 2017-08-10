@@ -62,7 +62,7 @@ function getCommand(m, callback) {
         dbManager.addXP(m.author, m.content.length / 12, 
             (mes) => callback(mes));
 
-    if(m.content.startsWith('->')) {
+    if(m.content.startsWith('=>')) {
         let cnt = m.content.toLowerCase().substring(2).split(' ');
         let sb = cnt.shift();
         let cd = cnt.join(' ').trim();
@@ -73,7 +73,7 @@ function getCommand(m, callback) {
                 return;
             case 'cl': 
             case 'claim': 
-                dbManager.claim(m.author, (text, img) => {
+                dbManager.claim(m.author, m.guild.id, cnt, (text, img) => {
                     callback(text, {file: img });
                 });
                 return;
@@ -186,6 +186,10 @@ function getCommand(m, callback) {
     callback(undefined);
 }
 
+function getArguments() {
+
+}
+
 function isAdmin(sender) {
     return settings.admins.includes(sender);
 }
@@ -232,17 +236,7 @@ function showHelp(message) {
             name: "->lead [?global]",
 			value: "Shows top 5 users by overall card star amount",
 			inline: false
-        },
-        /*{
-			name:"->er",
-			value:"Shows Tomato:Mekos exchange rate",
-			inline: false
         }, {
-			name:"->mekos",
-			value:"Changes all Mekos to Tomatoes (one-time operation)",
-			inline: false
-        }, */
-        {
 			name: "Bot source code",
 			value: "https://github.com/NoxCaos/amusement-club/",
 			inline: false

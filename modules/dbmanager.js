@@ -17,6 +17,7 @@ const quest = require('./quest.js');
 const _ = require("lodash");
 const randomColor = require('randomcolor');
 const settings = require('../settings/general.json');
+const guilds = require('../settings/servers.json');
 
 function disconnect() {
     isConnected = false;
@@ -53,7 +54,9 @@ function scanCards() {
                     let name = split[0];
                     let ext = split[1];
                     
-                    if (res.filter((e) => e.name == name.substr(2)).length == 0) {
+                    if (res.filter((e) => {
+                        return e.name == name.substr(2) && e.collection === item;
+                    }).length == 0) {
                         newCards.push(split);
                     }
                 }
@@ -82,12 +85,12 @@ function insertCards(names, collection) {
 
     var collection = mongodb.collection('cards');
     collection.insert(cards, (err, res) => {
-        console.log("Inserted " + cards.length + " new cards to DB");
+        console.log("Inserted " + cards.length + " new cards from "+ collection +" to DB");
     });
     console.log(collection + " update finished");
 }
 
-function claim(user, callback) {
+function claim(user, guildID, arg, callback) {
     let ucollection = mongodb.collection('users');
     ucollection.find({ discord_id: user.id }).toArray((err, result) => {
 
@@ -107,8 +110,15 @@ function claim(user, callback) {
             return;
         }
 
+        let any = false;
+        console.log(arg);
+        try { any = arg[0].trim() == 'any' } catch(e){}
+
         let collection = mongodb.collection('cards');
-        collection.find({}).toArray((err, i) => {
+        let guild = guilds.filter(g => g.guild_id == guildID)[0];
+        let find = (guild && !any)? { collection: guild.collection } : {};
+
+        collection.find(find).toArray((err, i) => {
             let res = _.sample(i);
             let name = toTitleCase(res.name.replace(/_/g, " "));
             let ext = res.animated? '.gif' : '.png';
@@ -560,6 +570,10 @@ function difference(uID, targetID, callback) {
 }
 
 function forge(user, card1, card2, callback) {
+
+}
+
+function convert(user, amount) {
 
 }
 
