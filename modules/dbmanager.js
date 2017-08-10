@@ -2,7 +2,7 @@ module.exports = {
     connect, disconnect, claim, addXP, getXP, 
     getCards, summon, transfer, sell, award, 
     pay, daily, leaderboard, fixUserCards, getQuests,
-    leaderboard_new
+    leaderboard_new, difference
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -289,16 +289,24 @@ function transfer(from, to, card, callback) {
         }
 
         if(from.id == to) {
-            callback(from.username + ", you can't send card to yourself");
+            callback(from.username + ", did you actually think it would work?");
             return;
         }
 
         for(var i = 0; i < cards.length; i++) {
             if (cards[i].name.toLowerCase().includes(check)) {
+                let tg = cards[i];
+                let name = toTitleCase(tg.name.replace(/_/g, " "));
+                let hours = 12 - getHoursDifference(tg.frozen);
+                if(hours && hours > 0) {
+                    callback("**" + from.username + "**, the card **" + name + "** is frozen for **" 
+                        + hours + "** more hours! You can't transfer it");
+                    return;
+                }
+
                 collection.find({ discord_id: to }).toArray((err, u2) => {
                     if(u2.length == 0) return;
 
-                    let tg = cards[i];
                     let stat = u[0].dailystats;
                     cards.splice(i, 1);
 
@@ -307,21 +315,18 @@ function transfer(from, to, card, callback) {
 
                     collection.update(
                         { discord_id: from.id },
-                        {
-                            $set: {cards: cards, dailystats: stat }
-                        }
+                        {$set: {cards: cards, dailystats: stat }}
                     ).then(() => {
                         quest.checkSend(u[0], tg.level, (mes)=>{callback(mes)});
                     });
 
+                    tg.frozen = new Date();
                     collection.update(
                         { discord_id: to },
                         {
                             $push: {cards: tg }
                         }
                     );
-
-                    let name = toTitleCase(tg.name.replace(/_/g, " "));
                     callback("**" + from.username + "** sent **" + name + "** to **" + u2[0].username + "**");
                 });
                 return;
@@ -388,8 +393,7 @@ function daily(uID, callback) {
     collection.findOne({ discord_id: uID }).then((user) => {
         if(!user) return;
 
-        let mil = new Date() - user.lastdaily;
-        let hours = 20 - Math.floor(mil / (1000*60*60));
+        let hours = 20 - getHoursDifference(user.lastdaily);
         if(!hours || hours <= 0) {
             collection.update(
                 { discord_id: uID },
@@ -400,11 +404,16 @@ function daily(uID, callback) {
                 }
             );
         } else {
-            callback("**" + user.username + "**, you can claim daily 🍅 in **" + hours + " hours**");
+            if(hours == 1){
+                let mins = 60 - (getMinutesDifference(user.lastdaily) % 60);
+                callback("**" + user.username + "**, you can claim daily 🍅 in **" + mins + " minutes**");
+            } else 
+                callback("**" + user.username + "**, you can claim daily 🍅 in **" + hours + " hours**");
             return;
         }
-        callback("**" + user.username + "** recieved daily **100** 🍅 Your color of the day is " + randomColor() + "\n"
-    + "You also got **2 daily quests**. To view them use ->quests");
+        callback("**" + user.username + "** recieved daily **100** 🍅 Your now have " 
+            + Math.floor(user.exp) + "🍅 \n"
+            + "You also got **2 daily quests**. To view them use ->quests");
     });
 }
 
@@ -527,8 +536,27 @@ function countDuplicates(arr, type) {
     return res.join('\n');
 }
 
-function difference(user, target, callback) {
+function difference(uID, targetID, callback) {
+    let collection = mongodb.collection('users');
+    collection.findOne({ discord_id: uID }).then((user) => {
+        if(!user) return;
 
+        collection.findOne({ discord_id: targetID }).then((user2) => {
+            if(!user2) return;
+
+            let dif1 = user.cards.filter(x => user2.cards.filter(y => x.name === y.name) < 0);
+            let dif2 = user2.cards.filter(x => user.cards.filter(y => x.name === y.name) < 0);
+            let res = "**" + user.username + "** has unique cards:\n";
+            dif1.forEach(function(element) {
+                res += nameCard(element) + "\n";
+            }, this);
+            res += "\n**" + user2.username + "** has unique cards:\n";
+            dif2.forEach(function(element) {
+                res += nameCard(element)+ "\n";
+            }, this);
+            callback(res);
+        });
+    });
 }
 
 function forge(user, card1, card2, callback) {
@@ -542,6 +570,16 @@ function removeCard(target, collection) {
             return collection;
         }
     }
+}
+
+function getHoursDifference(tg) {
+    let mil = new Date() - tg;
+    return Math.floor(mil / (1000*60*60));
+}
+
+function getMinutesDifference(tg) {
+    let mil = new Date() - tg;
+    return Math.floor(mil / (1000*60));
 }
 
 function nameOwners(col) {
@@ -564,7 +602,7 @@ function nameCard(card, count) {
 
         res += "]  ";
         res += toTitleCase(card.name.replace(/_/g, " "));
-        res += " (x" + count + ")";
+        if(count) res += " (x" + count + ")";
         return res;
     } catch (e) {}
     return null;
@@ -587,7 +625,7 @@ function getClaimsAmount(claims, exp) {
     let total = 0;
     for(let i=0; i<claims; i++) 
         total += (1+1) * 50;
-    
+
     while(exp >= total) {
         claims++;
         res++;

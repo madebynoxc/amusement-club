@@ -77,6 +77,12 @@ function getCommand(m, callback) {
                     callback(text, {file: img });
                 });
                 return;
+            /*case 'dif':
+            case 'difference':
+                dbManager.difference(m.author.id, getUserID(cnt.shift()), (text) => {
+                    callback(text);
+                });
+                return;*/
             case 'sum': 
             case 'summon':
                 if(cd.length < 3) 
