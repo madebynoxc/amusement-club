@@ -70,13 +70,13 @@ function scanCards() {
     });
 }
 
-function insertCards(names, collection) {
+function insertCards(names, col) {
     let cards = [];
 
     for (let i in names) {
         let c = {
             "name": names[i][0].substr(2),
-            "collection": collection,
+            "collection": col,
             "level": parseInt(names[i][0][0]),
             "animated": names[i][1] == "gif"
         }
@@ -85,9 +85,9 @@ function insertCards(names, collection) {
 
     var collection = mongodb.collection('cards');
     collection.insert(cards, (err, res) => {
-        console.log("Inserted " + cards.length + " new cards from "+ collection +" to DB");
+        console.log("Inserted " + cards.length + " new cards from "+ col +" to DB");
     });
-    console.log(collection + " update finished");
+    console.log(col + " update finished");
 }
 
 function claim(user, guildID, arg, callback) {
