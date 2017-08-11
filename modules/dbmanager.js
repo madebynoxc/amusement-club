@@ -145,6 +145,7 @@ function claim(user, guildID, arg, callback) {
 }
 
 function addXP(user, amount, callback) {
+    amount = Math.abs(amount);
     if(cooldownList.includes(user.id)) return;
 
     if(amount > 5) amount = 5;
@@ -348,6 +349,7 @@ function transfer(from, to, card, callback) {
 
 function pay(from, to, amount, callback) {
     let collection = mongodb.collection('users');
+    amount = Math.abs(amount);
     collection.find({ discord_id: from }).toArray((err, u) => {
         if(u.length == 0) return;
 
