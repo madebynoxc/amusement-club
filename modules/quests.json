@@ -2,42 +2,42 @@
     {
         "name" : "claim4",
         "description" : "Claim at least 4 cards today",
-        "award" : 600
+        "award" : 400
     },
     {
         "name" : "claim6",
         "description" : "Claim at least 6 cards today",
-        "award" : 800
+        "award" : 600
     },
     {
         "name" : "send2",
         "description" : "Send a 2-star card to anyone else",
-        "award" : 400
+        "award" : 200
     },
     {
         "name" : "send2",
         "description" : "Send a 2-star card to anyone else",
-        "award" : 400
+        "award" : 200
     },
     {
         "name" : "send3",
         "description" : "Send a 3-star card to anyone else",
-        "award" : 600
+        "award" : 300
     },
     {
         "name" : "send3",
         "description" : "Send a 3-star card to anyone else",
-        "award" : 600
+        "award" : 300
     },
     {
         "name" : "gain1000",
         "description" : "Get 1000 tomatoes balance",
-        "award" : 500
+        "award" : 400
     },
     {
         "name" : "gain1500",
         "description" : "Get 1500 tomatoes balance",
-        "award" : 1000
+        "award" : 800
     },
     {
         "name" : "sum2",

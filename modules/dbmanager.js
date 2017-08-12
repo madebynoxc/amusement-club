@@ -423,8 +423,8 @@ function daily(uID, callback) {
                 callback("**" + user.username + "**, you can claim daily 🍅 in **" + hours + " hours**");
             return;
         }
-        callback("**" + user.username + "** recieved daily **100** 🍅 Your now have " 
-            + Math.floor(user.exp) + "🍅 \n"
+        callback("**" + user.username + "** recieved daily **100** 🍅 You now have " 
+            + (Math.floor(user.exp) + 100) + "🍅 \n"
             + "You also got **2 daily quests**. To view them use ->quests");
     });
 }
