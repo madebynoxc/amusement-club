@@ -195,57 +195,22 @@ function isAdmin(sender) {
 }
 
 function showHelp(message) {
-    let embed = {
-		author: {
-			name: "⭐ Amusement Club ⭐ Card Game \n",
-		},
-        color: utils.HEXToVBColor(settings.botcolor),
-		fields: [{
-			name:"->claim",
-			value:"Claim a new card (costs 100 🍅 Tomatoes)",
-			inline: false
-        }, {
-			name: "->sum [name]",
-			value: "Summons a card with name (in case you have it)",
-			inline: false
-		}, {
-			name: "->bal",
-			value: "Shows your current 🍅 Tomato balance",
-			inline: false
-        }, {
-			name: "->give [user] [card]",
-			value: "Transfers card to user",
-			inline: false
-        }, {
-			name: "->cards [user (optional)]",
-			value: "Shows your cards, or some other [user]",
-			inline: false
-        }, {
-			name: "->pay [user] [amount]",
-			value: "Sends 🍅 Tomatoes to [user]",
-			inline: false
-        }, {
-			name: "->daily",
-			value: "Claims daily amount of 🍅 Tomatoes",
-			inline: false
-        }, {
-			name: "->sell [card]",
-			value: "Sells a card. ⭐=50🍅 | ⭐⭐=75🍅 | ⭐⭐⭐=100🍅",
-			inline: false
-        }, {
-            name: "->lead [?global]",
-			value: "Shows top 5 users by overall card star amount",
-			inline: false
-        }, {
-			name: "Bot source code",
-			value: "https://github.com/NoxCaos/amusement-club/",
-			inline: false
-		}]
-    }
-    message.author.send("", { embed });
+    let e = new Discord.RichEmbed();
+    e.setColor(settings.botcolor);
+    e.setAuthor("\u2B50 Amusement Club \u2B50 Card Game \n")
+    e.addField("->claim", "Claim a new card (costs 100 \u{1F345} Tomatoes)", false);
+    e.addField("->sum [name]", "Summons a card with name (in case you have it)", false);
+    e.addField("->bal", "Shows your current \u{1F345} Tomato balance", false);
+    e.addField("->give [user] [card]", "Transfers card to user", false);
+    e.addField("->cards [user (optional)]", "Shows your cards, or some other [user]", false);
+    e.addField("->pay [user] [amount]", "Sends \u{1F345} Tomatoes to [user]", false);
+    e.addField("->daily", "Claims daily amount of \u{1F345} Tomatoes", false);
+    e.addField("->sell [card]", "Sells a card. \u2B50=50\u{1F345} | \u2B50\u2B50=75\u{1F345} | \u2B50\u2B50\u2B50=100\u{1F345}", false);
+    e.addField("->lead [?global]", "Shows top 5 users by overall card star amount", false);
+    e.addField("Bot source code", "https://github.com/NoxCaos/amusement-club/", false);
+    message.author.send("", { embed: e });
     return message.author.username + ", I've sent you a DM";
 }
-
 function getUserID(inp) {
     try{
         return inp.slice(0, -1).split('@')[1].replace('!', '');
