@@ -575,10 +575,6 @@ function forge(user, card1, card2, callback) {
 
 }
 
-function convert(user, amount) {
-
-}
-
 function removeCard(target, collection) {
     for(let i=0; i<collection.length; i++) {
         if(collection[i].name == target.name) {
