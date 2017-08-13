@@ -198,7 +198,7 @@ function showHelp(message) {
     let e = new Discord.RichEmbed();
     e.setColor(settings.botcolor);
     e.setAuthor("\u2B50 Amusement Club \u2B50 Card Game \n")
-    e.addField("->claim", "Claim a new card (costs 100 \u{1F345} Tomatoes)", false);
+    e.addField("->claim", "Claim a new card (costs an increasing ammount of \u{1F345} Tomatoes)", false);
     e.addField("->sum [name]", "Summons a card with name (in case you have it)", false);
     e.addField("->bal", "Shows your current \u{1F345} Tomato balance", false);
     e.addField("->give [user] [card]", "Transfers card to user", false);
