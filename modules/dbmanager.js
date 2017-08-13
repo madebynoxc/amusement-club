@@ -92,27 +92,28 @@ function insertCards(names, col) {
 
 function claim(user, guildID, arg, callback) {
     let ucollection = mongodb.collection('users');
-    ucollection.find({ discord_id: user.id }).toArray((err, result) => {
+    ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
+        if(!dbUser) return;
 
-        let stat = result[0].dailystats;
+        let stat = dbUser.dailystats;
         if(!stat) stat = {summon:0, send: 0, claim: 0};
 
         let claimCost = (stat.claim + 1) * 50;
-        if(result.length == 0 || result[0].exp < claimCost) {
+        if(dbUser.exp < claimCost) {
             callback("**" + user.username + "**, you don't have enough 🍅 Tomatoes to claim a card \n" 
-                + "You need at least " + claimCost + ", but you have " + Math.floor(result[0].exp));
+                + "You need at least " + claimCost + ", but you have " + Math.floor(dbUser.exp));
             return;
         }
 
-        if(result[0].dailystats && result[0].dailystats.claim > 10) {
+        console.log(dbUser.dailystats.claim);
+        if(dbUser.dailystats && dbUser.dailystats.claim >= 10) {
             callback("**" + user.username + "**, you reached a limit of your daily claim."
                 + " It will be reset next time you successfully run '->daily'");
             return;
         }
 
         let any = false;
-        console.log(arg);
-        try { any = arg[0].trim() == 'any' } catch(e){}
+        try { any = (arg[0].trim() == 'any' || arg[0].trim() == 'all') } catch(e){}
 
         let collection = mongodb.collection('cards');
         let guild = guilds.filter(g => g.guild_id == guildID)[0];
@@ -125,7 +126,7 @@ function claim(user, guildID, arg, callback) {
             let file = './cards/' + res.collection + '/' + res.level + "_" + res.name + ext;
 
             let phrase = "Congratulations! You got **" + name + "** \n";
-            if(claimCost >= 500) phrase + "This is your last claim for today";
+            if(claimCost >= 500) phrase += "This is your last claim for today";
             else phrase += "Your next claim will cost **" + (claimCost + 50).toString() + "**🍅";
             callback(phrase, file);
             stat.claim++;
@@ -138,7 +139,7 @@ function claim(user, guildID, arg, callback) {
                     $inc: {exp: -claimCost}
                 }
             ).then(() => {
-                quest.checkClaim(result[0], (mes)=>{callback(mes)});
+                quest.checkClaim(dbUser, (mes)=>{callback(mes)});
             });
         });
     });
@@ -575,10 +576,6 @@ function forge(user, card1, card2, callback) {
 
 }
 
-function convert(user, amount) {
-
-}
-
 function removeCard(target, collection) {
     for(let i=0; i<collection.length; i++) {
         if(collection[i].name == target.name) {
@@ -638,16 +635,17 @@ function dynamicSort(property) {
 
 function getClaimsAmount(claims, exp) {
     let res = 0;
-    let total = 0;
-    for(let i=0; i<claims; i++) 
-        total += (1+1) * 50;
+    let total = claims * 50;
+    let allowed = 10 - claims;
 
+    claims++;
     while(exp >= total) {
         claims++;
         res++;
         total += claims * 50;
     }
-    return res;
+
+    return Math.min(res, allowed);
 }
 
 function countCardLevels(cards) {
