@@ -205,7 +205,7 @@ function showHelp(message) {
     e.addField("->cards [user (optional)]", "Shows your cards, or some other [user]", false);
     e.addField("->pay [user] [amount]", "Sends \u{1F345} Tomatoes to [user]", false);
     e.addField("->daily", "Claims daily amount of \u{1F345} Tomatoes", false);
-    e.addField("->sell [card]", "Sells a card. \u2B50=50\u{1F345} | \u2B50\u2B50=75\u{1F345} | \u2B50\u2B50\u2B50=100\u{1F345}", false);
+    e.addField("->sell [card]", "Sells a card. \u2B50=80\u{1F345} | \u2B50\u2B50=150\u{1F345} | \u2B50\u2B50\u2B50=300\u{1F345}", false);
     e.addField("->lead [?global]", "Shows top 5 users by overall card star amount", false);
     e.addField("Bot source code", "https://github.com/NoxCaos/amusement-club/", false);
     message.author.send("", { embed: e });
