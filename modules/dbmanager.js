@@ -105,7 +105,6 @@ function claim(user, guildID, arg, callback) {
             return;
         }
 
-        console.log(dbUser.dailystats.claim);
         if(dbUser.dailystats && dbUser.dailystats.claim >= 10) {
             callback("**" + user.username + "**, you reached a limit of your daily claim."
                 + " It will be reset next time you successfully run '->daily'");
