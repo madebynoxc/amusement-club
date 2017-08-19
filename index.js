@@ -74,7 +74,7 @@ function getCommand(m, callback) {
             (mes) => callback(mes));
     }
 
-    if(m.content.startsWith('=>')) {
+    if(m.content.startsWith(settings.botprefix)) {
         let cnt = m.content.toLowerCase().substring(2).split(' ');
         let sb = cnt.shift();
         let cd = cnt.join(' ').trim();
