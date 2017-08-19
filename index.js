@@ -4,7 +4,7 @@ const utils = require("./modules/localutils.js");
 const logger = require('./modules/log.js');
 const settings = require('./settings/general.json');
 const helpBody = require('./help/general.json');
-var bot;
+var bot, curgame = 0;
 
 //https://discordapp.com/oauth2/authorize?client_id=340988108222758934&scope=bot&permissions=125952
 
@@ -16,8 +16,9 @@ function _init() {
 
     bot.on("ready", () => {
         console.log("Discord Bot Connected");
-        bot.user.setGame("->help");
         console.log("Discord Bot Ready");
+        //setInterval(gameLoop, 5000);
+        bot.user.setGame("->help", "https://www.twitch.tv/v");
     });
 
     bot.on("disconnected", () => {
@@ -56,6 +57,14 @@ function log(message) {
 		msg = "PW : " + message.author.username + " : " + message.content;
 	}
     logger.message(msg);
+}
+
+function gameLoop() {
+    bot.user.setGame(settings.games[curgame], "");
+    curgame++;
+    if(curgame >= settings.games.length)
+        curgame = 0;
+    console.log(settings.games[curgame]);
 }
 
 function getCommand(m, callback) {
