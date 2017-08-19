@@ -1,0 +1,45 @@
+{
+    "title": "\u2B50 Amusement Club \u2B50 Card Game",
+    "fields": [
+        {
+            "title": "->claim",
+            "description": "Claim a new card (costs an increasing ammount of 🍅 Tomatoes)"
+        },
+        {
+            "title": "->sum [name]",
+            "description": "Summons a card with [name] (in case you have it)"
+        },
+        {
+            "title": "->bal",
+            "description": "Shows your current 🍅 Tomato balance"
+        },
+        {
+            "title": "->give [user] [card]",
+            "description": "Transfers [card] to [user]"
+        },
+        {
+            "title": "->cards [tier]",
+            "description": "Shows your cards, of some [tier]"
+        },
+        {
+            "title": "->pay [user] [amount]",
+            "description": "Sends 🍅 Tomatoes to [user]"
+        },
+        {
+            "title": "->daily",
+            "description": "Claims daily amount of 🍅 Tomatoes, resets quests and claim cost"
+        },
+        {
+            "title": "->sell [card]",
+            "description": "Sells a card. \u2B50=80🍅 | \u2B50\u2B50=150🍅 | \u2B50\u2B50\u2B50=300🍅"
+        },
+        {
+            "title": "->lead [?global]",
+            "description": "Shows top 5 users by overall card star amount"
+        },
+        {
+            "title": "Bot source code",
+            "description": "https://github.com/NoxCaos/amusement-club/"
+        }
+    ]
+}

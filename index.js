@@ -3,7 +3,8 @@ const dbManager = require("./modules/dbmanager.js");
 const utils = require("./modules/localutils.js");
 const logger = require('./modules/log.js');
 const settings = require('./settings/general.json');
-var bot;
+const helpBody = require('./help/general.json');
+var bot, curgame = 0;
 
 //https://discordapp.com/oauth2/authorize?client_id=340988108222758934&scope=bot&permissions=125952
 
@@ -15,8 +16,9 @@ function _init() {
 
     bot.on("ready", () => {
         console.log("Discord Bot Connected");
-        bot.user.setGame("->help");
         console.log("Discord Bot Ready");
+        //setInterval(gameLoop, 5000);
+        bot.user.setGame("->help", "https://www.twitch.tv/v");
     });
 
     bot.on("disconnected", () => {
@@ -55,6 +57,14 @@ function log(message) {
 		msg = "PW : " + message.author.username + " : " + message.content;
 	}
     logger.message(msg);
+}
+
+function gameLoop() {
+    bot.user.setGame(settings.games[curgame], "");
+    curgame++;
+    if(curgame >= settings.games.length)
+        curgame = 0;
+    console.log(settings.games[curgame]);
 }
 
 function getCommand(m, callback) {
@@ -197,19 +207,15 @@ function isAdmin(sender) {
 function showHelp(message) {
     let e = new Discord.RichEmbed();
     e.setColor(settings.botcolor);
-    e.setAuthor("\u2B50 Amusement Club \u2B50 Card Game \n")
-    e.addField("->claim", "Claim a new card (costs an increasing ammount of \u{1F345} Tomatoes)", false);
-    e.addField("->sum [name]", "Summons a card with name (in case you have it)", false);
-    e.addField("->bal", "Shows your current \u{1F345} Tomato balance", false);
-    e.addField("->give [user] [card]", "Transfers card to user", false);
-    e.addField("->cards [user (optional)]", "Shows your cards, or some other [user]", false);
-    e.addField("->pay [user] [amount]", "Sends \u{1F345} Tomatoes to [user]", false);
-    e.addField("->daily", "Claims daily amount of \u{1F345} Tomatoes", false);
-    e.addField("->sell [card]", "Sells a card. \u2B50=80\u{1F345} | \u2B50\u2B50=150\u{1F345} | \u2B50\u2B50\u2B50=300\u{1F345}", false);
-    e.addField("->lead [?global]", "Shows top 5 users by overall card star amount", false);
-    e.addField("Bot source code", "https://github.com/NoxCaos/amusement-club/", false);
+    e.setAuthor(helpBody.title)
+    helpBody.fields.forEach(function(element) {
+       e.addField(element.title, element.description, false); 
+    }, this);
+
     message.author.send("", { embed: e });
-    return message.author.username + ", I've sent you a DM";
+
+    if(message.channel.name) return "**" + message.author.username + "**, I've sent you a DM";
+    return undefined;
 }
 function getUserID(inp) {
     try{
