@@ -64,14 +64,12 @@ function gameLoop() {
     curgame++;
     if(curgame >= settings.games.length)
         curgame = 0;
-    console.log(settings.games[curgame]);
 }
 
 function getCommand(m, callback) {
     var channelType = m.channel.name? 1 : 0; //0 - DM, 1 - channel, 2 - bot channel
     if(channelType == 1) {
         if(m.channel.name.includes('bot')) channelType = 2;
-        console.log(channelType);
         dbManager.addXP(m.author, m.content.length / 12, 
             (mes) => callback(mes));
     }
