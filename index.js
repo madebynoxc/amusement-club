@@ -4,6 +4,7 @@ const utils = require("./modules/localutils.js");
 const logger = require('./modules/log.js');
 const settings = require('./settings/general.json');
 const helpBody = require('./help/general.json');
+const react = require('./modules/reactions.js');
 var bot, curgame = 0;
 
 //https://discordapp.com/oauth2/authorize?client_id=340988108222758934&scope=bot&permissions=125952
@@ -26,16 +27,19 @@ function _init() {
     });
 
     bot.on("message", (message) => {
-        if(message.author.bot) 
-            return false;
-
-        log(message);
-        getCommand(message, (res, obj) => {
-            if(!res && !obj) 
-                return false;
-                
-            message.channel.send(res, obj);
-        });
+        if(message.author.bot) {
+            if(message.author.id === bot.user.id) {
+                selfMessage(message);
+            }
+        } else {
+            log(message);
+            getCommand(message, (res, obj) => {
+                if(!res && !obj) 
+                    return false;
+                    
+                message.channel.send(res, obj);
+            });
+        }
     });
 
     console.log("Trying to log in ");
@@ -67,12 +71,19 @@ function gameLoop() {
     console.log(settings.games[curgame]);
 }
 
+function selfMessage(m) {
+    if(m.content.includes('\u{1F4C4}')) {
+        react.setupPagination(m, m.content.split("**")[1]);
+    }
+}
+
 function getCommand(m, callback) {
-    if(m.channel.name)
+    let dm = !m.channel.name;
+    if(!dm)
         dbManager.addXP(m.author, m.content.length / 12, 
             (mes) => callback(mes));
 
-    if(m.content.startsWith('->')) {
+    if(m.content.startsWith('=>')) {
         let cnt = m.content.toLowerCase().substring(2).split(' ');
         let sb = cnt.shift();
         let cd = cnt.join(' ').trim();
@@ -83,9 +94,11 @@ function getCommand(m, callback) {
                 return;
             case 'cl': 
             case 'claim': 
-                dbManager.claim(m.author, m.guild.id, cnt, (text, img) => {
-                    callback(text, {file: img });
-                });
+                if(!dm) {
+                    dbManager.claim(m.author, m.guild.id, cnt, (text, img) => {
+                        callback(text, {file: img });
+                    });
+                } else callback("Claim in direct messages is forbidden");
                 return;
             /*case 'dif':
             case 'difference':
@@ -131,10 +144,8 @@ function getCommand(m, callback) {
             case 'list':
             case 'cards':
                 let firstArg = cnt.shift();
-                let targetUsr = getUserID(firstArg);
-                let author = targetUsr? targetUsr : m.author.id;
-                let typeArg = targetUsr? parseInt(cnt.shift()) : parseInt(firstArg);
-                dbManager.getCards(author, typeArg? typeArg : 0, (text) =>{
+                let typeArg = parseInt(firstArg);
+                dbManager.getCards(m.author.id, typeArg? typeArg : 0, (text) =>{
                     callback(text);
                 });
                 return;

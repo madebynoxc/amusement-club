@@ -226,23 +226,26 @@ function getQuests(user, callback) {
     });
 }
 
-function getCards(user, type, callback) {
+function getCards(user, type, callback, page = 1) {
     let collection = mongodb.collection('users');
-    collection.find({ discord_id: user }).toArray((err, i) => {
-        if(i.length == 0) return;
+    collection.findOne({ discord_id: user }).then((usr) => {
+        if(usr == undefined || type > 5 || type < 0) return;
 
-        let usr = i[0]; 
         let cards = usr.cards;
         if(cards && cards.length > 0){
-            if(cards.length > 15 && type <= 0) {
+            /*if(cards.length > 15 && type <= 0) {
                 callback("Card list is too long. Please use ->cards [tier] to list stars of certain star amount");
-            } else {
+            } else {*/
+                let pages = Math.floor(cards.length/10) + 1;
+                if(page > pages) return;
+
                 let cur = "(showing only " + type + "-star cards) \n"
-                let resp = "**" + usr.username + "** has " + cards.length + " cards: \n";
+                let resp = "**" + usr.username + "**, you have " + cards.length + " cards: \n";
                 if(type > 0) resp += cur;
-                resp += countDuplicates(cards, type);
+                if(pages > 1) resp += "\u{1F4C4} Page "+ page +" of " + pages + "\n";
+                resp += countDuplicates(cards, type, page);
                 callback(resp);
-            }
+            //}
         } else {
             callback("**" + usr.username + "** has no any cards");
         }
@@ -518,7 +521,8 @@ function toTitleCase(str) {
     return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
 }
 
-function countDuplicates(arr, type) {
+function countDuplicates(arr, type, page) {
+    page--;
     arr.sort(dynamicSort("name"));
     if(type < 0) type = 0;
     //arr.sort(dynamicSort("-level"));
@@ -526,7 +530,8 @@ function countDuplicates(arr, type) {
     var res = [];
     var current = null;
     var cnt = 0;
-    for (var i = 0; i < arr.length; i++) {
+    var max = Math.min(10, arr.length - (page * 10));
+    for (var i = (page * 10); i < max; i++) {
         if(!arr[i]) continue;
         if (!current || arr[i].name != current.name) {
             if (cnt > 0 && (current.level == type || type == 0)) {
