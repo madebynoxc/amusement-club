@@ -19,7 +19,7 @@ function _init() {
         console.log("Discord Bot Connected");
         console.log("Discord Bot Ready");
         //setInterval(gameLoop, 5000);
-        bot.user.setGame("->help", "https://www.twitch.tv/v");
+        bot.user.setGame("->help", "https://www.twitch.tv/");
     });
 
     bot.on("disconnected", () => {
@@ -145,8 +145,9 @@ function getCommand(m, callback) {
             case 'cards':
                 let firstArg = cnt.shift();
                 let typeArg = parseInt(firstArg);
-                dbManager.getCards(m.author.id, typeArg? typeArg : 0, (text) =>{
-                    callback(text);
+                dbManager.getCards(m.author.id, typeArg? typeArg : 0, (data) => {
+                    if(!data) callback("**" + m.author.username + "** has no any cards");
+                    else callback(react.addNew(m.author, typeArg? typeArg : 0, 1, data));
                 });
                 return;
             case 'sell':
