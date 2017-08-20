@@ -5,6 +5,7 @@ const logger = require('./modules/log.js');
 const settings = require('./settings/general.json');
 const helpBody = require('./help/general.json');
 const react = require('./modules/reactions.js');
+const quickhelp = require('./help/quick.json');
 var bot, curgame = 0;
 
 //https://discordapp.com/oauth2/authorize?client_id=340988108222758934&scope=bot&permissions=125952
@@ -89,6 +90,12 @@ function getCommand(m, callback) {
         let sb = cnt.shift();
         let cd = cnt.join(' ').trim();
 
+        if(sb[0] === '?') {
+            if(channelType == 1) callback('Help can be called only in bot channel');
+            else callback(getHelp(sb.substring(1)));
+            return;
+        }
+
         switch(sb) {
             case 'help': 
                 callback(showHelp(m));
@@ -156,11 +163,9 @@ function getCommand(m, callback) {
             case 'cards':
                 if(channelType == 1) callback('Card listing is possible only in bot channel');
                 else {
-                  let firstArg = cnt.shift();
-                  let typeArg = parseInt(firstArg);
-                  dbManager.getCards(m.author.id, typeArg? typeArg : 0, (data) => {
+                  dbManager.getCards(m.author.id, (data) => {
                       if(!data) callback("**" + m.author.username + "** has no any cards");
-                      else callback(react.addNew(m.author, typeArg? typeArg : 0, 1, data));
+                      else callback(react.addNew(m.author, cnt, data));
                   });
                 }
                 return;
@@ -173,7 +178,7 @@ function getCommand(m, callback) {
                 if(channelType == 0) callback('Daily claim is available only on servers');
                 else if(channelType == 1) callback('Daily claim is available only in bot channel');
                 else {
-                    dbManager.daily(m.author.id, (text) =>{
+                    dbManager.daily(m.author.id, (text) => {
                         callback(text);
                     });
                 }
@@ -229,8 +234,12 @@ function getCommand(m, callback) {
     callback(undefined);
 }
 
-function getArguments() {
-
+function getHelp(com) {
+    var phrases = quickhelp.filter(e => e.name == com);
+    if(phrases.length > 0) {
+        return phrases[0].values.join('\n');
+    }
+    return undefined;
 }
 
 function isAdmin(sender) {

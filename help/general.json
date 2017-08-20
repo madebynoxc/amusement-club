@@ -2,6 +2,10 @@
     "title": "\u2B50 Amusement Club \u2B50 Card Game",
     "fields": [
         {
+            "title": "Quick Help",
+            "description": "use ->?[command] to get a quick help for command \n e.g. `->?give`" 
+        },
+        {
             "title": "->claim",
             "description": "Claim a new card (costs an increasing ammount of 🍅 Tomatoes)"
         },

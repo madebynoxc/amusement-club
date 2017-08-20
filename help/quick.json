@@ -1,0 +1,95 @@
+[
+    {
+        "name": "list",
+        "values": [
+            "->cards OR ->list",
+            "**->list [?multi] [tier] [collection...]**",
+            "->list multi (cards x2 and more)",
+            "->list 2 (only 2-star cards)",
+            "->list yuruyuri (only Yuru Yuri cards)",
+            "->list multi 2 yuruyuri",
+            "Filter parameters can be combined"
+        ]
+    },
+    {
+        "name": "cards",
+        "values" : [
+            "->cards OR ->list",
+            "**->cards [?multi] [tier] [collection...]**",
+            "->cards multi (cards x2 and more)",
+            "->cards 2 (only 2-star cards)",
+            "->cards yuruyuri (only Yuru Yuri cards)",
+            "->cards multi 2 yuruyuri",
+            "Filter parameters can be combined"
+        ]
+    },
+    {
+        "name": "claim",
+        "values" : [
+            "**->claim OR ->cl**",
+            "->claim (spawns a random card)"
+        ]
+    },
+    {
+        "name": "summon",
+        "values": [
+            "**->summon [name] OR ->sum [name]**",
+            "->summon lady to (summons Lady Toshino)",
+            "Name should contain 3+ characters"
+        ]
+    },
+    {
+        "name": "bal",
+        "values": [
+            "**->balance OR ->bal**",
+            "->bal (shows your balance and claim cost)"
+        ]
+    },
+    {
+        "name": "balance",
+        "values": [
+            "**->balance OR ->bal**",
+            "->bal (shows your balance and claim cost)"
+        ]
+    },
+    {
+        "name": "give",
+        "values":  [
+            "->give OR ->send",
+            "**->give [person] [card]**",
+            "->give @NoxCaos lady toshino (will transfer card to a person)"
+        ]
+    },
+    {
+        "name": "send",
+        "values":  [
+            "->give OR ->send",
+            "**->give [person] [card]**",
+            "->give @NoxCaos lady toshino (will transfer card to a person)"
+        ]
+    },
+    {
+        "name": "pay",
+        "values": [
+            "**->pay [person] [tomatoes]**",
+            "->pay @NoxCaos 42 (will transfer 42 tomatoes to a person)"
+        ]
+    },
+    {
+        "name": "sell",
+        "values": [
+            "**->sell [card name]**",
+            "->sell lady to (sells Lady Toshino)",
+            "Name should contain 3+ characters"
+        ]
+    },
+    {
+        "name": "lead",
+        "values": [
+            "->lead OR ->leaderboard OR ->leaderboards",
+            "**->lead [?global]**",
+            "->lead (shows local Top-5 rating)",
+            "->lead global (shows global Top-5 rating)"
+        ]
+    }
+]
