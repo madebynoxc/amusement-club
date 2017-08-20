@@ -3,7 +3,8 @@ module.exports = {
     parseToSeconds,
     msToTime,
     HEXToVBColor,
-    getSourceFormat
+    getSourceFormat,
+    toTitleCase
 }
 
 function getSourceFormat(str) {
@@ -35,6 +36,10 @@ function parseToSeconds(inp) {
     return parseInt(c[0]) * 3600 
     + parseInt(c[1]) * 60
     + parseFloat(c[2]);
+}
+
+function toTitleCase(str) {
+    return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
 }
 
 function msToTime(s) {

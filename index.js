@@ -4,6 +4,7 @@ const utils = require("./modules/localutils.js");
 const logger = require('./modules/log.js');
 const settings = require('./settings/general.json');
 const helpBody = require('./help/general.json');
+const react = require('./modules/reactions.js');
 var bot, curgame = 0;
 
 //https://discordapp.com/oauth2/authorize?client_id=340988108222758934&scope=bot&permissions=125952
@@ -18,7 +19,7 @@ function _init() {
         console.log("Discord Bot Connected");
         console.log("Discord Bot Ready");
         //setInterval(gameLoop, 5000);
-        bot.user.setGame("->help", "https://www.twitch.tv/v");
+        bot.user.setGame("->help", "https://www.twitch.tv/");
     });
 
     bot.on("disconnected", () => {
@@ -26,16 +27,19 @@ function _init() {
     });
 
     bot.on("message", (message) => {
-        if(message.author.bot) 
-            return false;
-
-        log(message);
-        getCommand(message, (res, obj) => {
-            if(!res && !obj) 
-                return false;
-                
-            message.channel.send(res, obj);
-        });
+        if(message.author.bot) {
+            if(message.author.id === bot.user.id) {
+                selfMessage(message);
+            }
+        } else {
+            log(message);
+            getCommand(message, (res, obj) => {
+                if(!res && !obj) 
+                    return false;
+                    
+                message.channel.send(res, obj);
+            });
+        }
     });
 
     console.log("Trying to log in ");
@@ -64,6 +68,12 @@ function gameLoop() {
     curgame++;
     if(curgame >= settings.games.length)
         curgame = 0;
+}
+
+function selfMessage(m) {
+    if(m.content.includes('\u{1F4C4}')) {
+        react.setupPagination(m, m.content.split("**")[1]);
+    }
 }
 
 function getCommand(m, callback) {
@@ -146,13 +156,12 @@ function getCommand(m, callback) {
             case 'cards':
                 if(channelType == 1) callback('Card listing is possible only in bot channel');
                 else {
-                    let firstArg = cnt.shift();
-                    let targetUsr = getUserID(firstArg);
-                    let author = targetUsr? targetUsr : m.author.id;
-                    let typeArg = targetUsr? parseInt(cnt.shift()) : parseInt(firstArg);
-                    dbManager.getCards(author, typeArg? typeArg : 0, (text) =>{
-                        callback(text);
-                    });
+                  let firstArg = cnt.shift();
+                  let typeArg = parseInt(firstArg);
+                  dbManager.getCards(m.author.id, typeArg? typeArg : 0, (data) => {
+                      if(!data) callback("**" + m.author.username + "** has no any cards");
+                      else callback(react.addNew(m.author, typeArg? typeArg : 0, 1, data));
+                  });
                 }
                 return;
             case 'sell':

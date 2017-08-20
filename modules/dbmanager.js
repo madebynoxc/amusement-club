@@ -2,7 +2,7 @@ module.exports = {
     connect, disconnect, claim, addXP, getXP, 
     getCards, summon, transfer, sell, award, 
     pay, daily, leaderboard, fixUserCards, getQuests,
-    leaderboard_new, difference
+    leaderboard_new, difference, dynamicSort
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -18,6 +18,7 @@ const _ = require("lodash");
 const randomColor = require('randomcolor');
 const settings = require('../settings/general.json');
 const guilds = require('../settings/servers.json');
+const utils = require('./localutils.js');
 
 function disconnect() {
     isConnected = false;
@@ -120,7 +121,7 @@ function claim(user, guildID, arg, callback) {
 
         collection.find(find).toArray((err, i) => {
             let res = _.sample(i);
-            let name = toTitleCase(res.name.replace(/_/g, " "));
+            let name = utils.toTitleCase(res.name.replace(/_/g, " "));
             let ext = res.animated? '.gif' : '.png';
             let file = './cards/' + res.collection + '/' + res.level + "_" + res.name + ext;
 
@@ -226,25 +227,16 @@ function getQuests(user, callback) {
     });
 }
 
-function getCards(user, type, callback) {
+function getCards(user, type, callback, page = 1) {
     let collection = mongodb.collection('users');
-    collection.find({ discord_id: user }).toArray((err, i) => {
-        if(i.length == 0) return;
+    collection.findOne({ discord_id: user }).then((usr) => {
+        if(usr == undefined || type > 5 || type < 0) return;
 
-        let usr = i[0]; 
         let cards = usr.cards;
         if(cards && cards.length > 0){
-            if(cards.length > 15 && type <= 0) {
-                callback("Card list is too long. Please use ->cards [tier] to list stars of certain star amount");
-            } else {
-                let cur = "(showing only " + type + "-star cards) \n"
-                let resp = "**" + usr.username + "** has " + cards.length + " cards: \n";
-                if(type > 0) resp += cur;
-                resp += countDuplicates(cards, type);
-                callback(resp);
-            }
+            callback(cards);
         } else {
-            callback("**" + usr.username + "** has no any cards");
+            callback(null);
         }
     });
 }
@@ -263,7 +255,7 @@ function summon(user, card, callback) {
 
         for(var i = 0; i < cards.length; i++) {
             if (cards[i].name.toLowerCase().includes(check)) {
-                let name = toTitleCase(cards[i].name.replace(/_/g, " "));
+                let name = utils.toTitleCase(cards[i].name.replace(/_/g, " "));
                 let ext = cards[i].animated? '.gif' : '.png';
                 let stat = u[0].dailystats;
                 let file = './cards/' + cards[i].collection + '/' + + cards[i].level + "_" + cards[i].name + ext;
@@ -307,7 +299,7 @@ function transfer(from, to, card, callback) {
         for(var i = 0; i < cards.length; i++) {
             if (cards[i].name.toLowerCase().includes(check)) {
                 let tg = cards[i];
-                let name = toTitleCase(tg.name.replace(/_/g, " "));
+                let name = utils.toTitleCase(tg.name.replace(/_/g, " "));
                 let hours = 12 - getHoursDifference(tg.frozen);
                 if(hours && hours > 0) {
                     callback("**" + from.username + "**, the card **" + name + "** is frozen for **" 
@@ -391,7 +383,7 @@ function sell(user, card, callback) {
                     }
                 );
 
-                let name = toTitleCase(tg.name.replace(/_/g, " "));
+                let name = utils.toTitleCase(tg.name.replace(/_/g, " "));
                 callback("**" + user.username + "** sold **" + name + "** for **" + exp + "** 🍅 Tomatoes");
                 return;
             }
@@ -429,6 +421,7 @@ function daily(uID, callback) {
     });
 }
 
+// OBSOLETE
 function leaderboard(arg, guild, callback) {
     let global = arg == 'global';
     let collection = mongodb.collection('users');
@@ -514,40 +507,6 @@ function award(uID, amout, callback) {
     
 }
 
-function toTitleCase(str) {
-    return str.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
-}
-
-function countDuplicates(arr, type) {
-    arr.sort(dynamicSort("name"));
-    if(type < 0) type = 0;
-    //arr.sort(dynamicSort("-level"));
-
-    var res = [];
-    var current = null;
-    var cnt = 0;
-    for (var i = 0; i < arr.length; i++) {
-        if(!arr[i]) continue;
-        if (!current || arr[i].name != current.name) {
-            if (cnt > 0 && (current.level == type || type == 0)) {
-                let c = nameCard(current, cnt);
-                if(c) res.push(c);
-            }
-            current = arr[i];
-            cnt = 1;
-        } else {
-            cnt++;
-        }
-    }
-    if (cnt > 0 && (current.level == type || type == 0)) {
-        let c = nameCard(current, cnt);
-        if(c) res.push(c);
-    }
-    res.sort().reverse();
-
-    return res.join('\n');
-}
-
 function difference(uID, targetID, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: uID }).then((user) => {
@@ -603,21 +562,6 @@ function nameOwners(col) {
         if(i >= 4) break;
     }
     return res;
-}
-
-function nameCard(card, count) {
-    try {
-        let res = "[";
-
-        for(let i=0; i<parseInt(card.level); i++)
-            res += "★";
-
-        res += "]  ";
-        res += toTitleCase(card.name.replace(/_/g, " "));
-        if(count) res += " (x" + count + ")";
-        return res;
-    } catch (e) {}
-    return null;
 }
 
 function dynamicSort(property) {
