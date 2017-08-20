@@ -68,7 +68,6 @@ function gameLoop() {
     curgame++;
     if(curgame >= settings.games.length)
         curgame = 0;
-    console.log(settings.games[curgame]);
 }
 
 function selfMessage(m) {
@@ -78,12 +77,14 @@ function selfMessage(m) {
 }
 
 function getCommand(m, callback) {
-    let dm = !m.channel.name;
-    if(!dm)
+    var channelType = m.channel.name? 1 : 0; //0 - DM, 1 - channel, 2 - bot channel
+    if(channelType == 1) {
+        if(m.channel.name.includes('bot')) channelType = 2;
         dbManager.addXP(m.author, m.content.length / 12, 
             (mes) => callback(mes));
+    }
 
-    if(m.content.startsWith('=>')) {
+    if(m.content.startsWith(settings.botprefix)) {
         let cnt = m.content.toLowerCase().substring(2).split(' ');
         let sb = cnt.shift();
         let cd = cnt.join(' ').trim();
@@ -94,11 +95,13 @@ function getCommand(m, callback) {
                 return;
             case 'cl': 
             case 'claim': 
-                if(!dm) {
+                if(channelType == 0) callback('Claiming is available only on servers');
+                else if(channelType == 1) callback('Claiming is possible only in bot channel');
+                else {
                     dbManager.claim(m.author, m.guild.id, cnt, (text, img) => {
                         callback(text, {file: img });
                     });
-                } else callback("Claim in direct messages is forbidden");
+                }
                 return;
             /*case 'dif':
             case 'difference':
@@ -124,31 +127,42 @@ function getCommand(m, callback) {
                 return;
             case 'give':
             case 'send':
-                let usr = getUserID(cnt.shift());
-                let cdname = cnt.join(' ').trim();
-                if(usr){
-                    dbManager.transfer(m.author, usr, cdname, (text) =>{
-                        callback(text);
-                    });
+                if(channelType == 0) callback('Card transfer is possible only on servers');
+                else if(channelType == 1) callback('Card transfer is possible only in bot channel');
+                else {
+                    let usr = getUserID(cnt.shift());
+                    let cdname = cnt.join(' ').trim();
+                    if(usr){
+                        dbManager.transfer(m.author, usr, cdname, (text) =>{
+                            callback(text);
+                        });
+                    }
                 }
                 return;
             case 'pay':
-                let tusr = getUserID(cnt.shift());
-                let tom = parseInt(cnt);
-                if(tusr && tom){
-                    dbManager.pay(m.author.id, tusr, tom, (text) =>{
-                        callback(text);
-                    });
+                if(channelType == 0) callback('Tomato transfer is possible only on servers');
+                else if(channelType == 1) callback('Tomato transfer is possible only in bot channel');
+                else {
+                    let tusr = getUserID(cnt.shift());
+                    let tom = parseInt(cnt);
+                    if(tusr && tom){
+                        dbManager.pay(m.author.id, tusr, tom, (text) =>{
+                            callback(text);
+                        });
+                    }
                 }
                 return;
             case 'list':
             case 'cards':
-                let firstArg = cnt.shift();
-                let typeArg = parseInt(firstArg);
-                dbManager.getCards(m.author.id, typeArg? typeArg : 0, (data) => {
-                    if(!data) callback("**" + m.author.username + "** has no any cards");
-                    else callback(react.addNew(m.author, typeArg? typeArg : 0, 1, data));
-                });
+                if(channelType == 1) callback('Card listing is possible only in bot channel');
+                else {
+                  let firstArg = cnt.shift();
+                  let typeArg = parseInt(firstArg);
+                  dbManager.getCards(m.author.id, typeArg? typeArg : 0, (data) => {
+                      if(!data) callback("**" + m.author.username + "** has no any cards");
+                      else callback(react.addNew(m.author, typeArg? typeArg : 0, 1, data));
+                  });
+                }
                 return;
             case 'sell':
                 dbManager.sell(m.author, cd, (text) =>{
@@ -156,9 +170,13 @@ function getCommand(m, callback) {
                 });
                 return;
             case 'daily':
-                dbManager.daily(m.author.id, (text) =>{
-                    callback(text);
-                });
+                if(channelType == 0) callback('Daily claim is available only on servers');
+                else if(channelType == 1) callback('Daily claim is available only in bot channel');
+                else {
+                    dbManager.daily(m.author.id, (text) =>{
+                        callback(text);
+                    });
+                }
                 return;
             case 'baka': 
                 callback(m.author.username + ", **you** baka! (￣^￣ﾒ)");
@@ -187,9 +205,12 @@ function getCommand(m, callback) {
             case 'lead':
             case 'leaderboard':
             case 'leaderboards':
-                dbManager.leaderboard_new(cnt, m.guild, (text) =>{
-                    callback(text);
-                });
+                if(channelType == 0) callback("You can't check leaderboards in DMs");
+                else {
+                    dbManager.leaderboard_new(cnt, m.guild, (text) =>{
+                        callback(text);
+                    });
+                }
                 break;
             case 'fix':
                 if(isAdmin(m.author.id)) {
