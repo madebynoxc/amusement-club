@@ -3,13 +3,20 @@ module.exports = {
 }
 
 var paginations = [];
+const fs = require('fs');
 const dbManager = require("./dbmanager.js");
 const utils = require('./localutils.js');
 
-function addNew(user, tier, page, data) {
+var collections = [];
+fs.readdir('./cards', (err, items) => {
+    if(err) console.log(err);
+    collections = items;
+});
+
+function addNew(user, filter, data) {
     removeExisting(user.id);
-    //data.sort(dbManager.dynamicSort("level"));
-    var pgn = {"page": page, "user": user, "tier": tier, "data": data};
+    var flt = setFiltering(filter);
+    var pgn = {"page": 1, "user": user, "filter": flt, "data": getCardList(data, flt)};
     paginations.push(pgn);
     return buildCardList(pgn);
 }
@@ -20,17 +27,16 @@ function setupPagination(message, author) {
     react(message);
 
     pgn.id = message.id;
+    pgn.message = message;
     var collector = message.createReactionCollector(
         (reaction, user) => user.id === pgn.user.id,
         { time: 100000 }
     );
     collector.on('collect', r => {
-        //message.clearReactions();
         processEmoji(r.emoji.name.trim(), message);
         r.remove(pgn.user.id).catch();
     });
     collector.on('end', collected => {
-        message.clearReactions();
         removeExisting(pgn.user.id);
     });
 }
@@ -68,53 +74,77 @@ function react(message) {
 function removeExisting(userID) {
     var pgn = paginations.filter((o)=> o.user.id == userID)[0];
     if(pgn){
+        if(pgn.message) pgn.message.clearReactions();
         var index = paginations.indexOf(pgn);
         paginations.splice(index, 1);
     }
 }
 
 function buildCardList(pgn) {
-    let pages = countPages(pgn.data);
+    let pages = Math.floor(pgn.data.length / 15) + 1;
     if(pgn.page > pages) pgn.page = pages;
 
-    //let cur = "(showing only " + type + "-star cards) \n"
+    var max = Math.min((pgn.page * 15), pgn.data.length);
     let resp = "**" + pgn.user.username + "**, you have: \n";
-    //if(type > 0) resp += cur;
-    resp += countDuplicates(pgn.data, 0, pgn.page);
+    resp += pgn.data.slice(((pgn.page - 1) * 15), max).join('\n');
     if(pages > 1) resp += "\n \u{1F4C4} Page "+ pgn.page +" of " + pages;
     return resp;
 }
 
-function countDuplicates(arr, type, page) {
-    page--;
+function getCardList(arr, flt) {
     arr.sort(dbManager.dynamicSort("name"));
-    if(type < 0) type = 0;
 
     var res = [];
     var current = null;
     var cnt = 0;
-    var max = Math.min(((page + 1) * 15), arr.length);
-    for (var i = (page * 15); i < max; i++) {
+    for (var i = 0; i < arr.length; i++) {
         if(!arr[i]) continue;
         if (!current || arr[i].name != current.name) {
-            if (cnt > 0 && (current.level == type || type == 0)) {
-                let c = nameCard(current, cnt);
-                if(c) res.push(c);
+            if (cnt > 0 && (!flt.tier || current.level == flt.tier)) {
+                if(!flt.col || flt.collections.includes(current.collection)) {
+                    let c = nameCard(current, cnt);
+                    if(c && (!flt.multi || cnt > 1)) res.push(c);
+                }
             }
             current = arr[i];
             cnt = 1;
-        } else {
-            max++;
-            cnt++;
+        } else cnt++;
+    }
+    if (cnt > 0 && (!flt.tier == 0 || current.level == flt.tier)) {
+        if(!flt.col || flt.collections.includes(current.collection)) {
+            let c = nameCard(current, cnt);
+            if(c) res.push(c);
         }
     }
-    if (cnt > 0 && (current.level == type || type == 0)) {
-        let c = nameCard(current, cnt);
-        if(c) res.push(c);
-    }
-    res.sort().reverse();
+    res.sort((a, b) => {
+        if(a.match(/★/g) < b.match(/★/g)) return 1;
+        if(a.match(/★/g) > b.match(/★/g)) return -1;
+        return 0;
+    });
 
-    return res.join('\n');
+    return res;
+}
+
+function setFiltering(filter) {
+    let res = {};
+    res.multi = filter.includes('multi');
+    res.collections = [];
+    filter.forEach(function(element) {
+        if(isInt(element)){
+            res.tier = parseInt(element);
+        } else if(collections.includes(element)) {
+            res.collections.push(element);
+        }
+    }, this);
+    res.col = res.collections.length > 0;
+    console.log(filter);
+    return res;
+}
+
+function isInt(value) {
+    return !isNaN(value) && 
+        parseInt(Number(value)) == value && 
+        !isNaN(parseInt(value, 10));
 }
 
 function countPages(arr) {

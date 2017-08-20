@@ -156,11 +156,9 @@ function getCommand(m, callback) {
             case 'cards':
                 if(channelType == 1) callback('Card listing is possible only in bot channel');
                 else {
-                  let firstArg = cnt.shift();
-                  let typeArg = parseInt(firstArg);
-                  dbManager.getCards(m.author.id, typeArg? typeArg : 0, (data) => {
+                  dbManager.getCards(m.author.id, (data) => {
                       if(!data) callback("**" + m.author.username + "** has no any cards");
-                      else callback(react.addNew(m.author, typeArg? typeArg : 0, 1, data));
+                      else callback(react.addNew(m.author, cnt, data));
                   });
                 }
                 return;
@@ -173,7 +171,7 @@ function getCommand(m, callback) {
                 if(channelType == 0) callback('Daily claim is available only on servers');
                 else if(channelType == 1) callback('Daily claim is available only in bot channel');
                 else {
-                    dbManager.daily(m.author.id, (text) =>{
+                    dbManager.daily(m.author.id, (text) => {
                         callback(text);
                     });
                 }

@@ -227,10 +227,10 @@ function getQuests(user, callback) {
     });
 }
 
-function getCards(user, type, callback, page = 1) {
+function getCards(userID, callback) {
     let collection = mongodb.collection('users');
-    collection.findOne({ discord_id: user }).then((usr) => {
-        if(usr == undefined || type > 5 || type < 0) return;
+    collection.findOne({ discord_id: userID }).then((usr) => {
+        if(!usr) return;
 
         let cards = usr.cards;
         if(cards && cards.length > 0){
