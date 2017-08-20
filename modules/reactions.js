@@ -37,6 +37,7 @@ function setupPagination(message, author) {
 
 function processEmoji(e, message) {
     var pgn = paginations.filter((o)=> o.id == message.id)[0];
+    if(!pgn) return;
     switch(e) {
         case '⬅':
             if(pgn.page > 1 ) {
@@ -93,7 +94,6 @@ function countDuplicates(arr, type, page) {
     var current = null;
     var cnt = 0;
     var max = Math.min(((page + 1) * 15), arr.length);
-    console.log(page + " : " + max);
     for (var i = (page * 15); i < max; i++) {
         if(!arr[i]) continue;
         if (!current || arr[i].name != current.name) {
@@ -113,7 +113,6 @@ function countDuplicates(arr, type, page) {
         if(c) res.push(c);
     }
     res.sort().reverse();
-    console.log(res);
 
     return res.join('\n');
 }
