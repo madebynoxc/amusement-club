@@ -2,7 +2,7 @@ module.exports = {
     connect, disconnect, claim, addXP, getXP, 
     getCards, summon, transfer, sell, award, 
     pay, daily, leaderboard, fixUserCards, getQuests,
-    leaderboard_new, difference, dynamicSort
+    leaderboard_new, difference, dynamicSort, countCardLevels
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -14,6 +14,7 @@ const fs = require('fs');
 const assert = require('assert');
 const logger = require('./log.js');
 const quest = require('./quest.js');
+const heroes = require('./heroes.js');
 const _ = require("lodash");
 const randomColor = require('randomcolor');
 const settings = require('../settings/general.json');
@@ -31,6 +32,7 @@ function connect(callback) {
         assert.equal(null, err);
         mongodb = db;
         quest.connect(db);
+        heroes.connect(db);
         isConnected = true;
         logger.message("Connected correctly to database");   
         if(callback) callback();   
@@ -194,7 +196,8 @@ function getXP(user, callback) {
 
             let bal = u.exp;
             let claimCost = (stat.claim + 1) * 50;
-            let msg = "**" + user.username + "**, you have **" + Math.floor(bal) + "** 🍅 Tomatoes! \n";
+            let msg = "**" + user.username + "**, you have **" + Math.floor(bal) + "** 🍅 Tomatoes ";
+            msg += "and " + countCardLevels(u.cards) + " \u2B50 stars!";
             if(stat.claim >= 10) {
                 msg += "You can't claim more cards, as you reached your daily claim limit."
             } else {
