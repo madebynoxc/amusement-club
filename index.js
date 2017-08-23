@@ -21,7 +21,7 @@ function _init() {
         console.log("Discord Bot Connected");
         console.log("Discord Bot Ready");
         //setInterval(gameLoop, 5000);
-        bot.user.setGame("->help", "https://www.twitch.tv/");
+        bot.user.setGame("->help | ->?cards", "https://www.twitch.tv/");
     });
 
     bot.on("disconnected", () => {
@@ -66,7 +66,7 @@ function log(message) {
 }
 
 function gameLoop() {
-    bot.user.setGame(settings.games[curgame], "");
+    bot.user.setGame(settings.games[curgame], "https://www.twitch.tv/");
     curgame++;
     if(curgame >= settings.games.length)
         curgame = 0;
@@ -82,7 +82,7 @@ function getCommand(m, callback) {
     var channelType = m.channel.name? 1 : 0; //0 - DM, 1 - channel, 2 - bot channel
     if(channelType == 1) {
         if(m.channel.name.includes('bot')) channelType = 2;
-        dbManager.addXP(m.author, m.content.length / 12, 
+        dbManager.addXP(m.author, m.content.length / 15, 
             (mes) => callback(mes));
     }
 
@@ -91,7 +91,6 @@ function getCommand(m, callback) {
         let sb = cnt.shift();
         cnt = cnt.filter(function(n){ return n != undefined && n != '' }); 
         let cd = cnt.join(' ');
-        console.log(cnt);
 
         if(sb[0] === '?') {
             if(channelType == 1) callback('Help can be called only in bot channel');

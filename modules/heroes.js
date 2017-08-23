@@ -1,5 +1,5 @@
 module.exports = {
-    connect, processRequest
+    connect, processRequest, getHeroEffect
 }
 
 var mongodb, ucollection;
@@ -7,6 +7,7 @@ const fs = require('fs');
 const logger = require('./log.js');
 const dbManager = require('./dbmanager.js');
 const heroDB = require('./heroes.json');
+const quests = require('./quest.js');
 
 function connect(db) {
     mongodb = db;
@@ -39,7 +40,7 @@ function getHero(dbUser, callback) {
     if(!h) {
         let stars = dbManager.countCardLevels(dbUser.cards);
         var msg = "**" + dbUser.username + "**, you have no any hero yet. \n";
-        if(stars > 30) msg += "To choose one, use `->hero list`";
+        if(stars >= 75) msg += "To choose one, use `->hero list`";
         else msg += "You can get one once you have more than 75 \u2B50 stars (you have now " + stars + "\u2B50 stars)";
         callback(msg);
         return;
@@ -51,7 +52,7 @@ function getHero(dbUser, callback) {
 
 function getHeroes(dbUser, callback) {
     let stars = dbManager.countCardLevels(dbUser.cards);
-    if(stars < 30) {
+    if(stars < 75) {
         callback("**" + dbUser.username + "**, you should have at least 75 \u2B50 stars to have a hero.\n"
             + "You have now " + stars + " \u2B50 stars.");
         return;
@@ -93,7 +94,8 @@ function assign(dbUser, args, callback) {
                 $set: {hero: h}
             }
         ).then(() => {
-            callback("**" + dbUser.username + "** and **" + h.name + "** made a contract! Congratulations!");
+            callback("**" + dbUser.username + "** and **" 
+                + h.name + "** made a contract! Congratulations! \u{1F389}");
         });
         
     } else {
@@ -101,6 +103,38 @@ function assign(dbUser, args, callback) {
     }
 }
 
-function getHeroEffect() {
-    
+function getHeroEffect(user, action, value) {
+    if(user.hero) {
+        switch(user.hero.name.toLowerCase()) {
+            case 'akaza akari':
+                if(action == 'sell') return Math.floor(value + (value * .5));
+                if(action == 'send') return value + 100;
+                break;
+            case 'toshino kyoko':
+                if(action == 'addXP') return value * 2;
+                if(action == 'forge') {  }
+                break;
+            case 'funami yui':
+                if(action == 'daily') return 200;
+                if(action == 'rating') return value + countAnimated(user.cards);
+                break;
+            case 'yoshikawa chinatsu':
+                if(action == 'claim') return false;
+                if(action == 'questComplete') {
+                    quests.addBonusQuest(user, () => {
+                        value("Dark spell from Chinatsu granted you another quest! Use `->quest` to see it");
+                    });
+                }
+                break;
+        }
+    }
+    return value;
+}
+
+function countAnimated(cards) {
+    var c = 0;
+    cards.forEach(function(element) {
+        if(element.animated) c++;
+    }, this);
+    return c;
 }

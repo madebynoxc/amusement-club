@@ -91,5 +91,15 @@
             "->lead (shows local Top-5 rating)",
             "->lead global (shows global Top-5 rating)"
         ]
+    },
+    {
+        "name": "hero",
+        "values": [
+            "**->hero [action] [name]**",
+            "->hero (shows your hero)",
+            "->hero list (shows list of all heroes)",
+            "->hero info [name] (shows hero's info)",
+            "->hero get [name] (assigns a hero to you)"
+        ]
     }
 ]
