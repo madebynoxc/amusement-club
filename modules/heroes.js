@@ -20,6 +20,9 @@ function processRequest(userID, args, callback) {
 
         var req = args.shift();
         switch(req) {
+            case undefined:
+                getHero(dbUser, callback);
+                break;
             case "list":
                 getHeroes(dbUser, callback);
                 break;
@@ -29,8 +32,6 @@ function processRequest(userID, args, callback) {
             case "get":
                 assign(dbUser, args, callback);
                 break;
-            default:
-                getHero(dbUser, callback);
         }
     });
 }
@@ -70,6 +71,7 @@ function getInfo(dbUser, args, callback) {
         return;
     }
 
+    if(req == '' || req == ' ') return;
     var h = heroDB.filter(h => h.name.toLowerCase().includes(req))[0];
     if(h) {
         console.log(h.name.toLowerCase().replace(/ /g, "_"));
@@ -85,7 +87,14 @@ function assign(dbUser, args, callback) {
         return;
     }
 
+    var stars = dbManager.countCardLevels(dbUser.cards);
+    if(stars < 75) {
+        callback("You can get one once you have more than 75 \u2B50 stars (you have now " + stars + "\u2B50 stars)");
+        return;
+    }
+
     var req = args.join(' ');
+    if(req == '' || req == ' ') return;
     var h = heroDB.filter(h => h.name.toLowerCase().includes(req))[0];
     if(h) {
         ucollection.update(
