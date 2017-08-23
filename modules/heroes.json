@@ -1,22 +1,22 @@
 [
     {
         "name": "Akaza Akari",
-        "fraction": "Anti-bully ranger",
-        "level": 0
+        "subname": "Anti-bully ranger",
+        "exp": 0
     },
     {
         "name": "Toshino Kyoko",
-        "fraction": "Ultimate Tomato",
-        "level": 0
+        "subname": "Ultimate Tomato",
+        "exp": 0
     },
     {
         "name": "Funami Yui",
-        "fraction": "Independent Maiden",
-        "level": 0
+        "subname": "Independent Maiden",
+        "exp": 0
     },
     {
         "name": "Yoshikawa Chinatsu",
-        "fraction": "Dark Priestess",
-        "level": 0
+        "subname": "Dark Priestess",
+        "exp": 0
     }
 ]

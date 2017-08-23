@@ -46,7 +46,7 @@ function getHero(dbUser, callback) {
         return;
     }
 
-    callback(h.fraction + " **" + h.name + "** level **" + h.level + "** arrives!", 
+    callback(h.subname + " **" + h.name + "** level **" + getHeroLevel(h.exp) + "** arrives!", 
         { file: "./heroes/" + h.name.toLowerCase().replace(/ /g, "_") + ".png" });
 }
 
@@ -101,6 +101,13 @@ function assign(dbUser, args, callback) {
     } else {
         callback("Can't find hero named '" + req + "'");
     }
+}
+
+function getHeroLevel(exp) {
+    var lvl = 1;
+    var targetExp = 2;
+    while(Math.pow(targetExp, lvl) < exp) lvl++;
+    return lvl;
 }
 
 function getHeroEffect(user, action, value) {
