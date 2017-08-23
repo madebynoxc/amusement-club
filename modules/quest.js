@@ -83,8 +83,10 @@ function addBonusQuest(user, callback) {
 
 function removeQuest(user, quest, callback) {
     var daily = user.dailystats;
-    if(daily.quests) daily.quests++;
-    else daily.quests = 1;
+    if(daily) {
+        if(daily.quests) daily.quests++;
+        else daily.quests = 1;
+    }
     col.update(
         { discord_id: user.discord_id },
         {   
@@ -93,7 +95,7 @@ function removeQuest(user, quest, callback) {
             $pull: {quests: {name: quest.name} },
         }
     ).then(e => {
-        if(user.quests.length <= 1 && daily.quests < 3)
+        if(user.quests.length <= 1 && daily && daily.quests < 3)
             heroes.getHeroEffect(user, 'questComplete', callback);
     });
 }

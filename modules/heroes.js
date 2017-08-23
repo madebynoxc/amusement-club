@@ -20,6 +20,9 @@ function processRequest(userID, args, callback) {
 
         var req = args.shift();
         switch(req) {
+            case undefined:
+                getHero(dbUser, callback);
+                break;
             case "list":
                 getHeroes(dbUser, callback);
                 break;
@@ -29,8 +32,6 @@ function processRequest(userID, args, callback) {
             case "get":
                 assign(dbUser, args, callback);
                 break;
-            default:
-                getHero(dbUser, callback);
         }
     });
 }
