@@ -2,7 +2,7 @@ module.exports = {
     connect, disconnect, claim, addXP, getXP, 
     getCards, summon, transfer, sell, award, 
     pay, daily, leaderboard, fixUserCards, getQuests,
-    leaderboard_new, difference, dynamicSort
+    leaderboard_new, difference, dynamicSort, countCardLevels
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -14,6 +14,7 @@ const fs = require('fs');
 const assert = require('assert');
 const logger = require('./log.js');
 const quest = require('./quest.js');
+const heroes = require('./heroes.js');
 const _ = require("lodash");
 const randomColor = require('randomcolor');
 const settings = require('../settings/general.json');
@@ -31,6 +32,7 @@ function connect(callback) {
         assert.equal(null, err);
         mongodb = db;
         quest.connect(db);
+        heroes.connect(db);
         isConnected = true;
         logger.message("Connected correctly to database");   
         if(callback) callback();   
@@ -100,15 +102,18 @@ function claim(user, guildID, arg, callback) {
         if(!stat) stat = {summon:0, send: 0, claim: 0};
 
         let claimCost = (stat.claim + 1) * 50;
+        if(claimCost > 500) claimCost = 500;
         if(dbUser.exp < claimCost) {
             callback("**" + user.username + "**, you don't have enough 🍅 Tomatoes to claim a card \n" 
                 + "You need at least " + claimCost + ", but you have " + Math.floor(dbUser.exp));
             return;
         }
 
-        if(dbUser.dailystats && dbUser.dailystats.claim >= 10) {
-            callback("**" + user.username + "**, you reached a limit of your daily claim."
-                + " It will be reset next time you successfully run '->daily'");
+        let blockClaim = dbUser.dailystats && dbUser.dailystats.claim >= 10;
+        blockClaim = heroes.getHeroEffect(dbUser, 'claim', blockClaim);
+        if(blockClaim) {
+            callback("**" + user.username + "**, you reached a limit of your daily claim. \n"
+                + "It will be reset next time you successfully run `->daily`");
             return;
         }
 
@@ -125,18 +130,24 @@ function claim(user, guildID, arg, callback) {
             let ext = res.animated? '.gif' : '.png';
             let file = './cards/' + res.collection + '/' + res.level + "_" + res.name + ext;
 
+            let heroEffect = !heroes.getHeroEffect(dbUser, 'claim', true);
             let phrase = "Congratulations! You got **" + name + "** \n";
-            if(claimCost >= 500) phrase += "This is your last claim for today";
-            else phrase += "Your next claim will cost **" + (claimCost + 50).toString() + "**🍅";
+            if(heroEffect) {
+                phrase += "Your hero grants you unlimited claims for **500**🍅";
+            } else {
+                if(claimCost >= 500) phrase += "This is your last claim for today";
+                else phrase += "Your next claim will cost **" + (claimCost + 50).toString() + "**🍅";
+            }
             callback(phrase, file);
             stat.claim++;
 
+            let increment = dbUser.hero? {exp: -claimCost, 'hero.exp': .1} : {exp: -claimCost};
             ucollection.update(
                 { discord_id: user.id },
                 {
                     $push: {cards: res },
                     $set: {dailystats: stat},
-                    $inc: {exp: -claimCost}
+                    $inc: increment
                 }
             ).then(() => {
                 quest.checkClaim(dbUser, (mes)=>{callback(mes)});
@@ -146,17 +157,17 @@ function claim(user, guildID, arg, callback) {
 }
 
 function addXP(user, amount, callback) {
-    amount = Math.abs(amount);
     if(cooldownList.includes(user.id)) return;
-
     if(amount > 5) amount = 5;
 
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: user.id}).then((res) => {
         if(res) {
+            let increment = res.hero? {exp: amount, 'hero.exp': amount * .01} : {exp: amount}
+            amount = heroes.getHeroEffect(res, 'addXP', amount);
             collection.update( 
                 { discord_id: user.id},
-                {$inc: {exp: amount}},
+                {$inc: increment},
                 { upsert: true }
             ).then((u)=>{
                 quest.checkXP(res, (mes)=>{callback(mes)});
@@ -193,15 +204,18 @@ function getXP(user, callback) {
             if(!stat) stat = {summon:0, send: 0, claim: 0};
 
             let bal = u.exp;
+            let stars = countCardLevels(u.cards);
             let claimCost = (stat.claim + 1) * 50;
-            let msg = "**" + user.username + "**, you have **" + Math.floor(bal) + "** 🍅 Tomatoes! \n";
+            let msg = "**" + user.username + "**, you have **" + Math.floor(bal) + "** 🍅 Tomatoes ";
+            msg += "and " + stars + " \u2B50 stars!\n";
             if(stat.claim >= 10) {
-                msg += "You can't claim more cards, as you reached your daily claim limit."
+                msg += "You can't claim more cards, as you reached your daily claim limit.\n"
             } else {
                 if(bal > claimCost) 
-                    msg += "You can claim " + getClaimsAmount(stat.claim, bal) + " cards today! Use ->claim \n";
-                msg += "Your claim now costs " + claimCost + " 🍅 Tomatoes";
+                    msg += "You can claim " + getClaimsAmount(stat.claim, bal) + " cards today! Use `->claim` \n";
+                msg += "Your claim now costs " + claimCost + " 🍅 Tomatoes\n";
             }
+            if(!u.hero && stars >= 75) msg += "You have enough \u2B50 stars to get a hero! use `->hero list`";
             callback(msg);
         } 
     });
@@ -264,11 +278,11 @@ function summon(user, card, callback) {
                 if(!stat) stat = {summon:0, send: 0, claim: 0};
                 stat.summon++;
 
+                let req = u[0].hero? 
+                {$set: {dailystats: stat}, $inc: {'hero.exp': .1}} : 
+                {$set: {dailystats: stat}};
                 collection.update(
-                    { discord_id: user.id },
-                    {
-                        $set: {dailystats: stat}
-                    }
+                    { discord_id: user.id }, req
                 ).then((e) => {
                     quest.checkSummon(u[0], (mes)=>{callback(mes)});
                 });
@@ -296,13 +310,20 @@ function transfer(from, to, card, callback) {
             return;
         }
 
+        var fromExp = u[0].exp;
+        fromExp = heroes.getHeroEffect(u[0], 'send', fromExp);
+        if(fromExp > u[0].exp) 
+            callback("Akari grants 100 tomatoes to " + u[0].username 
+                + " for sending a card!");
+
         for(var i = 0; i < cards.length; i++) {
             if (cards[i].name.toLowerCase().includes(check)) {
                 let tg = cards[i];
                 let name = utils.toTitleCase(tg.name.replace(/_/g, " "));
                 let hours = 12 - getHoursDifference(tg.frozen);
                 if(hours && hours > 0) {
-                    callback("**" + from.username + "**, the card **" + name + "** is frozen for **" 
+                    callback("**" + from.username + "**, the card **" 
+                        + name + "** is frozen for **" 
                         + hours + "** more hours! You can't transfer it");
                     return;
                 }
@@ -313,12 +334,14 @@ function transfer(from, to, card, callback) {
                     let stat = u[0].dailystats;
                     cards.splice(i, 1);
 
-                    if(!stat) stat = {summon:0, send: 0, claim: 0};
+                    if(!stat) stat = {summon: 0, send: 0, claim: 0};
                     stat.send++;
 
+                    let req = u[0].hero? 
+                    {$set: {cards: cards, dailystats: stat }, $inc: {'hero.exp': .1}} : 
+                    {$set: {cards: cards, dailystats: stat }};
                     collection.update(
-                        { discord_id: from.id },
-                        {$set: {cards: cards, dailystats: stat }}
+                        { discord_id: from.id }, req
                     ).then(() => {
                         quest.checkSend(u[0], tg.level, (mes)=>{callback(mes)});
                     });
@@ -373,13 +396,17 @@ function sell(user, card, callback) {
         for(var i = 0; i < cards.length; i++) {
             if (cards[i].name.toLowerCase().includes(check)) {
                 let exp = settings.cardprice[cards[i].level - 1];
+                if(cards[i].level == 1) 
+                    exp = heroes.getHeroEffect(u[0], 'sell', exp);
+
                 let tg = cards[i];
+                let increment = u[0].hero? {exp: exp, 'hero.exp': .1} : {exp: exp}
                 cards.splice(i, 1);
                 collection.update(
                     { discord_id: user.id },
                     {
                         $set: {cards: cards },
-                        $inc: {exp: exp}
+                        $inc: increment
                     }
                 );
 
@@ -397,14 +424,17 @@ function daily(uID, callback) {
     collection.findOne({ discord_id: uID }).then((user) => {
         if(!user) return;
 
+        let amount = 100;
+        amount = heroes.getHeroEffect(user, 'daily', amount);
         let hours = 20 - getHoursDifference(user.lastdaily);
+        let increment = user.hero? {exp: amount, 'hero.exp': 1} : {exp: amount};
         if(!hours || hours <= 0) {
             collection.update(
                 { discord_id: uID },
                 {
                     $set: {lastdaily: new Date(), quests: quest.getRandomQuests()},
                     $unset: {dailystats: ""},
-                    $inc: {exp: 100}
+                    $inc: increment
                 }
             );
         } else {
@@ -415,9 +445,13 @@ function daily(uID, callback) {
                 callback("**" + user.username + "**, you can claim daily 🍅 in **" + hours + " hours**");
             return;
         }
-        callback("**" + user.username + "** recieved daily **100** 🍅 You now have " 
-            + (Math.floor(user.exp) + 100) + "🍅 \n"
-            + "You also got **2 daily quests**. To view them use ->quests");
+
+        var msg = "**" + user.username + "** recieved daily **" + amount + "** 🍅 You now have " 
+        + (Math.floor(user.exp) + amount) + "🍅 \n";
+        msg += "You also got **2 daily quests**. To view them use `->quests`\n";
+        if(!user.hero && countCardLevels(user.cards) >= 75) 
+            msg += "You have enough stars to get a hero! use `->hero list`";
+        callback(msg);
     });
 }
 
@@ -462,10 +496,12 @@ function leaderboard_new(arg, guild, callback) {
         let usrLevels = [];
         users.forEach(function(element) {
             if(element.cards) {
+                let lvl = countCardLevels(element.cards);
+                lvl = heroes.getHeroEffect(element, 'rating', lvl);
                 usrLevels.push({
                     id: element.discord_id,
                     name: element.username,
-                    levels: countCardLevels(element.cards)
+                    levels: lvl
                 });
             }
         }, this);

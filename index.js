@@ -6,6 +6,7 @@ const settings = require('./settings/general.json');
 const helpBody = require('./help/general.json');
 const react = require('./modules/reactions.js');
 const quickhelp = require('./help/quick.json');
+const heroDB = require('./modules/heroes.js');
 var bot, curgame = 0;
 
 //https://discordapp.com/oauth2/authorize?client_id=340988108222758934&scope=bot&permissions=125952
@@ -20,7 +21,7 @@ function _init() {
         console.log("Discord Bot Connected");
         console.log("Discord Bot Ready");
         //setInterval(gameLoop, 5000);
-        bot.user.setGame("->help", "https://www.twitch.tv/");
+        bot.user.setGame("->help | ->?cards", "https://www.twitch.tv/");
     });
 
     bot.on("disconnected", () => {
@@ -65,7 +66,7 @@ function log(message) {
 }
 
 function gameLoop() {
-    bot.user.setGame(settings.games[curgame], "");
+    bot.user.setGame(settings.games[curgame], "https://www.twitch.tv/");
     curgame++;
     if(curgame >= settings.games.length)
         curgame = 0;
@@ -81,14 +82,15 @@ function getCommand(m, callback) {
     var channelType = m.channel.name? 1 : 0; //0 - DM, 1 - channel, 2 - bot channel
     if(channelType == 1) {
         if(m.channel.name.includes('bot')) channelType = 2;
-        dbManager.addXP(m.author, m.content.length / 12, 
+        dbManager.addXP(m.author, m.content.length / 15, 
             (mes) => callback(mes));
     }
 
     if(m.content.startsWith(settings.botprefix)) {
         let cnt = m.content.toLowerCase().substring(2).split(' ');
         let sb = cnt.shift();
-        let cd = cnt.join(' ').trim();
+        cnt = cnt.filter(function(n){ return n != undefined && n != '' }); 
+        let cd = cnt.join(' ');
 
         if(sb[0] === '?') {
             if(channelType == 1) callback('Help can be called only in bot channel');
@@ -217,6 +219,14 @@ function getCommand(m, callback) {
                     });
                 }
                 break;
+            case 'hero':
+                if(channelType == 1) callback('Hero commands available only in bot channel');
+                else {
+                    heroDB.processRequest(m.author.id, cnt, (text, file) => {
+                        callback(text, file);
+                    });
+                }
+                return;
             case 'fix':
                 if(isAdmin(m.author.id)) {
                     dbManager.fixUserCards();

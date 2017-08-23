@@ -1,12 +1,12 @@
 module.exports = {
     checkClaim, connect, getRandomQuests, 
-    checkXP, checkSend, checkSummon
+    checkXP, checkSend, checkSummon, addBonusQuest
 }
 
 var mongodb, col;
 const _ = require("lodash");
 const questList = require('./quests.json');
-const levenshtein = require('js-levenshtein');
+const heroes = require('./heroes.js');
 
 function getRandomQuests() {
     let res = _.sampleSize(questList, 2);
@@ -38,7 +38,7 @@ function checkClaim(user, callback) {
     if((q.name == 'claim4' && user.dailystats.claim >= 4) || 
     (q.name == 'claim6' && user.dailystats.claim >= 6)) {
         callback(completeMsg(user, q));
-        removeQuest(user, q);
+        removeQuest(user, q, callback);
     }
 }
 
@@ -49,7 +49,7 @@ function checkSend(user, sentlvl, callback) {
     if((q.name == 'send2' && sentlvl == 2) || 
     (q.name == 'send3' && sentlvl == 3)) {
         callback(completeMsg(user, q));
-        removeQuest(user, q);
+        removeQuest(user, q, callback);
     }
 }
 
@@ -59,7 +59,7 @@ function checkSummon(user, callback) {
 
     if(q.name == 'sum2' && user.dailystats.summon >= 2) {
         callback(completeMsg(user, q));
-        removeQuest(user, q);
+        removeQuest(user, q, callback);
     }
 }
 
@@ -70,18 +70,32 @@ function checkXP(user, callback) {
     if((q.name == 'gain1000' && user.exp >= 1000) || 
     (q.name == 'gain1500' && user.exp >= 1500)) {
         callback(completeMsg(user, q));
-        removeQuest(user, q);
+        removeQuest(user, q, callback);
     }
 }
 
-function removeQuest(user, quest) {
+function addBonusQuest(user, callback) {
     col.update(
         { discord_id: user.discord_id },
-        {
+        { $set: {quests: [getRandomQuests()[0]]} }
+    ).then(e => callback());
+}
+
+function removeQuest(user, quest, callback) {
+    var daily = user.dailystats;
+    if(daily.quests) daily.quests++;
+    else daily.quests = 1;
+    col.update(
+        { discord_id: user.discord_id },
+        {   
+            $set: {dailystats: daily},
             $inc: {exp: quest.award},
             $pull: {quests: {name: quest.name} },
         }
-    );
+    ).then(e => {
+        if(user.quests.length <= 1 && daily.quests < 3)
+            heroes.getHeroEffect(user, 'questComplete', callback);
+    });
 }
 
 function completeMsg(user, q){
