@@ -240,8 +240,6 @@ function getCommand(m, callback) {
                 return;
         }
     } 
-
-    callback(undefined);
 }
 
 function getHelp(com) {

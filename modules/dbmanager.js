@@ -131,7 +131,7 @@ function claim(user, guildID, arg, callback) {
             let file = './cards/' + res.collection + '/' + res.level + "_" + res.name + ext;
 
             let heroEffect = !heroes.getHeroEffect(dbUser, 'claim', true);
-            let phrase = "Congratulations! You got **" + name + "** \n";
+            let phrase = "**" + user.username + "**, you got **" + name + "** \n";
             if(heroEffect) {
                 phrase += "Your hero grants you unlimited claims for **500**🍅";
             } else {

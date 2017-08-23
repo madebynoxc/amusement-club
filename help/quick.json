@@ -24,10 +24,24 @@
         ]
     },
     {
+        "name": "daily",
+        "values" : [
+            "**->daily**",
+            "->daily (resets claim cost, grants daily bonus)"
+        ]
+    },
+    {
+        "name": "baka",
+        "values" : [
+            "[*insert angry stundere*]"
+        ]
+    },
+    {
         "name": "claim",
         "values" : [
             "**->claim OR ->cl**",
-            "->claim (spawns a random card)"
+            "->claim (spawns a random card)",
+            "->claim any (any card not related server theme)"
         ]
     },
     {
@@ -57,7 +71,7 @@
         "values":  [
             "->give OR ->send",
             "**->give [person] [card]**",
-            "->give @NoxCaos lady toshino (will transfer card to a person)"
+            "->give @person lady toshino (will transfer card to a person)"
         ]
     },
     {
@@ -65,14 +79,14 @@
         "values":  [
             "->give OR ->send",
             "**->give [person] [card]**",
-            "->give @NoxCaos lady toshino (will transfer card to a person)"
+            "->give @person lady toshino (will transfer card to a person)"
         ]
     },
     {
         "name": "pay",
         "values": [
             "**->pay [person] [tomatoes]**",
-            "->pay @NoxCaos 42 (will transfer 42 tomatoes to a person)"
+            "->pay @person 42 (will transfer 42 tomatoes to a person)"
         ]
     },
     {
@@ -90,6 +104,13 @@
             "**->lead [?global]**",
             "->lead (shows local Top-5 rating)",
             "->lead global (shows global Top-5 rating)"
+        ]
+    },
+    {
+        "name": "quests",
+        "values": [
+            "**->quest OR ->quests**",
+            "->quests (shows list of daily quests)"
         ]
     },
     {
