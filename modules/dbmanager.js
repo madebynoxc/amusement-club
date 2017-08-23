@@ -197,7 +197,7 @@ function getXP(user, callback) {
             let bal = u.exp;
             let claimCost = (stat.claim + 1) * 50;
             let msg = "**" + user.username + "**, you have **" + Math.floor(bal) + "** 🍅 Tomatoes ";
-            msg += "and " + countCardLevels(u.cards) + " \u2B50 stars!";
+            msg += "and " + countCardLevels(u.cards) + " \u2B50 stars!\n";
             if(stat.claim >= 10) {
                 msg += "You can't claim more cards, as you reached your daily claim limit."
             } else {

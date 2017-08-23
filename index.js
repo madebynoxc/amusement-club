@@ -6,6 +6,7 @@ const settings = require('./settings/general.json');
 const helpBody = require('./help/general.json');
 const react = require('./modules/reactions.js');
 const quickhelp = require('./help/quick.json');
+const heroDB = require('./modules/heroes.js');
 var bot, curgame = 0;
 
 //https://discordapp.com/oauth2/authorize?client_id=340988108222758934&scope=bot&permissions=125952
@@ -88,7 +89,9 @@ function getCommand(m, callback) {
     if(m.content.startsWith(settings.botprefix)) {
         let cnt = m.content.toLowerCase().substring(2).split(' ');
         let sb = cnt.shift();
-        let cd = cnt.join(' ').trim();
+        cnt = cnt.filter(function(n){ return n != undefined && n != '' }); 
+        let cd = cnt.join(' ');
+        console.log(cnt);
 
         if(sb[0] === '?') {
             if(channelType == 1) callback('Help can be called only in bot channel');
@@ -217,6 +220,14 @@ function getCommand(m, callback) {
                     });
                 }
                 break;
+            case 'hero':
+                if(channelType == 1) callback('Hero commands available only in bot channel');
+                else {
+                    heroDB.processRequest(m.author.id, cnt, (text, file) => {
+                        callback(text, file);
+                    });
+                }
+                return;
             case 'fix':
                 if(isAdmin(m.author.id)) {
                     dbManager.fixUserCards();
