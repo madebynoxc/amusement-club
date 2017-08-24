@@ -114,6 +114,14 @@
         ]
     },
     {
+        "name": "whatsnew",
+        "values": [
+            "**->whatsnew [?all]**",
+            "->whatsnew (shows latest version changes)",
+            "->whatsnew all (shows last 7 versions changes)"
+        ]
+    },
+    {
         "name": "hero",
         "values": [
             "**->hero [action] [name]**",

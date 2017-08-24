@@ -6,7 +6,7 @@
             "description": "use ->?[command] to get a quick help for command \n e.g. `->?give`" 
         },
         {
-            "title": "->claim",
+            "title": "->claim [?any]",
             "description": "Claim a new card (costs an increasing ammount of 🍅 Tomatoes)"
         },
         {
@@ -22,8 +22,8 @@
             "description": "Transfers [card] to [user]"
         },
         {
-            "title": "->cards [tier]",
-            "description": "Shows your cards, of some [tier]"
+            "title": "->cards [params]",
+            "description": "Shows cards interface (use `->?cards` for more)"
         },
         {
             "title": "->pay [user] [amount]",
@@ -38,8 +38,16 @@
             "description": "Sells a card. \u2B50=80🍅 | \u2B50\u2B50=150🍅 | \u2B50\u2B50\u2B50=300🍅"
         },
         {
+            "title": "->hero [params]",
+            "description": "Shows hero interface (use `->?hero` for more)"
+        },
+        {
             "title": "->lead [?global]",
             "description": "Shows top 5 users by overall card star amount"
+        },
+        {
+            "title": "->whatsnew [?all]",
+            "description": "Shows latest version changes"
         },
         {
             "title": "Bot source code",
