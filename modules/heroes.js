@@ -41,8 +41,8 @@ function getHero(dbUser, callback) {
     if(!h) {
         let stars = dbManager.countCardLevels(dbUser.cards);
         var msg = "**" + dbUser.username + "**, you have no any hero yet. \n";
-        if(stars >= 75) msg += "To choose one, use `->hero list`";
-        else msg += "You can get one once you have more than 75 \u2B50 stars (you have now " + stars + "\u2B50 stars)";
+        if(stars >= 50) msg += "To choose one, use `->hero list`";
+        else msg += "You can get one once you have more than 50 \u2B50 stars (you have now " + stars + "\u2B50 stars)";
         callback(msg);
         return;
     }
@@ -53,8 +53,8 @@ function getHero(dbUser, callback) {
 
 function getHeroes(dbUser, callback) {
     let stars = dbManager.countCardLevels(dbUser.cards);
-    if(stars < 75) {
-        callback("**" + dbUser.username + "**, you should have at least 75 \u2B50 stars to have a hero.\n"
+    if(stars < 50) {
+        callback("**" + dbUser.username + "**, you should have at least 50 \u2B50 stars to have a hero.\n"
             + "You have now " + stars + " \u2B50 stars.");
         return;
     }
@@ -88,8 +88,8 @@ function assign(dbUser, args, callback) {
     }
 
     var stars = dbManager.countCardLevels(dbUser.cards);
-    if(stars < 75) {
-        callback("You can get one once you have more than 75 \u2B50 stars (you have now " + stars + "\u2B50 stars)");
+    if(stars < 50) {
+        callback("You can get one once you have more than 50 \u2B50 stars (you have now " + stars + "\u2B50 stars)");
         return;
     }
 
@@ -150,7 +150,7 @@ function getHeroEffect(user, action, value) {
 function countAnimated(cards) {
     var c = 0;
     cards.forEach(function(element) {
-        if(element.animated) c++;
+        if(element.animated) c += element.level;
     }, this);
     return c;
 }

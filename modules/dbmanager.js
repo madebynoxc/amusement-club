@@ -132,12 +132,11 @@ function claim(user, guildID, arg, callback) {
 
             let heroEffect = !heroes.getHeroEffect(dbUser, 'claim', true);
             let phrase = "Congratulations! You got **" + name + "** \n";
-            if(heroEffect) {
-                phrase += "Your hero grants you unlimited claims for **500**🍅";
-            } else {
-                if(claimCost >= 500) phrase += "This is your last claim for today";
-                else phrase += "Your next claim will cost **" + (claimCost + 50).toString() + "**🍅";
-            }
+            if(claimCost >= 500) {
+                if(heroEffect) phrase += "Your hero grants you unlimited claims for **500**🍅";
+                else phrase += "This is your last claim for today";
+            } 
+            else phrase += "Your next claim will cost **" + (claimCost + 50).toString() + "**🍅";
             callback(phrase, file);
             stat.claim++;
 
@@ -215,7 +214,7 @@ function getXP(user, callback) {
                     msg += "You can claim " + getClaimsAmount(stat.claim, bal) + " cards today! Use `->claim` \n";
                 msg += "Your claim now costs " + claimCost + " 🍅 Tomatoes\n";
             }
-            if(!u.hero && stars >= 75) msg += "You have enough \u2B50 stars to get a hero! use `->hero list`";
+            if(!u.hero && stars >= 50) msg += "You have enough \u2B50 stars to get a hero! use `->hero list`";
             callback(msg);
         } 
     });
@@ -424,7 +423,9 @@ function daily(uID, callback) {
     collection.findOne({ discord_id: uID }).then((user) => {
         if(!user) return;
 
+        var stars = countCardLevels(user.cards);
         let amount = 100;
+        if(stars < 35) amount = 300;
         amount = heroes.getHeroEffect(user, 'daily', amount);
         let hours = 20 - getHoursDifference(user.lastdaily);
         let increment = user.hero? {exp: amount, 'hero.exp': 1} : {exp: amount};
@@ -449,7 +450,9 @@ function daily(uID, callback) {
         var msg = "**" + user.username + "** recieved daily **" + amount + "** 🍅 You now have " 
         + (Math.floor(user.exp) + amount) + "🍅 \n";
         msg += "You also got **2 daily quests**. To view them use `->quests`\n";
-        if(!user.hero && countCardLevels(user.cards) >= 75) 
+        if(stars < 35)
+            msg += "You got extra 200🍅 as a new player bonus!";
+        if(!user.hero && stars >= 50) 
             msg += "You have enough stars to get a hero! use `->hero list`";
         callback(msg);
     });
