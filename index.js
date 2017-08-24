@@ -7,6 +7,7 @@ const helpBody = require('./help/general.json');
 const react = require('./modules/reactions.js');
 const quickhelp = require('./help/quick.json');
 const heroDB = require('./modules/heroes.js');
+const changelog = require('./help/updates.json');
 var bot, curgame = 0;
 
 //https://discordapp.com/oauth2/authorize?client_id=340988108222758934&scope=bot&permissions=125952
@@ -238,8 +239,25 @@ function getCommand(m, callback) {
                     setTimeout(() => { _stop(); }, 2000); 
                 }
                 return;
+            case 'whatsnew':
+                if(channelType == 1) callback('This command is available only in bot channel');
+                else {
+                    let mes = "";
+                    if(cd == "all") {
+                        for(let i=0; i<Math.min(7, changelog.length); i++)
+                            mes += getUpdateLog(i) + "\n\n";
+                    } else mes = getUpdateLog(0);
+                    callback(mes);
+                }
+                return;
         }
     } 
+}
+
+function getUpdateLog(index) {
+    let mes = "**" + changelog[index].version + "**\n";
+    mes += changelog[index].changes.join("\n");
+    return mes;
 }
 
 function getHelp(com) {

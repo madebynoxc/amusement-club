@@ -1,0 +1,106 @@
+[
+    {
+        "version": "1.8.3",
+        "changes": [
+            "Changed bonus for Funami Yui. Now animated cards grant two times more stars",
+            "Increased daily bonus for playes who have less than 35 stars",
+            "Now players can get hero when they have 50 stars or more",
+            "Added `->whatsnew` command"
+        ]
+    },
+    {
+        "version": "1.8.2",
+        "changes": [
+            "Critical fixes to hero update",
+            "Quick help improvements, cleanups"
+        ]
+    },
+    {
+        "version": "1.8",
+        "changes": [
+            "**Major Update**",
+            "Adds full hero functionlality"
+        ]
+    },
+    {
+        "version": "1.7.1",
+        "changes": [
+            "Fixes to card filters",
+            "Tomato earning decreased to 0.07 tomato/character",
+            "Updated server list"
+        ]
+    },
+    {
+        "version": "1.7",
+        "changes": [
+            "**Major Update**",
+            "Added pagination and card filters"
+        ]
+    },
+    {
+        "version": "1.5.1",
+        "changes": [
+            "Fixed critical bug with negative payments",
+            "Fixed scan card log"
+        ]
+    },
+    {
+        "version": "1.5",
+        "changes": [
+            "**Major Update**",
+            "Multiple collections support"
+        ]
+    },
+    {
+        "version": "1.4.2",
+        "changes": [
+            "Added card cooldown, not working difference function",
+            "No counting same cards in rating",
+            "New quest awards",
+            "Direct Message fixes"
+        ]
+    },
+    {
+        "version": "1.4",
+        "changes": [
+            "**Major Update**",
+            "New claim mechanics"
+        ]
+    },
+    {
+        "version": "1.3",
+        "changes": [
+            "**Major Update**",
+            "Added quests, limits to claims per day, and some user daily statistics"
+        ]
+    },
+    {
+        "version": "1.2",
+        "changes": [
+            "**Major Update**",
+            "Added GIF image support",
+            "Added leaderboards"
+        ]
+    },
+    {
+        "version": "1.1.1",
+        "changes": [
+            "Fixed transfer card bug",
+            "Fixed selling bug",
+            "Added function for internal DB fix"
+        ]
+    },
+    {
+        "version": "1.1",
+        "changes": [
+            "**Major Update**",
+            "Added daily command. Fixed selling cards bug"
+        ]
+    },
+    {
+        "version": "1.0",
+        "changes": [
+            "**RELEASE**"
+        ]
+    }
+]
