@@ -1,5 +1,12 @@
 [
     {
+        "version": "1.8.5",
+        "changes": [
+            "Chnged abilities for Chinatsu, Akari and Yui",
+            "Improved claiming message"
+        ]
+    },
+    {
         "version": "1.8.3",
         "changes": [
             "Changed bonus for Funami Yui. Now animated cards grant two times more stars",
