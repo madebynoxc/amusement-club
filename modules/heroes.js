@@ -65,7 +65,7 @@ function getHeroes(dbUser, callback) {
 function getInfo(dbUser, args, callback) {
     var req = args.join(' ');
     if(req == 'all') {
-        callback("Use `->hero get [hero name]`. **Changing hero will not be free!**\n"
+        callback("Use `->hero get [hero name]`.\n"
             + "Use `->hero info [hero name]` to get specific hero info", 
             { file: "./heroes/all.png" });
         return;
@@ -75,17 +75,17 @@ function getInfo(dbUser, args, callback) {
     var h = heroDB.filter(h => h.name.toLowerCase().includes(req))[0];
     if(h) {
         console.log(h.name.toLowerCase().replace(/ /g, "_"));
-        callback("Use `->hero get [hero name]`. **Changing hero will not be free!**", 
+        callback("Use `->hero get [hero name]`.", 
             { file: "./heroes/" + h.name.toLowerCase().replace(/ /g, "_") + ".png" });
     }
 }
 
 function assign(dbUser, args, callback) {
-    if(dbUser.hero) {
+    /*if(dbUser.hero) {
         callback("**" + dbUser.username + "**, you already have a hero!\n"
         + "Hero change comes soon!");
         return;
-    }
+    }*/
 
     var stars = dbManager.countCardLevels(dbUser.cards);
     if(stars < 50) {
@@ -115,23 +115,23 @@ function assign(dbUser, args, callback) {
 function getHeroLevel(exp) {
     var lvl = 1;
     var targetExp = 2;
-    while(Math.pow(targetExp, lvl) < exp) lvl++;
-    return lvl;
+    while((targetExp = Math.pow(2, lvl)) < exp) lvl++;
+    return lvl + '.' + Math.floor((exp/targetExp) * 100);
 }
 
-function getHeroEffect(user, action, value) {
+function getHeroEffect(user, action, value, ...params) {
     if(user.hero) {
         switch(user.hero.name.toLowerCase()) {
             case 'akaza akari':
-                if(action == 'sell') return Math.floor(value + (value * .5));
-                if(action == 'send') return value + 100;
+                if(action == 'claim_akari') return Math.floor(value *.85);
+                if(action == 'send') return value + (params[0] * 100);
                 break;
             case 'toshino kyoko':
                 if(action == 'addXP') return value * 2;
                 if(action == 'forge') {  }
                 break;
             case 'funami yui':
-                if(action == 'daily') return 200;
+                if(action == 'daily') return value * 80;
                 if(action == 'rating') return value + countAnimated(user.cards);
                 break;
             case 'yoshikawa chinatsu':

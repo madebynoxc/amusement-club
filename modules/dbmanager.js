@@ -102,6 +102,7 @@ function claim(user, guildID, arg, callback) {
         if(!stat) stat = {summon:0, send: 0, claim: 0};
 
         let claimCost = (stat.claim + 1) * 50;
+        let nextClaim = claimCost + 50;
         if(claimCost > 500) claimCost = 500;
         if(dbUser.exp < claimCost) {
             callback("**" + user.username + "**, you don't have enough 🍅 Tomatoes to claim a card \n" 
@@ -131,12 +132,18 @@ function claim(user, guildID, arg, callback) {
             let file = './cards/' + res.collection + '/' + res.level + "_" + res.name + ext;
 
             let heroEffect = !heroes.getHeroEffect(dbUser, 'claim', true);
-            let phrase = "Congratulations! You got **" + name + "** \n";
-            if(claimCost >= 500) {
-                if(heroEffect) phrase += "Your hero grants you unlimited claims for **500**🍅";
-                else phrase += "This is your last claim for today";
+            claimCost = heroes.getHeroEffect(dbUser, 'claim_akari', claimCost);
+            nextClaim = heroes.getHeroEffect(dbUser, 'claim_akari', nextClaim);
+            let phrase = "**" + user.username + "**, you got **" + name + "** \n";
+            
+            if(heroEffect) { 
+                phrase += "Your hero grants you unlimited claims for **200**🍅";
+                claimCost = 200;
+            } else {
+                if(claimCost >= 500) phrase += "This is your last claim for today";
+                else phrase += "Your next claim will cost **" + nextClaim + "**🍅";
             } 
-            else phrase += "Your next claim will cost **" + (claimCost + 50).toString() + "**🍅";
+
             callback(phrase, file);
             stat.claim++;
 
@@ -205,6 +212,7 @@ function getXP(user, callback) {
             let bal = u.exp;
             let stars = countCardLevels(u.cards);
             let claimCost = (stat.claim + 1) * 50;
+            claimCost = heroes.getHeroEffect(u, 'claim_akari', claimCost);
             let msg = "**" + user.username + "**, you have **" + Math.floor(bal) + "** 🍅 Tomatoes ";
             msg += "and " + stars + " \u2B50 stars!\n";
             if(stat.claim >= 10) {
@@ -309,12 +317,6 @@ function transfer(from, to, card, callback) {
             return;
         }
 
-        var fromExp = u[0].exp;
-        fromExp = heroes.getHeroEffect(u[0], 'send', fromExp);
-        if(fromExp > u[0].exp) 
-            callback("Akari grants 100 tomatoes to " + u[0].username 
-                + " for sending a card!");
-
         for(var i = 0; i < cards.length; i++) {
             if (cards[i].name.toLowerCase().includes(check)) {
                 let tg = cards[i];
@@ -327,6 +329,13 @@ function transfer(from, to, card, callback) {
                     return;
                 }
 
+                var fromExp = u[0].exp;
+                fromExp = heroes.getHeroEffect(u[0], 'send', fromExp, tg.level);
+                if(fromExp > u[0].exp) 
+                    callback("**Akari** grants **" + (fromExp - u[0].exp) 
+                        + "** tomatoes to **" + u[0].username 
+                        + "** for sending a card!");
+
                 collection.find({ discord_id: to }).toArray((err, u2) => {
                     if(u2.length == 0) return;
 
@@ -337,7 +346,7 @@ function transfer(from, to, card, callback) {
                     stat.send++;
 
                     let req = u[0].hero? 
-                    {$set: {cards: cards, dailystats: stat }, $inc: {'hero.exp': .1}} : 
+                    {$set: {cards: cards, dailystats: stat, exp: fromExp }, $inc: {'hero.exp': .3}} : 
                     {$set: {cards: cards, dailystats: stat }};
                     collection.update(
                         { discord_id: from.id }, req
@@ -426,7 +435,9 @@ function daily(uID, callback) {
         var stars = countCardLevels(user.cards);
         let amount = 100;
         if(stars < 35) amount = 300;
-        amount = heroes.getHeroEffect(user, 'daily', amount);
+        if(user.dailystats && user.dailystats.claim) 
+            amount = Math.max(heroes.getHeroEffect(user, 'daily', user.dailystats.claim), 100);
+        
         let hours = 20 - getHoursDifference(user.lastdaily);
         let increment = user.hero? {exp: amount, 'hero.exp': 1} : {exp: amount};
         if(!hours || hours <= 0) {
