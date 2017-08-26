@@ -137,8 +137,8 @@ function claim(user, guildID, arg, callback) {
             let phrase = "**" + user.username + "**, you got **" + name + "** \n";
             
             if(heroEffect) { 
-                phrase += "Your hero grants you unlimited claims for **200**🍅";
-                claimCost = 200;
+                phrase += "Your hero grants you unlimited claims for **250**🍅";
+                claimCost = 250;
             } else {
                 if(claimCost >= 500) phrase += "This is your last claim for today";
                 else phrase += "Your next claim will cost **" + nextClaim + "**🍅";
@@ -215,8 +215,9 @@ function getXP(user, callback) {
             let bal = u.exp;
             let stars = countCardLevels(u.cards);
             let claimCost = (stat.claim + 1) * 50;
-            if(!heroes.getHeroEffect(u, 'claim', true)){
-                claimCost = 200;
+            let heffect = !heroes.getHeroEffect(u, 'claim', true);
+            if(heffect){
+                claimCost = 250;
             }
             else claimCost = heroes.getHeroEffect(u, 'claim_akari', claimCost);
             let msg = "**" + user.username + "**, you have **" + Math.floor(bal) + "** 🍅 Tomatoes ";
@@ -226,7 +227,7 @@ function getXP(user, callback) {
             if(blockClaim) {
                 msg += "You can't claim more cards, as you reached your daily claim limit.\n"
             } else {
-                if(bal > claimCost) 
+                if(bal > claimCost && !heffect) 
                     msg += "You can claim " + getClaimsAmount(stat.claim, bal) + " cards today! Use `->claim` \n";
                 msg += "Your claim now costs " + claimCost + " 🍅 Tomatoes\n";
             }
