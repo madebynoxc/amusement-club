@@ -86,7 +86,7 @@ function removeQuest(user, quest, callback) {
     if(daily) {
         if(daily.quests) daily.quests++;
         else daily.quests = 1;
-    } else daily = { quests: 1 };
+    } else daily = {summon: 0, send: 0, claim: 0, quests: 1};
 
     col.update(
         { discord_id: user.discord_id },

@@ -99,10 +99,11 @@ function claim(user, guildID, arg, callback) {
         if(!dbUser) return;
 
         let stat = dbUser.dailystats;
-        if(!stat) stat = {summon:0, send: 0, claim: 0};
+        if(!stat) stat = {summon:0, send: 0, claim: 0, quests: 0};
 
         let claimCost = (stat.claim + 1) * 50;
         let nextClaim = claimCost + 50;
+        claimCost = heroes.getHeroEffect(dbUser, 'claim_akari', claimCost);
         if(claimCost > 500) claimCost = 500;
         if(dbUser.exp < claimCost) {
             callback("**" + user.username + "**, you don't have enough 🍅 Tomatoes to claim a card \n" 
@@ -132,7 +133,6 @@ function claim(user, guildID, arg, callback) {
             let file = './cards/' + res.collection + '/' + res.level + "_" + res.name + ext;
 
             let heroEffect = !heroes.getHeroEffect(dbUser, 'claim', true);
-            claimCost = heroes.getHeroEffect(dbUser, 'claim_akari', claimCost);
             nextClaim = heroes.getHeroEffect(dbUser, 'claim_akari', nextClaim);
             let phrase = "**" + user.username + "**, you got **" + name + "** \n";
             
@@ -173,7 +173,10 @@ function addXP(user, amount, callback) {
             amount = heroes.getHeroEffect(res, 'addXP', amount);
             collection.update( 
                 { discord_id: user.id},
-                {$inc: increment},
+                {
+                    $set: { username: user.username },
+                    $inc: increment
+                },
                 { upsert: true }
             ).then((u)=>{
                 quest.checkXP(res, (mes)=>{callback(mes)});
@@ -207,15 +210,20 @@ function getXP(user, callback) {
     collection.findOne({ discord_id: user.id }).then((u) => {
         if(u) {
             let stat = u.dailystats;
-            if(!stat) stat = {summon:0, send: 0, claim: 0};
+            if(!stat) stat = {summon:0, send: 0, claim: 0, quests: 0};
 
             let bal = u.exp;
             let stars = countCardLevels(u.cards);
             let claimCost = (stat.claim + 1) * 50;
-            claimCost = heroes.getHeroEffect(u, 'claim_akari', claimCost);
+            if(!heroes.getHeroEffect(u, 'claim', true)){
+                claimCost = 200;
+            }
+            else claimCost = heroes.getHeroEffect(u, 'claim_akari', claimCost);
             let msg = "**" + user.username + "**, you have **" + Math.floor(bal) + "** 🍅 Tomatoes ";
             msg += "and " + stars + " \u2B50 stars!\n";
-            if(stat.claim >= 10) {
+
+            var blockClaim = heroes.getHeroEffect(u, 'claim', stat.claim >= 10);
+            if(blockClaim) {
                 msg += "You can't claim more cards, as you reached your daily claim limit.\n"
             } else {
                 if(bal > claimCost) 
@@ -282,7 +290,7 @@ function summon(user, card, callback) {
                 let file = './cards/' + cards[i].collection + '/' + + cards[i].level + "_" + cards[i].name + ext;
                 callback("**" + user.username + "** summons **" + name + "!**", file);
 
-                if(!stat) stat = {summon:0, send: 0, claim: 0};
+                if(!stat) stat = {summon:0, send: 0, claim: 0, quests: 0};
                 stat.summon++;
 
                 let req = u[0].hero? 
@@ -329,13 +337,6 @@ function transfer(from, to, card, callback) {
                     return;
                 }
 
-                var fromExp = u[0].exp;
-                fromExp = heroes.getHeroEffect(u[0], 'send', fromExp, tg.level);
-                if(fromExp > u[0].exp) 
-                    callback("**Akari** grants **" + (fromExp - u[0].exp) 
-                        + "** tomatoes to **" + u[0].username 
-                        + "** for sending a card!");
-
                 collection.find({ discord_id: to }).toArray((err, u2) => {
                     if(u2.length == 0) return;
 
@@ -344,6 +345,13 @@ function transfer(from, to, card, callback) {
 
                     if(!stat) stat = {summon: 0, send: 0, claim: 0};
                     stat.send++;
+
+                    var fromExp = u[0].exp;
+                    fromExp = heroes.getHeroEffect(u[0], 'send', fromExp, tg.level);
+                    if(fromExp > u[0].exp) 
+                        callback("**Akari** grants **" + (fromExp - u[0].exp) 
+                            + "** tomatoes to **" + u[0].username 
+                            + "** for sending a card!");
 
                     let req = u[0].hero? 
                     {$set: {cards: cards, dailystats: stat, exp: fromExp }, $inc: {'hero.exp': .3}} : 

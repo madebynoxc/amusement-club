@@ -123,7 +123,7 @@ function getHeroEffect(user, action, value, ...params) {
     if(user.hero) {
         switch(user.hero.name.toLowerCase()) {
             case 'akaza akari':
-                if(action == 'claim_akari') return Math.floor(value *.85);
+                if(action == 'claim_akari') return Math.floor(value *.88);
                 if(action == 'send') return value + (params[0] * 100);
                 break;
             case 'toshino kyoko':

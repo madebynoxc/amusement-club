@@ -122,6 +122,12 @@
         ]
     },
     {
+        "name": "forge",
+        "values": [
+            "**This feature comes in 1.9.0 patch**"
+        ]
+    },
+    {
         "name": "hero",
         "values": [
             "**->hero [action] [name]**",

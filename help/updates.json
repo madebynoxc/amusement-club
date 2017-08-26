@@ -1,8 +1,14 @@
 [
     {
+        "version": "1.8.6",
+        "changes": [
+            "Critical fixes to hero updates"
+        ]
+    },
+    {
         "version": "1.8.5",
         "changes": [
-            "Chnged abilities for Chinatsu, Akari and Yui",
+            "Changed abilities for Chinatsu, Akari and Yui",
             "Improved claiming message"
         ]
     },
