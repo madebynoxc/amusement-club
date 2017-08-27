@@ -187,6 +187,7 @@ function addXP(user, amount, callback) {
                     $set: { 
                         discord_id: user.id,
                         username: user.username,
+                        cards: [],
                         exp: 300
                     },
                 }, { upsert: true }
@@ -350,7 +351,7 @@ function transfer(from, to, card, callback) {
                     var fromExp = u[0].exp;
                     fromExp = heroes.getHeroEffect(u[0], 'send', fromExp, tg.level);
                     if(fromExp > u[0].exp) 
-                        callback("**Akari** grants **" + (fromExp - u[0].exp) 
+                        callback("**Akari** grants **" + Math.floor(fromExp - u[0].exp) 
                             + "** tomatoes to **" + u[0].username 
                             + "** for sending a card!");
 
@@ -653,6 +654,7 @@ function getClaimsAmount(claims, exp) {
 function countCardLevels(cards) {
     let sum = 0;
     let metCards = [];
+    if(!cards) return 0;
     cards.forEach(function(element) {
         if(!metCards.includes(element.name)) {
             sum += element.level;
