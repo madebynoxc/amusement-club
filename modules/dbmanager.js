@@ -1,7 +1,7 @@
 module.exports = {
     connect, disconnect, claim, addXP, getXP, 
     getCards, summon, transfer, sell, award, 
-    pay, daily, leaderboard, fixUserCards, getQuests,
+    pay, daily, fixUserCards, getQuests,
     leaderboard_new, difference, dynamicSort, countCardLevels
 }
 
@@ -444,10 +444,11 @@ function daily(uID, callback) {
 
         var stars = countCardLevels(user.cards);
         let amount = 100;
-        if(stars < 35) amount = 300;
+        
         if(user.dailystats && user.dailystats.claim) 
             amount = Math.max(heroes.getHeroEffect(user, 'daily', user.dailystats.claim), 100);
         
+        if(stars < 35) amount += 200;
         let hours = 20 - getHoursDifference(user.lastdaily);
         let increment = user.hero? {exp: amount, 'hero.exp': 1} : {exp: amount};
         if(!hours || hours <= 0) {
@@ -470,46 +471,13 @@ function daily(uID, callback) {
 
         var msg = "**" + user.username + "** recieved daily **" + amount + "** 🍅 You now have " 
         + (Math.floor(user.exp) + amount) + "🍅 \n";
+
+        if(stars < 35) msg += "(you got extra 200🍅 as a new player bonus)";
         msg += "You also got **2 daily quests**. To view them use `->quests`\n";
-        if(stars < 35)
-            msg += "You got extra 200🍅 as a new player bonus!";
+        
         if(!user.hero && stars >= 50) 
             msg += "You have enough stars to get a hero! use `->hero list`";
         callback(msg);
-    });
-}
-
-// OBSOLETE
-function leaderboard(arg, guild, callback) {
-    let global = arg == 'global';
-    let collection = mongodb.collection('users');
-    collection.aggregate(
-        { $unwind : '$cards' },
-        { $group : { _id : '$username', 'levels' : { $sum : '$cards.level' }}}, 
-        { $sort : { 'levels': -1 } }
-        ).toArray((err, users) => {
-            users.sort(dynamicSort('-levels'));
-            if(!users || users.length == 0) return;
-
-            if(global) {
-                callback("**Global TOP5 Card Owners:**\n" + nameOwners(users));
-            } else if(guild) {
-                let includedUsers = [];
-                try {
-                    users.forEach((elem) => {
-                        guild.members.forEach((mem) => {
-                            if(mem.user.username == elem._id) {
-                                includedUsers.push(elem);
-                            }
-                            if(includedUsers.length >= 5) throw BreakException;
-                        }, this);
-                    }, this);
-                } catch(e) {}
-
-                if(includedUsers.length > 0) {
-                    callback("**Local TOP5 Card Owners:**\n" + nameOwners(includedUsers));
-                }
-            }
     });
 }
 

@@ -6,6 +6,7 @@ var paginations = [];
 const fs = require('fs');
 const dbManager = require("./dbmanager.js");
 const utils = require('./localutils.js');
+const logger = require('./log.js');
 
 var collections = [];
 fs.readdir('./cards', (err, items) => {
@@ -170,6 +171,6 @@ function nameCard(card, count) {
         
         if(count > 1) res += " (x" + count + ")";
         return res;
-    } catch (e) {}
+    } catch (e) {logger.error(e);}
     return null;
 }
