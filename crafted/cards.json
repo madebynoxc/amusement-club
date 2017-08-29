@@ -1,0 +1,12 @@
+[
+    {
+        "name": "blue_free_eyes",
+        "level": 5,
+        "effect": "",
+        "cost": 1500,
+        "compressed": false,
+        "cards": [
+            "1cr_blue_eyes", "1cr_free_butterfly"
+        ]
+    }
+]

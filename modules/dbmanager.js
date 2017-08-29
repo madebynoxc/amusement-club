@@ -591,7 +591,12 @@ function difference(uID, targetID, callback) {
 }
 
 function forge(user, card1, card2, callback) {
+    /*let collection = mongodb.collection('users');
+    collection.findOne({ discord_id: uID }).then((user) => {
+        if(!user) return;
 
+        if(!user.hero || user.hero.level < )
+    });*/
 }
 
 function removeCard(target, collection) {
