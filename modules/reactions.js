@@ -121,7 +121,7 @@ function getCardList(arr, flt) {
     if (flt.tier == 0 || current.level == flt.tier) {
         if(!flt.col || flt.collections.includes(current.collection)) {
             let c = nameCard(current, cnt);
-            if(c) res.push(c);
+            if(c && (!flt.multi || cnt > 1)) res.push(c);
         }
     }
     res.sort((a, b) => {
@@ -140,7 +140,12 @@ function setFiltering(filter) {
     res.anim = filter.includes('gif');
     res.collections = [];
     res.keywords = [];
-    filter.forEach(function(element) {
+    if(res.multi) 
+        filter.splice(filter.indexOf('multi'));
+    if(res.anim) 
+        filter.splice(filter.indexOf('gif'));
+    
+    filter.forEach(element => {
         if(isInt(element)){
             res.tier = parseInt(element);
         } else if(collections.includes(element)) {
