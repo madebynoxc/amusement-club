@@ -1,7 +1,7 @@
 module.exports = {
     connect, disconnect, claim, addXP, getXP, 
     getCards, summon, transfer, sell, award, 
-    pay, daily, fixUserCards, getQuests,
+    pay, daily, fixUserCards, getQuests, getBestCardSorted,
     leaderboard_new, difference, dynamicSort, countCardLevels
 }
 
@@ -20,6 +20,7 @@ const randomColor = require('randomcolor');
 const settings = require('../settings/general.json');
 const guilds = require('../settings/servers.json');
 const utils = require('./localutils.js');
+const lev = require('js-levenshtein');
 
 function disconnect() {
     isConnected = false;
@@ -274,50 +275,47 @@ function getCards(userID, callback) {
 
 function summon(user, card, callback) {
     let collection = mongodb.collection('users');
-    collection.find({ discord_id: user.id }).toArray((err, u) => {
-        if(u.length == 0) return;
+    collection.findOne({ discord_id: user.id }).then(dbUser => {
+        if(!dbUser) return;
 
         let check = card.toLowerCase().replace(/ /g, "_");
-        let cards = u[0].cards;
-        if(cards == undefined){
+        if(!dbUser.cards){
             callback(user.username + ", you have no any cards");
             return;
         }
 
-        for(var i = 0; i < cards.length; i++) {
-            if (cards[i].name.toLowerCase().includes(check)) {
-                let name = utils.toTitleCase(cards[i].name.replace(/_/g, " "));
-                let ext = cards[i].animated? '.gif' : '.png';
-                let stat = u[0].dailystats;
-                let file = './cards/' + cards[i].collection + '/' + + cards[i].level + "_" + cards[i].name + ext;
-                callback("**" + user.username + "** summons **" + name + "!**", file);
+        let match = getBestCardSorted(dbUser.cards, check)[0];
+        if(match){
+            let name = utils.toTitleCase(match.name.replace(/_/g, " "));
+            let ext = match.animated? '.gif' : '.png';
+            let stat = dbUser.dailystats;
+            let file = './cards/' + match.collection + '/' + + match.level + "_" + match.name + ext;
+            callback("**" + user.username + "** summons **" + name + "!**", file);
 
-                if(!stat) stat = {summon:0, send: 0, claim: 0, quests: 0};
-                stat.summon++;
+            if(!stat) stat = {summon:0, send: 0, claim: 0, quests: 0};
+            stat.summon++;
 
-                let req = u[0].hero? 
-                {$set: {dailystats: stat}, $inc: {'hero.exp': .1}} : 
-                {$set: {dailystats: stat}};
-                collection.update(
-                    { discord_id: user.id }, req
-                ).then((e) => {
-                    quest.checkSummon(u[0], (mes)=>{callback(mes)});
-                });
-                return;
-            }
-        }
-        callback("**" + user.username + "** you have no card named **'" + card + "'**");
-    });
+            let req = dbUser.hero? 
+            {$set: {dailystats: stat}, $inc: {'hero.exp': .1}} : 
+            {$set: {dailystats: stat}};
+            collection.update(
+                { discord_id: user.id }, req
+            ).then((e) => {
+                quest.checkSummon(dbUser, (mes)=>{callback(mes)});
+            });
+        } else 
+            callback("**" + user.username + "** you have no card named **'" + card + "'**");
+    }).catch(e => logger.error(e));
 }
 
 function transfer(from, to, card, callback) {
     let collection = mongodb.collection('users');
-    collection.find({ discord_id: from.id }).toArray((err, u) => {
-        if(u.length == 0) return;
+    collection.findOne({ discord_id: from.id }).then(dbUser => {
+        if(!dbUser) return;
 
         let check = card.toLowerCase().replace(/ /g, "_");
-        let cards = u[0].cards;
-        if(cards == undefined){
+        let cards = dbUser.cards;
+        if(!cards){
             callback(from.username + ", you have no any cards");
             return;
         }
@@ -327,54 +325,53 @@ function transfer(from, to, card, callback) {
             return;
         }
 
-        for(var i = 0; i < cards.length; i++) {
-            if (cards[i].name.toLowerCase().includes(check)) {
-                let tg = cards[i];
-                let name = utils.toTitleCase(tg.name.replace(/_/g, " "));
-                let hours = 12 - getHoursDifference(tg.frozen);
-                if(hours && hours > 0) {
-                    callback("**" + from.username + "**, the card **" 
-                        + name + "** is frozen for **" 
-                        + hours + "** more hours! You can't transfer it");
-                    return;
-                }
-
-                collection.find({ discord_id: to }).toArray((err, u2) => {
-                    if(u2.length == 0) return;
-
-                    let stat = u[0].dailystats;
-                    cards.splice(i, 1);
-
-                    if(!stat) stat = {summon: 0, send: 0, claim: 0};
-                    stat.send++;
-
-                    var fromExp = u[0].exp;
-                    fromExp = heroes.getHeroEffect(u[0], 'send', fromExp, tg.level);
-                    if(fromExp > u[0].exp) 
-                        callback("**Akari** grants **" + Math.floor(fromExp - u[0].exp) 
-                            + "** tomatoes to **" + u[0].username 
-                            + "** for sending a card!");
-
-                    let req = u[0].hero? 
-                    {$set: {cards: cards, dailystats: stat, exp: fromExp }, $inc: {'hero.exp': .3}} : 
-                    {$set: {cards: cards, dailystats: stat }};
-                    collection.update(
-                        { discord_id: from.id }, req
-                    ).then(() => {
-                        quest.checkSend(u[0], tg.level, (mes)=>{callback(mes)});
-                    });
-
-                    tg.frozen = new Date();
-                    collection.update(
-                        { discord_id: to },
-                        {
-                            $push: {cards: tg }
-                        }
-                    );
-                    callback("**" + from.username + "** sent **" + name + "** to **" + u2[0].username + "**");
-                });
+        let match = getBestCardSorted(dbUser.cards, check)[0];
+        if(match){
+            let name = utils.toTitleCase(match.name.replace(/_/g, " "));
+            let hours = 12 - getHoursDifference(match.frozen);
+            if(hours && hours > 0) {
+                callback("**" + from.username + "**, the card **" 
+                    + name + "** is frozen for **" 
+                    + hours + "** more hours! You can't transfer it");
                 return;
             }
+
+            collection.findOne({ discord_id: to }).then(u2 => {
+                if(!u2) return;
+
+                let stat = dbUser.dailystats;
+                let i = cards.indexOf(match);
+                cards.splice(i, 1);
+
+                if(!stat) stat = {summon: 0, send: 0, claim: 0};
+                stat.send++;
+
+                var fromExp = dbUser.exp;
+                fromExp = heroes.getHeroEffect(dbUser, 'send', fromExp, match.level);
+                if(fromExp > dbUser.exp) 
+                    callback("**Akari** grants **" + Math.round(fromExp - dbUser.exp) 
+                        + "** tomatoes to **" + dbUser.username 
+                        + "** for sending a card!");
+
+                let req = dbUser.hero? 
+                {$set: {cards: cards, dailystats: stat, exp: fromExp }, $inc: {'hero.exp': .3}} : 
+                {$set: {cards: cards, dailystats: stat }};
+                collection.update(
+                    { discord_id: from.id }, req
+                ).then(() => {
+                    quest.checkSend(dbUser, match.level, (mes)=>{callback(mes)});
+                });
+
+                match.frozen = new Date();
+                collection.update(
+                    { discord_id: to },
+                    {
+                        $push: {cards: match }
+                    }
+                );
+                callback("**" + from.username + "** sent **" + name + "** to **" + u2.username + "**");
+            });
+            return;
         }
         callback("**" + from.username + "** you have no card named **'" + card + "'**");
     });
@@ -401,39 +398,33 @@ function pay(from, to, amount, callback) {
 
 function sell(user, card, callback) {
     let collection = mongodb.collection('users');
-    collection.find({ discord_id: user.id }).toArray((err, u) => {
-        if(u.length == 0) return;
+    collection.findOne({ discord_id: user.id }).then(dbUser => {
+        if(!dbUser) return;
 
         let check = card.toLowerCase().replace(/ /g, "_");
-        let cards = u[0].cards;
-        if(cards == undefined){
+        let cards = dbUser.cards;
+        if(!cards){
             callback(user.username + ", you have no any cards");
             return;
         }
 
-        for(var i = 0; i < cards.length; i++) {
-            if (cards[i].name.toLowerCase().includes(check)) {
-                let exp = settings.cardprice[cards[i].level - 1];
-                if(cards[i].level == 1) 
-                    exp = heroes.getHeroEffect(u[0], 'sell', exp);
+        let match = getBestCardSorted(dbUser.cards, check)[0];
+        if(match) {
+            let exp = settings.cardprice[match.level - 1];
+            let increment = dbUser.hero? {exp: exp, 'hero.exp': .1} : {exp: exp}
+            cards.splice(cards.indexOf(match), 1);
+            collection.update(
+                { discord_id: user.id },
+                {
+                    $set: {cards: cards },
+                    $inc: increment
+                }
+            );
 
-                let tg = cards[i];
-                let increment = u[0].hero? {exp: exp, 'hero.exp': .1} : {exp: exp}
-                cards.splice(i, 1);
-                collection.update(
-                    { discord_id: user.id },
-                    {
-                        $set: {cards: cards },
-                        $inc: increment
-                    }
-                );
-
-                let name = utils.toTitleCase(tg.name.replace(/_/g, " "));
-                callback("**" + user.username + "** sold **" + name + "** for **" + exp + "** 🍅 Tomatoes");
-                return;
-            }
-        }
-        callback("**" + user.username + "** you have no card named **'" + card + "'**");
+            let name = utils.toTitleCase(match.name.replace(/_/g, " "));
+            callback("**" + user.username + "** sold **" + name + "** for **" + exp + "** 🍅 Tomatoes");
+        } else
+            callback("**" + user.username + "**, you have no card named **'" + card + "'**");
     });
 }
 
@@ -472,7 +463,7 @@ function daily(uID, callback) {
         var msg = "**" + user.username + "** recieved daily **" + amount + "** 🍅 You now have " 
         + (Math.floor(user.exp) + amount) + "🍅 \n";
 
-        if(stars < 35) msg += "(you got extra 200🍅 as a new player bonus)";
+        if(stars < 35) msg += "(you got extra 200🍅 as a new player bonus)\n";
         msg += "You also got **2 daily quests**. To view them use `->quests`\n";
         
         if(!user.hero && stars >= 50) 
@@ -543,15 +534,10 @@ function difference(uID, targetID, callback) {
         collection.findOne({ discord_id: targetID }).then((user2) => {
             if(!user2) return;
 
-            let dif1 = user.cards.filter(x => user2.cards.filter(y => x.name === y.name) < 0);
-            let dif2 = user2.cards.filter(x => user.cards.filter(y => x.name === y.name) < 0);
+            let dif = user2.cards.filter(x => user.cards.filter(y => x.name === y.name) < 0);
             let res = "**" + user.username + "** has unique cards:\n";
-            dif1.forEach(function(element) {
+            dif.forEach(element => {
                 res += nameCard(element) + "\n";
-            }, this);
-            res += "\n**" + user2.username + "** has unique cards:\n";
-            dif2.forEach(function(element) {
-                res += nameCard(element)+ "\n";
             }, this);
             callback(res);
         });
@@ -654,4 +640,23 @@ function fixUserCards() {
             });
         }, this);
     });
+}
+
+function getBestCardSorted(cards, name) {
+    let filtered = cards.filter(c => c.name.includes(name));
+    filtered.sort((a, b) => {
+        let dist1 = lev(a, name);
+        let dist2 = lev(b, name);
+        if(dist1 < dist2) return 1;
+        if(dist1 > dist2) return -1;
+        else return 0;
+    });
+
+    var re = new RegExp('^' + name);
+    let supermatch = filtered.filter(c => re.exec(c.name));
+    if(supermatch.length > 0) { 
+        let left = filtered.filter(c => !supermatch.includes(c));
+        return supermatch.concat(left);
+    }
+    return filtered;
 }

@@ -82,6 +82,9 @@ function removeExisting(userID) {
 }
 
 function buildCardList(pgn) {
+    if(!pgn.data, pgn.data.length == 0)
+        return "**" + pgn.user.username + "**, no cards found matching request \n";
+
     let pages = Math.floor(pgn.data.length / 15) + 1;
     if(pgn.page > pages) pgn.page = pages;
 
@@ -95,13 +98,17 @@ function buildCardList(pgn) {
 function getCardList(arr, flt) {
     arr.sort(dbManager.dynamicSort("name"));
 
+    if(flt.key) 
+        arr = dbManager.getBestCardSorted(arr, flt.keywords.join('_'));
+
     var res = [];
     var current = null;
     var cnt = 0;
+
     for (var i = 0; i < arr.length; i++) {
         if(!arr[i]) continue;
         if (!current || arr[i].name != current.name) {
-            if (cnt > 0 && (!flt.tier || current.level == flt.tier)) {
+            if (cnt > 0 && (flt.tier == 0 || current.level == flt.tier)) {
                 if(!flt.col || flt.collections.includes(current.collection)) {
                     let c = nameCard(current, cnt);
                     if(c && (!flt.multi || cnt > 1)) res.push(c);
@@ -111,7 +118,7 @@ function getCardList(arr, flt) {
             cnt = 1;
         } else cnt++;
     }
-    if (cnt > 0 && (!flt.tier == 0 || current.level == flt.tier)) {
+    if (flt.tier == 0 || current.level == flt.tier) {
         if(!flt.col || flt.collections.includes(current.collection)) {
             let c = nameCard(current, cnt);
             if(c) res.push(c);
@@ -128,16 +135,20 @@ function getCardList(arr, flt) {
 
 function setFiltering(filter) {
     let res = {};
+    res.tier = 0;
     res.multi = filter.includes('multi');
+    res.anim = filter.includes('gif');
     res.collections = [];
+    res.keywords = [];
     filter.forEach(function(element) {
         if(isInt(element)){
             res.tier = parseInt(element);
         } else if(collections.includes(element)) {
             res.collections.push(element);
-        }
+        } else res.keywords.push(element.trim());
     }, this);
     res.col = res.collections.length > 0;
+    res.key = res.keywords.length > 0;
     console.log(filter);
     return res;
 }
