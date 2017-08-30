@@ -643,7 +643,7 @@ function fixUserCards() {
 }
 
 function getBestCardSorted(cards, name) {
-    let filtered = cards.filter(c => c.name.includes(name));
+    let filtered = cards.filter(c => c.name.toLowerCase().includes(name));
     filtered.sort((a, b) => {
         let dist1 = lev(a, name);
         let dist2 = lev(b, name);
@@ -653,7 +653,7 @@ function getBestCardSorted(cards, name) {
     });
 
     var re = new RegExp('^' + name);
-    let supermatch = filtered.filter(c => re.exec(c.name));
+    let supermatch = filtered.filter(c => re.exec(c.name.toLowerCase()));
     if(supermatch.length > 0) { 
         let left = filtered.filter(c => !supermatch.includes(c));
         return supermatch.concat(left);
