@@ -97,7 +97,8 @@ function buildCardList(pgn) {
     var max = Math.min((pgn.page * 15), pgn.data.length);
     let resp = "";
 
-    if(pgn.dif) resp += "**" + pgn.dif + "** has following unique cards: \n";
+    if(pgn.dif) resp += "**" + pgn.user.username 
+        + "**, **" + pgn.dif + "** has following unique cards: \n";
     else resp += "**" + pgn.user.username + "**, you have: \n";
 
     resp += pgn.data.slice(((pgn.page - 1) * 15), max).join('\n');
