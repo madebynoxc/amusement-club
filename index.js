@@ -116,7 +116,7 @@ function getCommand(m, callback) {
             case 'dif':
             case 'diff':
             case 'difference':
-                dbManager.difference(m.author.id, getUserID(cnt.shift()), (text) => {
+                dbManager.difference(m.author.id, getUserID(cnt.shift()), cnt, (text) => {
                     callback(text);
                 });
                 return;
@@ -188,7 +188,10 @@ function getCommand(m, callback) {
                 }
                 return;
             case 'baka': 
-                callback(m.author.username + ", **you** baka! (￣^￣ﾒ)");
+                var u = getUserID(cnt[0]);
+                if(u) dbManager.getUserName(u, name => 
+                    callback("**" + name + "** is now baka! ( ` ω ´ )"));
+                else callback(m.author.username + ", **you** baka! (￣^￣ﾒ)");
                 return;
             case 'quest':
             case 'quests':

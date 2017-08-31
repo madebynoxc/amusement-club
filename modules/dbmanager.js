@@ -1,6 +1,6 @@
 module.exports = {
     connect, disconnect, claim, addXP, getXP, 
-    getCards, summon, transfer, sell, award, 
+    getCards, summon, transfer, sell, award, getUserName,
     pay, daily, fixUserCards, getQuests, getBestCardSorted,
     leaderboard_new, difference, dynamicSort, countCardLevels
 }
@@ -527,24 +527,38 @@ function award(uID, amout, callback) {
     
 }
 
-function difference(uID, targetID, callback) {
+function difference(uID, targetID, args, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: uID }).then((user) => {
         if(!user) return;
+
+        if(uID == targetID) {
+            callback("Eh? That won't work");
+            return;
+        }
 
         collection.findOne({ discord_id: targetID }).then((user2) => {
             if(!user2) return;
 
             let dif = user2.cards.filter(x => user.cards.filter(y => x.name == y.name) == 0);
-            let res = "**" + user2.username + "** has unique cards:\n";
             let cards = [];
             dif.forEach(element => {
-                //res += nameCard(element) + "\n";
                 cards.push(element);
             }, this);
             
-            callback(listing.addNew(user, null, cards, user2.username));
+            if(cards.length > 0) 
+                callback(listing.addNew(user, args, cards, user2.username));
+            else
+                callback("**" + user2.username + "** has no any unique cards for you\n");
         });
+    });
+}
+
+function getUserName(uID, callback) {
+    let collection = mongodb.collection('users');
+    collection.findOne({ discord_id: uID }).then((user) => {
+        if(!user) return;
+        callback(user.username);
     });
 }
 
