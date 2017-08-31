@@ -20,6 +20,7 @@ const randomColor = require('randomcolor');
 const settings = require('../settings/general.json');
 const guilds = require('../settings/servers.json');
 const utils = require('./localutils.js');
+const listing = require('./reactions.js');
 const lev = require('js-levenshtein');
 
 function disconnect() {
@@ -534,12 +535,15 @@ function difference(uID, targetID, callback) {
         collection.findOne({ discord_id: targetID }).then((user2) => {
             if(!user2) return;
 
-            let dif = user2.cards.filter(x => user.cards.filter(y => x.name === y.name) < 0);
-            let res = "**" + user.username + "** has unique cards:\n";
+            let dif = user2.cards.filter(x => user.cards.filter(y => x.name == y.name) == 0);
+            let res = "**" + user2.username + "** has unique cards:\n";
+            let cards = [];
             dif.forEach(element => {
-                res += nameCard(element) + "\n";
+                //res += nameCard(element) + "\n";
+                cards.push(element);
             }, this);
-            callback(res);
+            
+            callback(listing.addNew(user, null, cards, user2.username));
         });
     });
 }

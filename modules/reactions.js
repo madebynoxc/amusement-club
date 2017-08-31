@@ -14,10 +14,16 @@ fs.readdir('./cards', (err, items) => {
     collections = items;
 });
 
-function addNew(user, filter, data) {
+function addNew(user, filter, data, dif = "") {
     removeExisting(user.id);
     var flt = setFiltering(filter);
-    var pgn = {"page": 1, "user": user, "filter": flt, "data": getCardList(data, flt)};
+    var pgn = {
+        "page": 1, 
+        "user": user, 
+        "filter": flt, 
+        "data": getCardList(data, flt), 
+        "dif": dif
+    };
     paginations.push(pgn);
     return buildCardList(pgn);
 }
@@ -89,7 +95,11 @@ function buildCardList(pgn) {
     if(pgn.page > pages) pgn.page = pages;
 
     var max = Math.min((pgn.page * 15), pgn.data.length);
-    let resp = "**" + pgn.user.username + "**, you have: \n";
+    let resp = "";
+
+    if(pgn.dif) resp += "**" + pgn.dif + "** has following unique cards: \n";
+    else resp += "**" + pgn.user.username + "**, you have: \n";
+
     resp += pgn.data.slice(((pgn.page - 1) * 15), max).join('\n');
     if(pages > 1) resp += "\n \u{1F4C4} Page "+ pgn.page +" of " + pages;
     return resp;
@@ -134,6 +144,8 @@ function getCardList(arr, flt) {
 }
 
 function setFiltering(filter) {
+    if(!filter) return {tier: 0};
+
     let res = {};
     res.tier = 0;
     res.multi = filter.includes('multi');
@@ -144,7 +156,7 @@ function setFiltering(filter) {
         filter.splice(filter.indexOf('multi'));
     if(res.anim) 
         filter.splice(filter.indexOf('gif'));
-    
+
     filter.forEach(element => {
         if(isInt(element)){
             res.tier = parseInt(element);

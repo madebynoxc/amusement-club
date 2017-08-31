@@ -113,12 +113,13 @@ function getCommand(m, callback) {
                     });
                 }
                 return;
-            /*case 'dif':
+            case 'dif':
+            case 'diff':
             case 'difference':
                 dbManager.difference(m.author.id, getUserID(cnt.shift()), (text) => {
                     callback(text);
                 });
-                return;*/
+                return;
             case 'sum': 
             case 'summon':
                 if(cd.length < 3) 
