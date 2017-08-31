@@ -527,8 +527,9 @@ function award(uID, amout, callback) {
     
 }
 
-function difference(uID, targetID, args, callback) {
+function difference(discUser, targetID, args, callback) {
     let collection = mongodb.collection('users');
+    let uID = discUser.id;
     collection.findOne({ discord_id: uID }).then((user) => {
         if(!user) return;
 
@@ -547,7 +548,7 @@ function difference(uID, targetID, args, callback) {
             }, this);
             
             if(cards.length > 0) 
-                callback(listing.addNew(user, args, cards, user2.username));
+                callback(listing.addNew(discUser, args, cards, user2.username));
             else
                 callback("**" + user2.username + "** has no any unique cards for you\n");
         });

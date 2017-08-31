@@ -116,7 +116,7 @@ function getCommand(m, callback) {
             case 'dif':
             case 'diff':
             case 'difference':
-                dbManager.difference(m.author.id, getUserID(cnt.shift()), cnt, (text) => {
+                dbManager.difference(m.author, getUserID(cnt.shift()), cnt, (text) => {
                     callback(text);
                 });
                 return;
