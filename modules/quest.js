@@ -88,11 +88,12 @@ function removeQuest(user, quest, callback) {
         else daily.quests = 1;
     } else daily = {summon: 0, send: 0, claim: 0, quests: 1};
 
+    var award = heroes.getHeroEffect(user, 'questReward', quest.award);
     col.update(
         { discord_id: user.discord_id },
         {   
             $set: {dailystats: daily},
-            $inc: {exp: quest.award},
+            $inc: {exp: award},
             $pull: {quests: {name: quest.name} },
         }
     ).then(e => {
@@ -102,7 +103,8 @@ function removeQuest(user, quest, callback) {
 }
 
 function completeMsg(user, q){
+    var award = heroes.getHeroEffect(user, 'questReward', q.award);
     return "**" + user.username + "**, you completed '" 
     + q.description + "'. " 
-    + "**" + q.award + "** Tomatoes were added to your account!";
+    + "**" + award + "** Tomatoes were added to your account!";
 }

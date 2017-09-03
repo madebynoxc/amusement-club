@@ -81,11 +81,13 @@ function getInfo(dbUser, args, callback) {
 }
 
 function assign(dbUser, args, callback) {
-    /*if(dbUser.hero) {
-        callback("**" + dbUser.username + "**, you already have a hero!\n"
-        + "Hero change comes soon!");
-        return;
-    }*/
+    var hasHero = dbUser.hero != undefined;
+    if(hasHero) {
+        if(dbUser.exp < 2000) {
+            callback("**" + dbUser.username + "**, hero change requires 2000 Tomatoes!\n");
+            return;
+        }
+    }
 
     var stars = dbManager.countCardLevels(dbUser.cards);
     if(stars < 50) {
@@ -95,13 +97,13 @@ function assign(dbUser, args, callback) {
 
     var req = args.join(' ');
     if(req == '' || req == ' ') return;
+
     var h = heroDB.filter(h => h.name.toLowerCase().includes(req))[0];
     if(h) {
+        var upd = hasHero? {$set: {hero: h}, $inc: {exp: -2000}} : {$set: {hero: h}};
         ucollection.update(
             { discord_id: dbUser.discord_id },
-            {
-                $set: {hero: h}
-            }
+            upd
         ).then(() => {
             callback("**" + dbUser.username + "** and **" 
                 + h.name + "** made a contract! Congratulations! \u{1F389}");
@@ -124,7 +126,7 @@ function getHeroEffect(user, action, value, ...params) {
         switch(user.hero.name.toLowerCase()) {
             case 'akaza akari':
                 if(action == 'claim_akari') return Math.floor(value *.88);
-                if(action == 'send') return value + (params[0] * 100);
+                if(action == 'send') return value + (params[0] * 80);
                 break;
             case 'toshino kyoko':
                 if(action == 'addXP') return value * 2;
@@ -135,7 +137,7 @@ function getHeroEffect(user, action, value, ...params) {
                 if(action == 'rating') return value + countAnimated(user.cards);
                 break;
             case 'yoshikawa chinatsu':
-                if(action == 'claim') return false;
+                if(action == 'questReward') return Math.floor(value * 1.8);
                 if(action == 'questComplete') {
                     quests.addBonusQuest(user, () => {
                         value("Dark spell from Chinatsu granted you another quest! Use `->quest` to see it");

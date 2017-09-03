@@ -1,5 +1,12 @@
 [
     {
+        "version": "1.8.9",
+        "changes": [
+            "Changed effects of Chinatsu's bufs, nerfed Akari's 'send card' award", 
+            "Added fee for hero change (2000 tomatoes)"
+        ]
+    },
+    {
         "version": "1.8.8",
         "changes": [
             "Added new command `->dif` or `->difference`.", 
