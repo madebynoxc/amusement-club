@@ -1,5 +1,5 @@
 module.exports = {
-    connect, disconnect, claim, addXP, getXP, 
+    connect, disconnect, claim, addXP, getXP, doesUserHave,
     getCards, summon, transfer, sell, award, getUserName,
     pay, daily, fixUserCards, getQuests, getBestCardSorted,
     leaderboard_new, difference, dynamicSort, countCardLevels
@@ -579,6 +579,20 @@ function removeCard(target, collection) {
             return collection;
         }
     }
+}
+
+function doesUserHave(name, tgID, card, callback) {
+    let collection = mongodb.collection('users');
+    collection.findOne({ discord_id: tgID }).then((user) => {
+        if(!user) return;
+        
+        let match = getBestCardSorted(user.cards, card)[0];
+        if(match) {
+            let cardname = utils.toTitleCase(match.name.replace(/_/g, " "));
+            callback("**" + name + "**, matched card **" + cardname + "**");
+        }
+        else callback("**" + name + "**, card with that name was not found");
+    });
 }
 
 function getHoursDifference(tg) {

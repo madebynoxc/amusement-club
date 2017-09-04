@@ -224,6 +224,18 @@ function getCommand(m, callback) {
                     });
                 }
                 break;
+            case 'has':
+                if(channelType == 0) callback("You can't ask that in DMs");
+                else {
+                    let usr = getUserID(cnt.shift());
+                    let cdname = cnt.join(' ').trim();
+                    if(usr){
+                        dbManager.doesUserHave(m.author.username, usr, cdname, (text) =>{
+                            callback(text);
+                        });
+                    }
+                }
+                break;
             case 'hero':
                 if(channelType == 1) callback('Hero commands available only in bot channel');
                 else {

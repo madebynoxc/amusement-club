@@ -32,6 +32,9 @@ function processRequest(userID, args, callback) {
             case "get":
                 assign(dbUser, args, callback);
                 break;
+            case "lead":
+                getRating(dbUser, callback);
+                break;
         }
     });
 }
@@ -118,7 +121,8 @@ function getHeroLevel(exp) {
     var lvl = 1;
     var targetExp = 2;
     while((targetExp = Math.pow(2, lvl)) < exp) lvl++;
-    return lvl + '.' + Math.floor((exp/targetExp) * 100);
+    var rem = (exp/targetExp).toString();
+    return lvl + '.' + rem[2] + rem[3];
 }
 
 function getHeroEffect(user, action, value, ...params) {
@@ -147,6 +151,25 @@ function getHeroEffect(user, action, value, ...params) {
         }
     }
     return value;
+}
+
+function getRating(user, callback) {
+    ucollection.find({ }).sort({'hero.exp': -1}).toArray((err, users) => {
+        callback("**Global** hero rating:\n" + nameOwners(users));
+    });
+}
+
+function nameOwners(col) {
+    let res = '';
+    for(let i=0; i<col.length; i++) {
+        if(!col[i].hero || !col[i].hero.name) continue;
+        res += (i+1).toString() + ". ";
+        res += "**" + col[i].username + "** with **";
+        res += col[i].hero.name + "** level **";
+        res += getHeroLevel(col[i].hero.exp) + "**\n";
+        if(i >= 9) break;
+    }
+    return res;
 }
 
 function countAnimated(cards) {

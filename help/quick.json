@@ -158,7 +158,8 @@
             "->hero (shows your hero)",
             "->hero list (shows list of all heroes)",
             "->hero info [name] (shows hero's info)",
-            "->hero get [name] (assigns a hero to you)"
+            "->hero get [name] (assigns a hero to you)",
+            "->hero lead (global hero rating)"
         ]
     }
 ]
