@@ -30,6 +30,11 @@
         "award" : 300
     },
     {
+        "name" : "gain500",
+        "description" : "Get 500 tomatoes balance",
+        "award" : 200
+    },
+    {
         "name" : "gain1000",
         "description" : "Get 1000 tomatoes balance",
         "award" : 400
