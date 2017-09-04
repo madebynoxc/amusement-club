@@ -7,7 +7,6 @@ module.exports = {
 
 var MongoClient = require('mongodb').MongoClient;
 var mongodb;
-var isConnected = false;
 var cooldownList = [];
 
 const fs = require('fs');
@@ -21,6 +20,7 @@ const settings = require('../settings/general.json');
 const guilds = require('../settings/servers.json');
 const utils = require('./localutils.js');
 const listing = require('./reactions.js');
+const cardmanager = require('./cardmanager.js');
 const lev = require('js-levenshtein');
 
 function disconnect() {
@@ -32,18 +32,19 @@ function disconnect() {
 function connect(callback) {
     MongoClient.connect(settings.database, function(err, db) {
         assert.equal(null, err);
+        logger.message("Connected correctly to database");
+
         mongodb = db;
         quest.connect(db);
         heroes.connect(db);
-        isConnected = true;
-        logger.message("Connected correctly to database");   
-        if(callback) callback();   
+        cardmanager.updateCards(db);
 
-        logger.message("Updating cards..."); 
-        scanCards();
+        if(callback) callback();   
+        //scanCards();
     });
 }
 
+// OBSOLETE
 function scanCards() {
     let collection = mongodb.collection('cards');
     collection.find({}).toArray((err, res) => {
@@ -75,6 +76,7 @@ function scanCards() {
     });
 }
 
+// OBSOLETE
 function insertCards(names, col) {
     let cards = [];
 
@@ -106,7 +108,6 @@ function claim(user, guildID, arg, callback) {
         let claimCost = (stat.claim + 1) * 50;
         let nextClaim = claimCost + 50;
         claimCost = heroes.getHeroEffect(dbUser, 'claim_akari', claimCost);
-        if(claimCost > 500) claimCost = 500;
         if(dbUser.exp < claimCost) {
             callback("**" + user.username + "**, you don't have enough 🍅 Tomatoes to claim a card \n" 
                 + "You need at least " + claimCost + ", but you have " + Math.floor(dbUser.exp));
@@ -129,21 +130,16 @@ function claim(user, guildID, arg, callback) {
 
         collection.find(find).toArray((err, i) => {
             let res = _.sample(i);
-            let name = utils.toTitleCase(res.name.replace(/_/g, " "));
-            let ext = res.animated? '.gif' : '.png';
-            let file = './cards/' + res.collection + '/' + res.level + "_" + res.name + ext;
+            let file = getCardFile(res);
 
             let heroEffect = !heroes.getHeroEffect(dbUser, 'claim', true);
             nextClaim = heroes.getHeroEffect(dbUser, 'claim_akari', nextClaim);
             let phrase = "**" + user.username + "**, you got **" + name + "** \n";
+            if(res.craft) 
+                phrase += "This is a **craft card**. Find pair and `->forge` special card of them!";
             
-            if(heroEffect) { 
-                phrase += "Your hero grants you unlimited claims for **250**🍅";
-                claimCost = 250;
-            } else {
-                if(claimCost >= 500) phrase += "This is your last claim for today";
-                else phrase += "Your next claim will cost **" + nextClaim + "**🍅";
-            } 
+            if(claimCost >= 500) phrase += "*You are claiming for extremely high price*";
+            phrase += "Your next claim will cost **" + nextClaim + "**🍅";
 
             callback(phrase, file);
             stat.claim++;
@@ -282,10 +278,9 @@ function summon(user, card, callback) {
 
         let match = getBestCardSorted(dbUser.cards, check)[0];
         if(match){
-            let name = utils.toTitleCase(match.name.replace(/_/g, " "));
-            let ext = match.animated? '.gif' : '.png';
             let stat = dbUser.dailystats;
-            let file = './cards/' + match.collection + '/' + + match.level + "_" + match.name + ext;
+            let name = utils.toTitleCase(match.name.replace(/_/g, " "));
+            let file = getCardFile(match);
             callback("**" + user.username + "** summons **" + name + "!**", file);
 
             if(!stat) stat = {summon:0, send: 0, claim: 0, quests: 0};
@@ -687,4 +682,11 @@ function getBestCardSorted(cards, name) {
         return supermatch.concat(left);
     }
     return filtered;
+}
+
+function getCardFile(card) {
+    let name = utils.toTitleCase(card.name.replace(/_/g, " "));
+    let ext = card.animated? '.gif' : card.compressed? '.jpg' : '.png';
+    let prefix = card.craft? card.level + 'cr' : card.level;
+    return './cards/' + card.collection + '/' + prefix + "_" + card.name + ext;
 }

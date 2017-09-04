@@ -121,8 +121,10 @@ function getCardList(arr, flt) {
         if (!current || arr[i].name != current.name) {
             if (cnt > 0 && (flt.tier == 0 || current.level == flt.tier)) {
                 if(!flt.col || flt.collections.includes(current.collection)) {
-                    let c = nameCard(current, cnt);
-                    if(c && (!flt.multi || cnt > 1)) res.push(c);
+                    if(!flt.craft || current.craft) {
+                        let c = nameCard(current, cnt);
+                        if(c && (!flt.multi || cnt > 1)) res.push(c);
+                    }
                 }
             }
             current = arr[i];
@@ -131,8 +133,10 @@ function getCardList(arr, flt) {
     }
     if (flt.tier == 0 || current.level == flt.tier) {
         if(!flt.col || flt.collections.includes(current.collection)) {
-            let c = nameCard(current, cnt);
-            if(c && (!flt.multi || cnt > 1)) res.push(c);
+            if(!flt.craft || current.craft) {
+                let c = nameCard(current, cnt);
+                if(c && (!flt.multi || cnt > 1)) res.push(c);
+            }
         }
     }
     res.sort((a, b) => {
@@ -159,15 +163,20 @@ function setFiltering(filter) {
         filter.splice(filter.indexOf('gif'));
 
     filter.forEach(element => {
-        if(isInt(element)){
+        if(isInt(element))
             res.tier = parseInt(element);
-        } else if(collections.includes(element)) {
-            res.collections.push(element);
+
+        else if(element[0] == '-') {
+            let el = element.substr(1);
+            res.craft = el === "craft"; 
+            col = collections.filter(c => c.includes(el))[0];
+            if(col) res.collections.push(col);
+
         } else res.keywords.push(element.trim());
     }, this);
     res.col = res.collections.length > 0;
     res.key = res.keywords.length > 0;
-    console.log(filter);
+    //console.log(filter);
     return res;
 }
 
@@ -196,6 +205,7 @@ function nameCard(card, count) {
             res += "★";
 
         res += "]  ";
+        if(card.craft) res += "[craft]  ";
         res += utils.toTitleCase(card.name.replace(/_/g, " "));
         
         if(count > 1) res += " (x" + count + ")";
