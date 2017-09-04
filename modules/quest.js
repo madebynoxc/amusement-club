@@ -67,8 +67,9 @@ function checkXP(user, callback) {
     let q = getQuest(user, 'gain');
     if(!q) return;
 
-    if((q.name == 'gain1000' && user.exp >= 1000) || 
-    (q.name == 'gain1500' && user.exp >= 1500)) {
+    if((q.name == 'gain500' && user.exp >= 500) || 
+        (q.name == 'gain1000' && user.exp >= 1000) || 
+        (q.name == 'gain1500' && user.exp >= 1500)) {
         callback(completeMsg(user, q));
         removeQuest(user, q, callback);
     }

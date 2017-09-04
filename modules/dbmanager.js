@@ -113,8 +113,7 @@ function claim(user, guildID, arg, callback) {
             return;
         }
 
-        let blockClaim = dbUser.dailystats && dbUser.dailystats.claim >= 10;
-        blockClaim = heroes.getHeroEffect(dbUser, 'claim', blockClaim);
+        let blockClaim = dbUser.dailystats && dbUser.dailystats.claim >= 30;
         if(blockClaim) {
             callback("**" + user.username + "**, you reached a limit of your daily claim. \n"
                 + "It will be reset next time you successfully run `->daily`");
@@ -218,19 +217,15 @@ function getXP(user, callback) {
             let bal = u.exp;
             let stars = countCardLevels(u.cards);
             let claimCost = (stat.claim + 1) * 50;
-            let heffect = !heroes.getHeroEffect(u, 'claim', true);
-            if(heffect){
-                claimCost = 250;
-            }
-            else claimCost = heroes.getHeroEffect(u, 'claim_akari', claimCost);
+            claimCost = heroes.getHeroEffect(u, 'claim_akari', claimCost);
             let msg = "**" + user.username + "**, you have **" + Math.floor(bal) + "** 🍅 Tomatoes ";
             msg += "and " + stars + " \u2B50 stars!\n";
 
-            var blockClaim = heroes.getHeroEffect(u, 'claim', stat.claim >= 10);
+            var blockClaim = heroes.getHeroEffect(u, 'claim', stat.claim >= 30);
             if(blockClaim) {
                 msg += "You can't claim more cards, as you reached your daily claim limit.\n"
             } else {
-                if(bal > claimCost && !heffect) 
+                if(bal > claimCost) 
                     msg += "You can claim " + getClaimsAmount(stat.claim, bal) + " cards today! Use `->claim` \n";
                 msg += "Your claim now costs " + claimCost + " 🍅 Tomatoes\n";
             }
@@ -631,7 +626,7 @@ function dynamicSort(property) {
 function getClaimsAmount(claims, exp) {
     let res = 0;
     let total = claims * 50;
-    let allowed = 10 - claims;
+    let allowed = 30 - claims;
 
     claims++;
     while(exp >= total) {
