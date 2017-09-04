@@ -676,7 +676,7 @@ function fixUserCards() {
 }
 
 function getBestCardSorted(cards, name) {
-    let filtered = cards.filter(c => c.name.toLowerCase().includes(name));
+    let filtered = cards.filter(c => c.name.toLowerCase().includes(name.replace(' ', '_')));
     filtered.sort((a, b) => {
         let dist1 = lev(a, name);
         let dist2 = lev(b, name);
