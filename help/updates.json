@@ -3,7 +3,10 @@
         "version": "1.8.9",
         "changes": [
             "Changed effects of Chinatsu's bufs, nerfed Akari's 'send card' award", 
-            "Added fee for hero change (2000 tomatoes)"
+            "Added fee for hero change (2000 tomatoes)",
+            "Added `->has` command",
+            "Added `->hero lead` (hero leaderboard)",
+            "Changed hero level counting system"
         ]
     },
     {

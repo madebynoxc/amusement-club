@@ -164,8 +164,8 @@ function nameOwners(col) {
     for(let i=0; i<col.length; i++) {
         if(!col[i].hero || !col[i].hero.name) continue;
         res += (i+1).toString() + ". ";
-        res += "**" + col[i].username + "** with **";
-        res += col[i].hero.name + "** level **";
+        res += "**" + col[i].username + "** -- [";
+        res += col[i].hero.name + "] lvl **";
         res += getHeroLevel(col[i].hero.exp) + "**\n";
         if(i >= 9) break;
     }
