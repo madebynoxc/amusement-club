@@ -1,12 +1,12 @@
 module.exports = {
-    connect, processRequest, getHeroEffect
+    connect, processRequest, getHeroEffect, getHeroLevel
 }
 
 var mongodb, ucollection;
 const fs = require('fs');
 const logger = require('./log.js');
 const dbManager = require('./dbmanager.js');
-const heroDB = require('./heroes.json');
+const heroDB = require('../heroes/heroes.json');
 const quests = require('./quest.js');
 
 function connect(db) {

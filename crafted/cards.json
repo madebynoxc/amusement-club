@@ -6,7 +6,16 @@
         "cost": 1500,
         "compressed": false,
         "cards": [
-            "1cr_blue_eyes", "1cr_free_butterfly"
+            "blue_eyes", "free_butterfly"
+        ]
+    }, {
+        "name": "cherry_blossoms",
+        "level": 7,
+        "effect": "lala",
+        "cost": 2000,
+        "compressed": false,
+        "cards": [
+            "censored_akari", "cherry_blossoms"
         ]
     }
 ]

@@ -21,6 +21,8 @@ const guilds = require('../settings/servers.json');
 const utils = require('./localutils.js');
 const listing = require('./reactions.js');
 const cardmanager = require('./cardmanager.js');
+const forge = require('./forge.js');
+const inv = require('./inventory.js');
 const lev = require('js-levenshtein');
 
 function disconnect() {
@@ -37,6 +39,8 @@ function connect(callback) {
         mongodb = db;
         quest.connect(db);
         heroes.connect(db);
+        forge.connect(db);
+        inv.connect(db);
         cardmanager.updateCards(db);
 
         if(callback) callback();   
@@ -553,15 +557,6 @@ function getUserName(uID, callback) {
     });
 }
 
-function forge(user, card1, card2, callback) {
-    /*let collection = mongodb.collection('users');
-    collection.findOne({ discord_id: uID }).then((user) => {
-        if(!user) return;
-
-        if(!user.hero || user.hero.level < )
-    });*/
-}
-
 function removeCard(target, collection) {
     for(let i=0; i<collection.length; i++) {
         if(collection[i].name == target.name) {
@@ -686,7 +681,7 @@ function getBestCardSorted(cards, name) {
 
 function getCardFile(card) {
     let name = utils.toTitleCase(card.name.replace(/_/g, " "));
-    let ext = card.animated? '.gif' : card.compressed? '.jpg' : '.png';
+    let ext = card.animated? '.gif' : (card.compressed? '.jpg' : '.png');
     let prefix = card.craft? card.level + 'cr' : card.level;
     return './cards/' + card.collection + '/' + prefix + "_" + card.name + ext;
 }

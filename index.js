@@ -7,6 +7,8 @@ const helpBody = require('./help/general.json');
 const react = require('./modules/reactions.js');
 const quickhelp = require('./help/quick.json');
 const heroDB = require('./modules/heroes.js');
+const forge = require('./modules/forge.js');
+const inventory = require('./modules/inventory.js');
 const changelog = require('./help/updates.json');
 var bot, curgame = 0;
 
@@ -240,6 +242,24 @@ function getCommand(m, callback) {
                 if(channelType == 1) callback('Hero commands available only in bot channel');
                 else {
                     heroDB.processRequest(m.author.id, cnt, (text, file) => {
+                        callback(text, file);
+                    });
+                }
+                return;
+            case 'forge':
+                if(channelType == 0) callback("You forge cards in DM");
+                else if(channelType == 1) callback('This operation is possible in bot channel only');
+                else {
+                    forge.processRequest(m.author.id, cnt, (text, file) => {
+                        callback(text, file);
+                    });
+                }
+                return;
+            case 'inv':
+            case 'inventory':
+                if(channelType == 1) callback('This operation is possible in bot channel only');
+                else {
+                    inventory.processRequest(m.author.id, cnt, (text, file) => {
                         callback(text, file);
                     });
                 }
