@@ -7,7 +7,7 @@ const fs = require('fs');
 const crafted = require('../crafted/cards.json');
 const logger = require('./log.js');
 const utils = require('./localutils.js');
-const heroes = require('./hero.js');
+const heroes = require('./heroes.js');
 const dbManager = require("./dbmanager.js");
 
 function connect(db) {
@@ -84,7 +84,7 @@ function craftCard(user, args, callback) {
 
     for(i in crafted) {
         let count = 0;
-        let dif = crafted[i].cards.filter(x => !cardNames.includes(x));
+        let dif = crafted[i].cards.filter(c => !cardNames.includes(c));
 
         if(dif.length == 0) {
             let err = "";
@@ -94,7 +94,7 @@ function craftCard(user, args, callback) {
                 + "to craft this card. You need at least **" + crafted[i].cost + "**🍅\n";
             }
 
-            if(!user.hero || heroes.getHeroLevel(user.hero.exp) < crafted[i].level) {
+            if(!user.hero || parseFloat(heroes.getHeroLevel(user.hero.exp)) < crafted[i].level) {
                 err += "**" + user.username + "**, your **hero level** is lower, than "
                 + "required level **" + crafted[i].level + "**\n";
             }
@@ -104,12 +104,22 @@ function craftCard(user, args, callback) {
                 return;
             }
 
-            //let usercards = user.cards
+            for(j in cardNames) {
+                let match = user.cards.filter(c => c.name == cardNames[j])[0];
+                if(match) {
+                    user.cards.splice(user.cards.indexOf(match), 1);
+                } else {
+                    callback("**" + user.username + "**, can't find needed card among yours");
+                    return;
+                }
+            }
+
             ucollection.update( 
                 { discord_id: user.discord_id},
                 { 
                     $push: {inventory: {name: crafted[i].name, type: 'craft'}},
-                    $inc: {exp: -crafted[i].cost}
+                    $inc: {exp: -crafted[i].cost},
+                    $set: {cards: user.cards }
                 }
             ).then(u => {
                 callback("**" + user.username 

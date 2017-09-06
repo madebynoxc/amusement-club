@@ -52,8 +52,8 @@ function showInventory(user, callback) {
     }
 
     let resp = "**" + user.username + "**, your inventory:\n";
-    for(i in user.inventory) {
-        resp += (i + 1) + ". ";
+    for(let i=0; i<user.inventory.length; i++) {
+        resp += (i+1).toString() + ". ";
         resp += "[" + user.inventory[i].type + "]  ";
         resp += utils.toTitleCase(user.inventory[i].name.replace(/_/g, " "));
         resp += "\n";
