@@ -1,5 +1,5 @@
 module.exports = {
-    processRequest, connect, getInfo
+    processRequest, connect, getInfo, useCard, getCardEffect
 }
 
 var mongodb, ucollection;
@@ -8,6 +8,7 @@ const crafted = require('../crafted/cards.json');
 const logger = require('./log.js');
 const utils = require('./localutils.js');
 const heroes = require('./heroes.js');
+const quest = require('./quest.js');
 const dbManager = require("./dbmanager.js");
 
 function connect(db) {
@@ -136,4 +137,53 @@ function craftCard(user, args, callback) {
 
     callback("**" + user.username 
         + "**, you can't forge a craft card with those source cards");
+}
+
+// For cards with passive effects
+function getCardEffect(user, card, value, ...params) {
+    switch(card) {
+        case '':
+            break;
+        case '':
+            break;
+    }
+    return value;
+}
+
+// For cards that are used
+function useCard(user, name, callback) {
+    //let card = crafted.filter(c => c.name == name)[0];
+    let fullName = utils.toTitleCase(name.replace(/_/g, " "));
+    switch(name) {
+        case 'delightful_sunset':
+            reduceClaims(user, fullName, callback);
+            break;
+        case 'long-awaited_date':
+            reduceClaims(user, fullName, callback);
+            break;
+        case 'the_space_unity':
+            reduceClaims(user, fullName, callback);
+            break;
+    }
+    return;
+}
+
+function reduceClaims(user, fullName, callback) {
+    if(user.dailystats && user.dailystats.claims > 4) {
+        let claims = user.dailystats.claims - 4;
+        ucollection.update( 
+            { discord_id: user.discord_id},
+            { $inc: {'dailystats.claims': -4} }
+        ).then(u => {
+            callback("**" + user.username + "**, you used **" + fullName + "** "
+                + "that reduced your claim cost to " + (50 * (claims + 1)));
+        }).catch(e => logger.error(e));
+        return;
+    }
+
+    callback("Unable to use **" + fullName + "** right now");
+}
+
+function completeQuest(user, fullName, callback) {
+    
 }

@@ -1,5 +1,5 @@
 module.exports = {
-    processRequest, connect
+    processRequest, connect, useItem
 }
 
 var mongodb, ucollection;
@@ -25,6 +25,10 @@ function processRequest(userID, args, callback) {
                 if(args.length > 0)
                     getInfo(dbUser, args.join('_'), callback);
                 break;
+            case "use":
+                if(args.length > 0)
+                    useItem(dbUser, args.join('_'), callback);
+                break;
         }
     }).catch(e => logger.error(e));
 }
@@ -42,7 +46,10 @@ function getInfo(user, name, callback) {
                 forge.getInfo(user, name, callback, true);
                 break;
         }
+        return;
     }
+
+    callback("**" + user.username + "**, you don't have item named **" + item + "**");
 }
 
 function showInventory(user, callback) {
@@ -59,4 +66,23 @@ function showInventory(user, callback) {
         resp += "\n";
     }
     callback(resp);
+}
+
+function useItem (user, name, callback) {
+    if(!user.inventory || user.inventory.length == 0) {
+        callback("**" + user.username + "**, your inventory is **empty**");
+        return;
+    }
+
+    let item = user.inventory.filter(i => i.name.includes(name))[0];
+    if(item) {
+        switch(item.type){
+            case 'craft':
+                forge.useCard(user, item.name, callback);
+                break;
+        }
+        return;
+    }
+
+    callback("**" + user.username + "**, you don't have item named **" + name + "**");
 }

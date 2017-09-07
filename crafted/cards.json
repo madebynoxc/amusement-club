@@ -20,7 +20,7 @@
     }, {
         "name": "delightful_sunset",
         "level": 8,
-        "effect": "Reduces claim cosr by 300 🍅 Tomatoes when used [24hr cooldown]",
+        "effect": "Reduces claim cost by 200 🍅 Tomatoes when used [24hr cooldown]",
         "cost": 1300,
         "compressed": false,
         "cards": [
@@ -38,7 +38,7 @@
     }, {
         "name": "long-awaited_date",
         "level": 5,
-        "effect": "When used completes your first quest [20hr cooldown]",
+        "effect": "Completes your first quest when used [20hr cooldown]",
         "cost": 2200,
         "compressed": false,
         "cards": [
@@ -83,7 +83,7 @@
     }, {
         "name": "the_space_unity",
         "level": 6,
-        "effect": "When used gives a random card from **specified collection** [20hr cooldown]",
+        "effect": "Gives a random card from **specified collection** when used [20hr cooldown]",
         "cost": 2900,
         "compressed": false,
         "cards": [
