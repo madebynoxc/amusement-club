@@ -122,6 +122,8 @@ function getHeroLevel(exp) {
     var targetExp = 1.5;
     while((targetExp = Math.pow(1.5, lvl)) < exp) lvl++;
     var rem = (exp/targetExp).toString();
+    
+    if(!rem[2] || !rem[3]) return lvl + '.00';
     return lvl + '.' + rem[2] + rem[3];
 }
 

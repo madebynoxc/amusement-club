@@ -23,6 +23,7 @@
         "effect": "Reduces claim cost by 200 🍅 Tomatoes when used [24hr cooldown]",
         "cost": 1300,
         "compressed": false,
+        "cooldown": 24,
         "cards": [
             "cherry_sunset", "afterschool_sunset"
         ]
@@ -41,6 +42,7 @@
         "effect": "Completes your first quest when used [20hr cooldown]",
         "cost": 2200,
         "compressed": false,
+        "cooldown": 20,
         "cards": [
             "date_with_ayano", "kyoko_delight"
         ]
@@ -82,10 +84,11 @@
         ]
     }, {
         "name": "the_space_unity",
-        "level": 6,
-        "effect": "Gives a random card from **specified collection** when used [20hr cooldown]",
+        "level": 9,
+        "effect": "Gives a random card from __specified collection__ when used [20hr cooldown]",
         "cost": 2900,
         "compressed": false,
+        "cooldown": 20,
         "cards": [
             "deep_space", "dragon_unity"
         ]

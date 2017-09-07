@@ -4,7 +4,10 @@ module.exports = {
     msToTime,
     HEXToVBColor,
     getSourceFormat,
-    toTitleCase
+    toTitleCase,
+    getMinutesDifference,
+    getHoursDifference,
+    getFullTimeDifference
 }
 
 function getSourceFormat(str) {
@@ -57,4 +60,19 @@ function msToTime(s) {
   var hrs = (s - mins) / 60;
 
   return pad(hrs) + ':' + pad(mins) + ':' + pad(secs) + '.' + pad(ms, 3);
+}
+
+function getHoursDifference(tg) {
+    let mil = new Date() - tg;
+    return Math.floor(mil / (1000*60*60));
+}
+
+function getMinutesDifference(tg) {
+    let mil = new Date() - tg;
+    return Math.floor(mil / (1000*60));
+}
+
+function getFullTimeDifference(tg) {
+    let mil = new Date() - tg;
+    return msToTime(mil);
 }

@@ -101,7 +101,7 @@ function insertCards(names, col) {
     console.log(col + " update finished");
 }
 
-function claim(user, guildID, arg, callback) {
+function claim(user, guildID, arg, callback, reqObj) {
     let ucollection = mongodb.collection('users');
     ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
         if(!dbUser) return;
@@ -131,18 +131,20 @@ function claim(user, guildID, arg, callback) {
         let collection = mongodb.collection('cards');
         let guild = guilds.filter(g => g.guild_id == guildID)[0];
         let find = (guild && !any)? { collection: guild.collection } : {};
+        if(reqObj) find = reqObj;
 
         collection.find(find).toArray((err, i) => {
             let res = _.sample(i);
             let file = getCardFile(res);
+            let name = utils.toTitleCase(res.name.replace(/_/g, " "));
 
             let heroEffect = !heroes.getHeroEffect(dbUser, 'claim', true);
             nextClaim = heroes.getHeroEffect(dbUser, 'claim_akari', nextClaim);
             let phrase = "**" + user.username + "**, you got **" + name + "** \n";
             if(res.craft) 
-                phrase += "This is a **craft card**. Find pair and `->forge` special card of them!";
+                phrase += "This is a **craft card**. Find pair and `->forge` special card of them!\n";
             
-            if(claimCost >= 500) phrase += "*You are claiming for extremely high price*";
+            if(claimCost >= 500) phrase += "*You are claiming for extremely high price*\n";
             phrase += "Your next claim will cost **" + nextClaim + "**🍅";
 
             callback(phrase, file);
@@ -323,7 +325,7 @@ function transfer(from, to, card, callback) {
         let match = getBestCardSorted(dbUser.cards, check)[0];
         if(match){
             let name = utils.toTitleCase(match.name.replace(/_/g, " "));
-            let hours = 12 - getHoursDifference(match.frozen);
+            let hours = 12 - utils.getHoursDifference(match.frozen);
             if(hours && hours > 0) {
                 callback("**" + from.username + "**, the card **" 
                     + name + "** is frozen for **" 
@@ -435,7 +437,7 @@ function daily(uID, callback) {
             amount = Math.max(heroes.getHeroEffect(user, 'daily', user.dailystats.claim), 100);
         
         if(stars < 35) amount += 200;
-        let hours = 20 - getHoursDifference(user.lastdaily);
+        let hours = 20 - utils.getHoursDifference(user.lastdaily);
         let increment = user.hero? {exp: amount, 'hero.exp': 1} : {exp: amount};
         if(!hours || hours <= 0) {
             collection.update(
@@ -448,7 +450,7 @@ function daily(uID, callback) {
             );
         } else {
             if(hours == 1){
-                let mins = 60 - (getMinutesDifference(user.lastdaily) % 60);
+                let mins = 60 - (utils.getMinutesDifference(user.lastdaily) % 60);
                 callback("**" + user.username + "**, you can claim daily 🍅 in **" + mins + " minutes**");
             } else 
                 callback("**" + user.username + "**, you can claim daily 🍅 in **" + hours + " hours**");
@@ -578,16 +580,6 @@ function doesUserHave(name, tgID, card, callback) {
         }
         else callback("**" + name + "**, card with that name was not found");
     });
-}
-
-function getHoursDifference(tg) {
-    let mil = new Date() - tg;
-    return Math.floor(mil / (1000*60*60));
-}
-
-function getMinutesDifference(tg) {
-    let mil = new Date() - tg;
-    return Math.floor(mil / (1000*60));
 }
 
 function nameOwners(col) {

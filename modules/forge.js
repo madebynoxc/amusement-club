@@ -11,6 +11,12 @@ const heroes = require('./heroes.js');
 const quest = require('./quest.js');
 const dbManager = require("./dbmanager.js");
 
+var collections = [];
+fs.readdir('./cards', (err, items) => {
+    if(err) console.log(err);
+    collections = items;
+});
+
 function connect(db) {
     mongodb = db;
     ucollection = db.collection('users');
@@ -151,21 +157,27 @@ function getCardEffect(user, card, value, ...params) {
 }
 
 // For cards that are used
-function useCard(user, name, callback) {
-    //let card = crafted.filter(c => c.name == name)[0];
+function useCard(user, name, args, callback) {
+    let card = crafted.filter(c => c.name == name)[0];
     let fullName = utils.toTitleCase(name.replace(/_/g, " "));
+    let isComplete = false;
+    //let cooldown = card.cooldown - utils.getHoursDifference()
     switch(name) {
         case 'delightful_sunset':
-            reduceClaims(user, fullName, callback);
+            isComplete = reduceClaims(user, fullName, callback);
             break;
         case 'long-awaited_date':
-            reduceClaims(user, fullName, callback);
+            isComplete = completeQuest(user, fullName, callback);
             break;
         case 'the_space_unity':
-            reduceClaims(user, fullName, callback);
+            isComplete = getClaimedCard(user, fullName, args, callback);
             break;
     }
-    return;
+
+    /*if(isComplete) {
+        let index = user.inventory.indexOf(card);
+        card.lastUsed = new Date();
+    }*/
 }
 
 function reduceClaims(user, fullName, callback) {
@@ -178,12 +190,35 @@ function reduceClaims(user, fullName, callback) {
             callback("**" + user.username + "**, you used **" + fullName + "** "
                 + "that reduced your claim cost to " + (50 * (claims + 1)));
         }).catch(e => logger.error(e));
-        return;
+        return true;
     }
 
     callback("Unable to use **" + fullName + "** right now");
+    return false;
 }
 
 function completeQuest(user, fullName, callback) {
-    
+    if(user.quests && user.quests.length > 0) {
+        quest.completeNext(user, callback);
+        return true;
+    }
+
+    callback("**" + user.username + "**, can't use **" 
+        + fullName + "**. There are no quests to complete");
+    return false;
+}
+
+function getClaimedCard(user, fullName, args, callback) {
+    if(a) {
+        var foundarg = args.filter(a => a.replace('_', '')[1] == '-');
+        var col = collections.filter(c => c.includes(foundarg))[0];
+        if(col) {
+            var req = { collection: col };
+            dbManager.claim(user, undefined, undefined, callback, req);
+            return;
+        }
+    }
+
+    callback("**" + user.username + "**, this card requires collection name to be passed.\n" 
+        + "Use `->inv use " + fullName + ", -collection`");
 }

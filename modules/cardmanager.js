@@ -21,11 +21,15 @@ function updateCards(connection) {
                 let files = fs.readdirSync(path);
 
                 for (let i in files) {
-                    var card = getCardObject(files[i], item);
-                    if (res.filter((e) => {
-                        return e.name == card.name && e.collection === item;
-                    }).length == 0) {
-                        newCards.push(card);
+                    let ext = files[i].split('.')[1];
+
+                    if(ext == 'png' || ext == 'jpg' || ext == 'gif') {
+                        var card = getCardObject(files[i], item);
+                        if (res.filter((e) => {
+                            return e.name == card.name && e.collection === item;
+                        }).length == 0) {
+                            newCards.push(card);
+                        }
                     }
                 }
 

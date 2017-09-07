@@ -27,7 +27,7 @@ function processRequest(userID, args, callback) {
                 break;
             case "use":
                 if(args.length > 0)
-                    useItem(dbUser, args.join('_'), callback);
+                    useItem(dbUser, args, callback);
                 break;
         }
     }).catch(e => logger.error(e));
@@ -68,17 +68,20 @@ function showInventory(user, callback) {
     callback(resp);
 }
 
-function useItem (user, name, callback) {
+function useItem (user, args, callback) {
     if(!user.inventory || user.inventory.length == 0) {
         callback("**" + user.username + "**, your inventory is **empty**");
         return;
     }
 
+    let passArgs = args.join('_').split(',');
+    console.log(passArgs);
+    let name = passArgs[0];
     let item = user.inventory.filter(i => i.name.includes(name))[0];
     if(item) {
         switch(item.type){
             case 'craft':
-                forge.useCard(user, item.name, callback);
+                forge.useCard(user, item.name, passArgs[1], callback);
                 break;
         }
         return;
