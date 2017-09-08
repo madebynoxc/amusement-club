@@ -168,7 +168,37 @@ function craftCard(user, args, callback) {
 }
 
 function craftOrdinary(user, cards, callback) {
-    
+    let level = cards[0].level;
+    let collection = cards[0].collection;
+    for(i in cards) {
+        if(cards[i].level != level) {
+            callback("**" + user.username + "**, please, specify cards of the same level");
+            return;
+        }
+    }
+
+    if((level == 1 && cards.length > 4) 
+        || (level == 1 && cards.level == 3)
+        || (level == 2 && cards.length > 2)) {
+        callback("**" + user.username + "**, card amount mismatch.\n"
+            + "You need **two or four 1-star cards** or **two 2-star cards**");
+        return;
+    }
+
+    if(level == 1 && cards.length >= 4) level = 3;
+    else level += 1;
+
+    for(j in cards) {
+        let match = user.cards.filter(c => c.name == cards[j].name)[0];
+        if(match) user.cards.splice(user.cards.indexOf(match), 1);
+    }
+
+    ucollection.update( 
+        { discord_id: user.discord_id},
+        { $set: {cards: user.cards } }
+    ).then(u => { 
+        requestCard(user, {level: level}, callback);
+    });
 }
 
 // For cards with passive effects
@@ -272,4 +302,21 @@ function getClaimedCard(user, fullName, args, callback) {
     for(i in collections) resp += collections[i] + ', ';
     callback(resp);
     return false;
+}
+
+function requestCard(user, findObj, callback) {
+    if(!findObj) findObj = {};
+    ccollection.find(findObj).toArray((err, i) => {
+        if(err){ logger.error(err); return; }
+
+            let res = _.sample(i);
+            let name = utils.toTitleCase(res.name.replace(/_/g, " "));
+            ucollection.update(
+                    { discord_id: user.discord_id },
+                    { $push: {cards: res } }
+            ).then(u => {
+                callback("**" + user.username + "**, you got **" + name + "**!",
+                        {file: dbManager.getCardFile(res)});
+        }).catch(e => logger.error(e));
+    });
 }
