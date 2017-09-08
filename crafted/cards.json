@@ -20,7 +20,7 @@
     }, {
         "name": "delightful_sunset",
         "level": 8,
-        "effect": "Reduces claim cost by 200 🍅 Tomatoes when used [24hr cooldown]",
+        "effect": "Reduces claim cost by __200 🍅 Tomatoes__ when used",
         "cost": 1300,
         "compressed": false,
         "cooldown": 24,
@@ -39,7 +39,7 @@
     }, {
         "name": "long-awaited_date",
         "level": 5,
-        "effect": "Completes your first quest when used [20hr cooldown]",
+        "effect": "Completes your __first quest__ when used",
         "cost": 2200,
         "compressed": false,
         "cooldown": 20,
@@ -48,9 +48,9 @@
         ]
     }, {
         "name": "onward_to_victory",
-        "level": 8,
+        "level": 5,
         "effect": "Get 50% more hero expirience",
-        "cost": 1800,
+        "cost": 3800,
         "compressed": false,
         "cards": [
             "onward_to_battle", "sword_of_victory"
@@ -85,7 +85,7 @@
     }, {
         "name": "the_space_unity",
         "level": 9,
-        "effect": "Gives a random card from __specified collection__ when used [20hr cooldown]",
+        "effect": "Gives a random card from __specified collection__ when used",
         "cost": 2900,
         "compressed": false,
         "cooldown": 20,

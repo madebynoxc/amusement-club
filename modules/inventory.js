@@ -1,5 +1,5 @@
 module.exports = {
-    processRequest, connect, useItem
+    processRequest, connect, useItem, has
 }
 
 var mongodb, ucollection;
@@ -52,6 +52,12 @@ function getInfo(user, name, callback) {
     callback("**" + user.username + "**, you don't have item named **" + item + "**");
 }
 
+function has(user, name) {
+    if(user.inventory)
+        return user.inventory.filter(i => i.name == name);
+    return undefined;
+}
+
 function showInventory(user, callback) {
     if(!user.inventory || user.inventory.length == 0) {
         callback("**" + user.username + "**, your inventory is **empty**");
@@ -75,14 +81,32 @@ function useItem (user, args, callback) {
     }
 
     let passArgs = args.join('_').split(',');
-    console.log(passArgs);
     let name = passArgs[0];
     let item = user.inventory.filter(i => i.name.includes(name))[0];
+    let isComplete = false;
     if(item) {
-        switch(item.type){
+        if(item.lastused) {
+            let cooldown = item.cooldown - utils.getHoursDifference(item.lastused);
+            let itemname = utils.toTitleCase(item.name.replace(/_/g, " "));
+            if(cooldown && cooldown > 0){
+                callback("**" + user.username + "**, the item **" + itemname
+                + "** is on cooldown for **" + cooldown + "** more hours");
+                return;
+            }
+        }
+
+        switch(item.type) {
             case 'craft':
-                forge.useCard(user, item.name, passArgs[1], callback);
+                isComplete = forge.useCard(user, item.name, passArgs[1], callback);
                 break;
+        }
+
+        if(isComplete) {
+            item.lastused = new Date();
+            ucollection.update( 
+                { discord_id: user.discord_id },
+                { $set: {inventory: user.inventory} }
+            ).then(u => {callback("Item is now on cooldown")});
         }
         return;
     }

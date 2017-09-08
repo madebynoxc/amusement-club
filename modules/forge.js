@@ -2,14 +2,16 @@ module.exports = {
     processRequest, connect, getInfo, useCard, getCardEffect
 }
 
-var mongodb, ucollection;
+var mongodb, ucollection, ccollections;
 const fs = require('fs');
+const _ = require("lodash");
 const crafted = require('../crafted/cards.json');
 const logger = require('./log.js');
 const utils = require('./localutils.js');
 const heroes = require('./heroes.js');
 const quest = require('./quest.js');
 const dbManager = require("./dbmanager.js");
+const inv = require("./inventory.js");
 
 var collections = [];
 fs.readdir('./cards', (err, items) => {
@@ -20,6 +22,7 @@ fs.readdir('./cards', (err, items) => {
 function connect(db) {
     mongodb = db;
     ucollection = db.collection('users');
+    ccollection = db.collection('cards');
 }
 
 function processRequest(userID, args, callback) {
@@ -57,6 +60,7 @@ function getInfo(user, name, callback, image = false) {
             res += (i + 1 == card.cards.length)? " " : ", ";
         }
         res += "\nEffect: *" + card.effect + "*";
+        if(card.cooldown) res += "\nCooldown: **" + card.cooldown + "**";
         if(!image) res += "\nUse `->forge [card1], [card2], ...`";
         callback(res, image? 
             {file: "./crafted/" + crafted[i].name + (crafted[i].compressed? '.jpg' : '.png')} : 
@@ -74,6 +78,7 @@ function craftCard(user, args, callback) {
     }
 
     let cardNames = [];
+    let cardObjects = [];
     for(i in cards) {
         let name = cards[i];
         if(cards[i][0] == "_") 
@@ -87,6 +92,20 @@ function craftCard(user, args, callback) {
             return;
         }
         cardNames.push(card.name);
+        cardObjects.push(card);
+    }
+
+    let isCraft = cardObjects[0].craft;
+    for(i in cardObjects) {
+        if(cardObjects[i].craft != isCraft) {
+            callback("All cards have to be the same type (you can't mix *craft* and *ordinary* cards)");
+            return;
+        }
+    }
+
+    if(!isCraft) {
+        craftOrdinary(user, cardObjects, callback);
+        return;
     }
 
     for(i in crafted) {
@@ -124,7 +143,10 @@ function craftCard(user, args, callback) {
             ucollection.update( 
                 { discord_id: user.discord_id},
                 { 
-                    $push: {inventory: {name: crafted[i].name, type: 'craft'}},
+                    $push: {inventory: {
+                        name: crafted[i].name, 
+                        cooldown: crafted[i].cooldown,
+                        type: 'craft'}},
                     $inc: {exp: -crafted[i].cost},
                     $set: {cards: user.cards }
                 }
@@ -145,15 +167,28 @@ function craftCard(user, args, callback) {
         + "**, you can't forge a craft card with those source cards");
 }
 
+function craftOrdinary(user, cards, callback) {
+    
+}
+
 // For cards with passive effects
-function getCardEffect(user, card, value, ...params) {
-    switch(card) {
-        case '':
+function getCardEffect(user, action, ...params) {
+    switch(action) {
+        case 'claim':
+            if(inv.has(user, 'blue_free_eyes')) params[0] += 200;
+            if(inv.has(user, 'gift_from_tohru') 
+                && (!user.dailystats || user.dailystats.claim == 0)) 
+                params[1].level = 3;
             break;
-        case '':
+        case 'heroup':
+            if(inv.has(user, 'onward_to_victory')) params[0] += params[0] * .5;
             break;
+        case 'sell':
+            if(inv.has(user, 'sushi_squad')) params[0] += params[0] * .2;
+        case 'daily':
+            if(inv.has(user, 'the_ruler_jeanne')) params[0] = 15;
     }
-    return value;
+    return params;
 }
 
 // For cards that are used
@@ -161,7 +196,7 @@ function useCard(user, name, args, callback) {
     let card = crafted.filter(c => c.name == name)[0];
     let fullName = utils.toTitleCase(name.replace(/_/g, " "));
     let isComplete = false;
-    //let cooldown = card.cooldown - utils.getHoursDifference()
+
     switch(name) {
         case 'delightful_sunset':
             isComplete = reduceClaims(user, fullName, callback);
@@ -174,21 +209,18 @@ function useCard(user, name, args, callback) {
             break;
     }
 
-    /*if(isComplete) {
-        let index = user.inventory.indexOf(card);
-        card.lastUsed = new Date();
-    }*/
+    return isComplete;
 }
 
 function reduceClaims(user, fullName, callback) {
-    if(user.dailystats && user.dailystats.claims > 4) {
-        let claims = user.dailystats.claims - 4;
+    if(user.dailystats && user.dailystats.claim > 4) {
+        let claims = user.dailystats.claim - 4;
         ucollection.update( 
             { discord_id: user.discord_id},
-            { $inc: {'dailystats.claims': -4} }
+            { $inc: {'dailystats.claim': -4} }
         ).then(u => {
             callback("**" + user.username + "**, you used **" + fullName + "** "
-                + "that reduced your claim cost to " + (50 * (claims + 1)));
+                + "that reduced your claim cost to **" + (50 * (claims + 1)) + "**");
         }).catch(e => logger.error(e));
         return true;
     }
@@ -209,16 +241,35 @@ function completeQuest(user, fullName, callback) {
 }
 
 function getClaimedCard(user, fullName, args, callback) {
-    if(a) {
-        var foundarg = args.filter(a => a.replace('_', '')[1] == '-');
+    if(args) {
+        var foundarg =  args.substr(args.indexOf('-') + 1);
         var col = collections.filter(c => c.includes(foundarg))[0];
         if(col) {
-            var req = { collection: col };
-            dbManager.claim(user, undefined, undefined, callback, req);
-            return;
+            ccollection.find({ collection: col }).toArray((err, i) => {
+                if(err){ logger.error(err); return; }
+
+                let res = _.sample(i);
+                let name = utils.toTitleCase(res.name.replace(/_/g, " "));
+                ucollection.update(
+                    { discord_id: user.discord_id },
+                    { $push: {cards: res } }
+                ).then(u => {
+                    callback("**" + user.username + "**, you got **" + name + "**!",
+                        {file: dbManager.getCardFile(res)});
+                }).catch(e => logger.error(e));
+            });
+            return true;
+        } else {
+            callback("**" + user.username + "**, the collection **" 
+                + foundarg + "** was not found");
         }
+        return false;
     }
 
-    callback("**" + user.username + "**, this card requires collection name to be passed.\n" 
-        + "Use `->inv use " + fullName + ", -collection`");
+    let resp = "**" + user.username + "**, this card requires collection name to be passed.\n" 
+    resp += "Use `->inv use " + fullName.toLowerCase() + ", -collection`\n";
+    resp +=  "You can use collections: ";
+    for(i in collections) resp += collections[i] + ', ';
+    callback(resp);
+    return false;
 }

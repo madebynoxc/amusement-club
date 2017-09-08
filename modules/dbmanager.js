@@ -2,7 +2,7 @@ module.exports = {
     connect, disconnect, claim, addXP, getXP, doesUserHave,
     getCards, summon, transfer, sell, award, getUserName,
     pay, daily, fixUserCards, getQuests, getBestCardSorted,
-    leaderboard_new, difference, dynamicSort, countCardLevels
+    leaderboard_new, difference, dynamicSort, countCardLevels, getCardFile
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -101,7 +101,7 @@ function insertCards(names, col) {
     console.log(col + " update finished");
 }
 
-function claim(user, guildID, arg, callback, reqObj) {
+function claim(user, guildID, arg, callback) {
     let ucollection = mongodb.collection('users');
     ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
         if(!dbUser) return;
@@ -131,7 +131,6 @@ function claim(user, guildID, arg, callback, reqObj) {
         let collection = mongodb.collection('cards');
         let guild = guilds.filter(g => g.guild_id == guildID)[0];
         let find = (guild && !any)? { collection: guild.collection } : {};
-        if(reqObj) find = reqObj;
 
         collection.find(find).toArray((err, i) => {
             let res = _.sample(i);
