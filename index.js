@@ -246,6 +246,7 @@ function getCommand(m, callback) {
                     });
                 }
                 return;
+            case 'craft':
             case 'forge':
                 if(channelType == 0) callback("You forge cards in DM");
                 else if(channelType == 1) callback('This operation is possible in bot channel only');

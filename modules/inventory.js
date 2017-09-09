@@ -49,7 +49,7 @@ function getInfo(user, name, callback) {
         return;
     }
 
-    callback("**" + user.username + "**, you don't have item named **" + item + "**");
+    callback("**" + user.username + "**, you don't have item named **" + name + "**");
 }
 
 function has(user, name) {

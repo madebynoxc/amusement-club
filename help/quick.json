@@ -148,7 +148,41 @@
     {
         "name": "forge",
         "values": [
-            "**This feature comes in 1.9.0 patch**"
+            "**->forge [card1], [card2]...**",
+            "->forge info card name (shows info about craft card)",
+            "->forge lady toshino, akari what (claims new card, consuming old)",
+            "->forge info space (will show info about The Space Unity card)"
+        ]
+    },
+    {
+        "name": "craft",
+        "values": [
+            "**->craft [card1], [card2]...**",
+            "->craft info card name (shows info about craft card)",
+            "->craft lady toshino, akari what (claims new card, consuming old)",
+            "->craft info space (will show info about The Space Unity card)"
+        ]
+    },
+    {
+        "name": "inventory",
+        "values": [
+            "**->inventory or ->inv**",
+            "->inv info [item]",
+            "->inv use [item]",
+            "->inv (shows your inventory)",
+            "->inv info space (will show info about The Space Unity craft card)",
+            "->inv use space (will use The Space Unity craft card)"
+        ]
+    },
+    {
+        "name": "inv",
+        "values": [
+            "**->inventory or ->inv**",
+            "->inv info [item]",
+            "->inv use [item]",
+            "->inv (shows your inventory)",
+            "->inv info space (will show info about The Space Unity craft card)",
+            "->inv use space (will use The Space Unity craft card)"
         ]
     },
     {
