@@ -54,8 +54,8 @@ function getInfo(user, name, callback) {
 
 function has(user, name) {
     if(user.inventory)
-        return user.inventory.filter(i => i.name == name);
-    return undefined;
+        return user.inventory.filter(i => i.name == name).length > 0;
+    return false;
 }
 
 function showInventory(user, callback) {

@@ -11,7 +11,7 @@
     }, {
         "name": "cherry_blossoms",
         "level": 5,
-        "effect": "Get 100 🍅 Tomatoes every time you forge ordinary cards",
+        "effect": "Get 200 🍅 Tomatoes every time you forge ordinary cards",
         "cost": 2000,
         "compressed": false,
         "cards": [
@@ -40,7 +40,7 @@
         "name": "long-awaited_date",
         "level": 5,
         "effect": "Completes your __first quest__ when used",
-        "cost": 2200,
+        "cost": 3200,
         "compressed": false,
         "cooldown": 20,
         "cards": [
@@ -68,16 +68,16 @@
         "name": "sushi_squad",
         "level": 4,
         "effect": "Get 20% more 🍅 Tomatoes when you sell a card",
-        "cost": 2700,
+        "cost": 1700,
         "compressed": false,
         "cards": [
             "rolled_sushi_band", "rolled_sushi_party"
         ]
     }, {
         "name": "the_ruler_jeanne",
-        "level": 10,
+        "level": 12,
         "effect": "Get `->daily` in 15 hours instead of 20",
-        "cost": 2400,
+        "cost": 2900,
         "compressed": false,
         "cards": [
             "dark_jeanne", "light_jeanne"
@@ -86,7 +86,7 @@
         "name": "the_space_unity",
         "level": 9,
         "effect": "Gives a random card from __specified collection__ when used",
-        "cost": 2900,
+        "cost": 3900,
         "compressed": false,
         "cooldown": 20,
         "cards": [

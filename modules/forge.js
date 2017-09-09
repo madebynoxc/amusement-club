@@ -57,13 +57,13 @@ function getInfo(user, name, callback, image = false) {
         res += "\nRequired cards: ";
         for(i in card.cards) {
             res += "**" + utils.toTitleCase(card.cards[i].replace(/_/g, " ")) + "**";
-            res += (i + 1 == card.cards.length)? " " : ", ";
+            res += (i == card.cards.length)? " " : ", ";
         }
         res += "\nEffect: *" + card.effect + "*";
         if(card.cooldown) res += "\nCooldown: **" + card.cooldown + "**";
         if(!image) res += "\nUse `->forge [card1], [card2], ...`";
         callback(res, image? 
-            {file: "./crafted/" + crafted[i].name + (crafted[i].compressed? '.jpg' : '.png')} : 
+            {file: "./crafted/" + card.name + (card.compressed? '.jpg' : '.png')} : 
             undefined);
     } else callback("**" + user.username + 
         "**, forged card with name **" + name.replace(/_/g, " ") + 
@@ -91,13 +91,15 @@ function craftCard(user, args, callback) {
                 + "** was not found, or you don't have it");
             return;
         }
-        cardNames.push(card.name);
+        cardNames.push(card.name.toLowerCase());
         cardObjects.push(card);
     }
 
     let isCraft = cardObjects[0].craft;
+    if(!isCraft) isCraft = false;
     for(i in cardObjects) {
-        if(cardObjects[i].craft != isCraft) {
+        var cr = cardObjects[i].craft == undefined? false : cardObjects[i].craft;
+        if(cr != isCraft) {
             callback("**Error** \nAll cards have to be the same type "
                 + "(you can't mix **craft** and **ordinary** cards)");
             return;
@@ -132,7 +134,7 @@ function craftCard(user, args, callback) {
             }
 
             for(j in cardNames) {
-                let match = user.cards.filter(c => c.name == cardNames[j])[0];
+                let match = user.cards.filter(c => c.name.toLowerCase() == cardNames[j])[0];
                 if(match) {
                     user.cards.splice(user.cards.indexOf(match), 1);
                 } else {
@@ -215,6 +217,7 @@ function craftOrdinary(user, cards, callback) {
                 $inc: {exp: bonus[0] }
             }
         ).then(u => { 
+            if(bonus) m += "\nAdded 200 🍅 Tomatoes from card effect";
             callback(m, o);
         }).catch(e => {logger.error(e)});
     });
@@ -239,7 +242,7 @@ function getCardEffect(user, action, ...params) {
             if(inv.has(user, 'the_ruler_jeanne')) params[1] = 15;
             break;
         case 'forge':
-            if(inv.has(user, 'cherry_blossoms')) params[0] = 100;
+            if(inv.has(user, 'cherry_blossoms')) params[0] = 200;
             break;
         case 'send':
             if(params[0].inventory && inv.has(params[0], 'skies_of_friendship')) {
@@ -247,7 +250,7 @@ function getCardEffect(user, action, ...params) {
                     { discord_id: user.discord_id},
                     { $inc: {exp: 100} }
                 ).then(u => {
-                    callback("**" + user.username + "**, you got **100 Tomatoes** for sending card to this user");
+                    params[1]("**" + user.username + "**, you got **100 Tomatoes** for sending card to this user");
                 });
             }
             break;
