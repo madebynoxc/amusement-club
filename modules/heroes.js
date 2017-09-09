@@ -146,8 +146,8 @@ function getHeroEffect(user, action, value, ...params) {
                 if(action == 'send') return value + (params[0] * 80);
                 break;
             case 'toshino kyoko':
-                if(action == 'addXP') return value * 2;
-                if(action == 'forge') {  }
+                if(action == 'addXP') return value * 1.8;
+                if(action == 'forge') return 0;
                 break;
             case 'funami yui':
                 if(action == 'daily') return value * 80;

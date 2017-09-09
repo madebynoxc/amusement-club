@@ -118,9 +118,10 @@ function craftCard(user, args, callback) {
         if(dif.length == 0) {
             let err = "";
             let curName = utils.toTitleCase(crafted[i].name.replace(/_/g, " "));
-            if(user.exp < crafted[i].cost) {
+            let cost = heroes.getHeroEffect(user, 'forge', crafted[i].cost);
+            if(user.exp < cost) {
                 err += "**" + user.username + "**, you don't have enough 🍅 Tomatoes "
-                + "to craft this card. You need at least **" + crafted[i].cost + "**🍅\n";
+                + "to craft this card. You need at least **" + cost + "**🍅\n";
             }
 
             if(!user.hero || parseFloat(heroes.getHeroLevel(user.hero.exp)) < crafted[i].level) {
@@ -150,7 +151,7 @@ function craftCard(user, args, callback) {
                         name: crafted[i].name, 
                         cooldown: crafted[i].cooldown,
                         type: 'craft'}},
-                    $inc: {exp: -crafted[i].cost},
+                    $inc: {exp: -cost},
                     $set: {cards: user.cards }
                 }
             ).then(u => {
