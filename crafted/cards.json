@@ -11,7 +11,7 @@
     }, {
         "name": "cherry_blossoms",
         "level": 5,
-        "effect": "Get 200 🍅 Tomatoes every time you forge ordinary cards",
+        "effect": "Get 100 🍅 Tomatoes every time you forge ordinary cards",
         "cost": 2000,
         "compressed": false,
         "cards": [

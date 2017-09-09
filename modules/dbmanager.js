@@ -130,7 +130,9 @@ function claim(user, guildID, arg, callback) {
 
         let collection = mongodb.collection('cards');
         let guild = guilds.filter(g => g.guild_id == guildID)[0];
-        let find = (guild && !any)? { collection: guild.collection } : {};
+        let find = {};
+        if(guild && !any) find.collection = guild.collection;
+        find = forge.getCardEffect(user, 'claim', find)[0];
 
         collection.find(find).toArray((err, i) => {
             let res = _.sample(i);
@@ -322,6 +324,7 @@ function transfer(from, to, card, callback) {
         }
 
         let match = getBestCardSorted(dbUser.cards, check)[0];
+        
         if(match){
             let name = utils.toTitleCase(match.name.replace(/_/g, " "));
             let hours = 12 - utils.getHoursDifference(match.frozen);
@@ -364,7 +367,10 @@ function transfer(from, to, card, callback) {
                     {
                         $push: {cards: match }
                     }
-                );
+                ).then(() => {
+                    forge.getCardEffect(user, 'send', u2);
+                });
+
                 callback("**" + from.username + "** sent **" + name + "** to **" + u2.username + "**");
             });
             return;
@@ -406,8 +412,8 @@ function sell(user, card, callback) {
 
         let match = getBestCardSorted(dbUser.cards, check)[0];
         if(match) {
-            let exp = settings.cardprice[match.level - 1];
-            let increment = dbUser.hero? {exp: exp, 'hero.exp': .1} : {exp: exp}
+            let exp = forge.getCardEffect(user, 'sell', settings.cardprice[match.level - 1]);
+            let increment = dbUser.hero? {exp: exp, 'hero.exp': .1} : {exp: exp};
             cards.splice(cards.indexOf(match), 1);
             collection.update(
                 { discord_id: user.id },
@@ -434,9 +440,12 @@ function daily(uID, callback) {
         
         if(user.dailystats && user.dailystats.claim) 
             amount = Math.max(heroes.getHeroEffect(user, 'daily', user.dailystats.claim), 100);
+
+        let cardEffect = forge.getCardEffect(user, 'daily', amount, 20);
+        amount = cardEffect[0];
         
         if(stars < 35) amount += 200;
-        let hours = 20 - utils.getHoursDifference(user.lastdaily);
+        let hours = cardEffect[1] - utils.getHoursDifference(user.lastdaily);
         let increment = user.hero? {exp: amount, 'hero.exp': 1} : {exp: amount};
         if(!hours || hours <= 0) {
             collection.update(

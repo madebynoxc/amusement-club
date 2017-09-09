@@ -98,7 +98,8 @@ function craftCard(user, args, callback) {
     let isCraft = cardObjects[0].craft;
     for(i in cardObjects) {
         if(cardObjects[i].craft != isCraft) {
-            callback("All cards have to be the same type (you can't mix *craft* and *ordinary* cards)");
+            callback("**Error** \nAll cards have to be the same type "
+                + "(you can't mix **craft** and **ordinary** cards)");
             return;
         }
     }
@@ -164,17 +165,26 @@ function craftCard(user, args, callback) {
     }
 
     callback("**" + user.username 
-        + "**, you can't forge a craft card with those source cards");
+        + "**, you can't forge a craft card using those source cards");
 }
 
 function craftOrdinary(user, cards, callback) {
     let level = cards[0].level;
     let collection = cards[0].collection;
+    let passed = [];
     for(i in cards) {
         if(cards[i].level != level) {
             callback("**" + user.username + "**, please, specify cards of the same level");
             return;
         }
+
+        if(passed.includes(cards[i].name)) {
+            callback("**" + user.username + "**, you can't use cards with same name!");
+            return;
+        }
+
+        if(cards[i].collection != collection) collection = null;
+        passed.push(cards[i].name);
     }
 
     if((level == 1 && cards.length > 4) 
@@ -186,18 +196,27 @@ function craftOrdinary(user, cards, callback) {
     }
 
     if(level == 1 && cards.length >= 4) level = 3;
-    else level += 1;
+    else if(level != 3) level += 1;
 
     for(j in cards) {
         let match = user.cards.filter(c => c.name == cards[j].name)[0];
         if(match) user.cards.splice(user.cards.indexOf(match), 1);
     }
 
-    ucollection.update( 
-        { discord_id: user.discord_id},
-        { $set: {cards: user.cards } }
-    ).then(u => { 
-        requestCard(user, {level: level}, callback);
+    let req = {level: level};
+    let bonus = getCardEffect(user, 'forge', 0);
+    if(collection) req.collection = collection;
+    requestCard(user, req, (m, o, c) => {
+        user.cards.push(c);
+        ucollection.update( 
+            { discord_id: user.discord_id},
+            { 
+                $set: {cards: user.cards },
+                $inc: {exp: bonus[0] }
+            }
+        ).then(u => { 
+            callback(m, o);
+        }).catch(e => {logger.error(e)});
     });
 }
 
@@ -205,18 +224,33 @@ function craftOrdinary(user, cards, callback) {
 function getCardEffect(user, action, ...params) {
     switch(action) {
         case 'claim':
-            if(inv.has(user, 'blue_free_eyes')) params[0] += 200;
             if(inv.has(user, 'gift_from_tohru') 
                 && (!user.dailystats || user.dailystats.claim == 0)) 
-                params[1].level = 3;
+                params[0].level = 3;
             break;
         case 'heroup':
             if(inv.has(user, 'onward_to_victory')) params[0] += params[0] * .5;
             break;
         case 'sell':
             if(inv.has(user, 'sushi_squad')) params[0] += params[0] * .2;
+            break;
         case 'daily':
-            if(inv.has(user, 'the_ruler_jeanne')) params[0] = 15;
+            if(inv.has(user, 'blue_free_eyes')) params[0] += 200;
+            if(inv.has(user, 'the_ruler_jeanne')) params[1] = 15;
+            break;
+        case 'forge':
+            if(inv.has(user, 'cherry_blossoms')) params[0] = 100;
+            break;
+        case 'send':
+            if(params[0].inventory && inv.has(params[0], 'skies_of_friendship')) {
+                ucollection.update( 
+                    { discord_id: user.discord_id},
+                    { $inc: {exp: 100} }
+                ).then(u => {
+                    callback("**" + user.username + "**, you got **100 Tomatoes** for sending card to this user");
+                });
+            }
+            break;
     }
     return params;
 }
@@ -310,13 +344,14 @@ function requestCard(user, findObj, callback) {
         if(err){ logger.error(err); return; }
 
             let res = _.sample(i);
+            if(!res) return;
             let name = utils.toTitleCase(res.name.replace(/_/g, " "));
             ucollection.update(
                     { discord_id: user.discord_id },
                     { $push: {cards: res } }
             ).then(u => {
                 callback("**" + user.username + "**, you got **" + name + "**!",
-                        {file: dbManager.getCardFile(res)});
+                    {file: dbManager.getCardFile(res)}, res);
         }).catch(e => logger.error(e));
     });
 }

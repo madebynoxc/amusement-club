@@ -106,7 +106,9 @@ function useItem (user, args, callback) {
             ucollection.update( 
                 { discord_id: user.discord_id },
                 { $set: {inventory: user.inventory} }
-            ).then(u => {callback("Item is now on cooldown")});
+            ).then(u => {callback("Item was used and now on cooldown")});
+        } else {
+            callback("**" + user.username + "**, impossible to use this item D:");
         }
         return;
     }
