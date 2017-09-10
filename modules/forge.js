@@ -218,7 +218,7 @@ function craftOrdinary(user, cards, callback) {
                 $inc: {exp: bonus[0] }
             }
         ).then(u => { 
-            if(bonus) m += "\nAdded 200 🍅 Tomatoes from card effect";
+            if(bonus[0] > 0) m += "\nAdded " + bonus[0] + "🍅 Tomatoes from card effect";
             callback(m, o);
         }).catch(e => {logger.error(e)});
     });
