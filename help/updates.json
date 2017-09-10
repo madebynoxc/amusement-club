@@ -1,5 +1,15 @@
 [
     {
+        "version": "1.9.0",
+        "changes": [
+            "**Major Update**",
+            "Added card crafting functionality", 
+            "Added craft cards",
+            "Added advanced help",
+            "Added `->stats` command"
+        ]
+    },
+    {
         "version": "1.8.9",
         "changes": [
             "Changed effects of Chinatsu's bufs, nerfed Akari's 'send card' award", 

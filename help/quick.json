@@ -202,5 +202,14 @@
             "**->has [user] [card]**",
             "->has @user chiina mirakurun"
         ]
+    },
+    {
+        "name": "stats",
+        "values": [
+            "**->stats [?hero] [?cards]**",
+            "->stats (shows general bot statistics)",
+            "->stats hero (shows general hero statistics)",
+            "->stats cards (shows general card statistics)"
+        ]
     }
 ]

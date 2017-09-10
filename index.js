@@ -8,6 +8,7 @@ const react = require('./modules/reactions.js');
 const quickhelp = require('./help/quick.json');
 const heroDB = require('./modules/heroes.js');
 const forge = require('./modules/forge.js');
+const stats = require('./modules/stats.js');
 const inventory = require('./modules/inventory.js');
 const changelog = require('./help/updates.json');
 const helpMod = require('./modules/help.js');
@@ -263,6 +264,14 @@ function getCommand(m, callback) {
                 if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
                     inventory.processRequest(m.author.id, cnt, (text, file) => {
+                        callback(text, file);
+                    });
+                }
+                return;
+            case 'stats':
+                if(channelType == 1) callback('This operation is possible in bot channel only');
+                else {
+                    stats.processRequest(cnt, (text, file) => {
                         callback(text, file);
                     });
                 }

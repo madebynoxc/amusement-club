@@ -23,6 +23,7 @@ const listing = require('./reactions.js');
 const cardmanager = require('./cardmanager.js');
 const forge = require('./forge.js');
 const inv = require('./inventory.js');
+const stats = require('./stats.js');
 const lev = require('js-levenshtein');
 
 function disconnect() {
@@ -41,6 +42,7 @@ function connect(callback) {
         heroes.connect(db);
         forge.connect(db);
         inv.connect(db);
+        stats.connect(db);
         cardmanager.updateCards(db);
 
         if(callback) callback();   

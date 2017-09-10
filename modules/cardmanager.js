@@ -30,7 +30,7 @@ function updateCards(connection) {
                         }).length == 0) {
                             newCards.push(card);
                         }
-                    }
+                    } else  logger.error("Can't parse card: " + files[i]);
                 }
 
                 insertCrads(newCards);
@@ -40,6 +40,7 @@ function updateCards(connection) {
 }
 
 function getCardObject(name, collection) {
+    name = name.replace(' ', '');
     let split = name.split('.');
     let craft = name.substr(1, 2) === "cr";
 
