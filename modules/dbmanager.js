@@ -147,7 +147,7 @@ function claim(user, guildID, arg, callback) {
             
             if(claimCost >= 500) phrase += "*You are claiming for extremely high price*\n";
             if(dbUser.cards.filter(
-                c => c.name == res.name && c.collection == re.collection) > 0)
+                c => c.name == res.name && c.collection == res.collection) > 0)
                 phrase += "(*you already own this card*)";
             phrase += "Your next claim will cost **" + nextClaim + "**🍅";
 
