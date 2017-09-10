@@ -1,5 +1,5 @@
 module.exports = {
-    checkClaim, connect, getRandomQuests, 
+    checkClaim, connect, getRandomQuests, completeNext,
     checkXP, checkSend, checkSummon, addBonusQuest
 }
 
@@ -80,6 +80,14 @@ function addBonusQuest(user, callback) {
         { discord_id: user.discord_id },
         { $set: {quests: [getRandomQuests()[0]]} }
     ).then(e => callback());
+}
+
+function completeNext(user, callback) {
+    if(user.quests && user.quests.length > 0) {
+        let q = user.quests[0];
+        callback(completeMsg(user, q));
+        removeQuest(user, q, callback);
+    }
 }
 
 function removeQuest(user, quest, callback) {

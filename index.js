@@ -10,6 +10,7 @@ const heroDB = require('./modules/heroes.js');
 const forge = require('./modules/forge.js');
 const inventory = require('./modules/inventory.js');
 const changelog = require('./help/updates.json');
+const helpMod = require('./modules/help.js');
 var bot, curgame = 0;
 
 //https://discordapp.com/oauth2/authorize?client_id=340988108222758934&scope=bot&permissions=125952
@@ -103,7 +104,8 @@ function getCommand(m, callback) {
 
         switch(sb) {
             case 'help': 
-                callback(showHelp(m));
+                //callback(showHelp(m));
+                helpMod.processRequest(m, cnt, callback);
                 return;
             case 'cl': 
             case 'claim': 
@@ -246,6 +248,7 @@ function getCommand(m, callback) {
                     });
                 }
                 return;
+            case 'craft':
             case 'forge':
                 if(channelType == 0) callback("You forge cards in DM");
                 else if(channelType == 1) callback('This operation is possible in bot channel only');

@@ -1,5 +1,5 @@
 module.exports = {
-    connect, processRequest, getHeroEffect, getHeroLevel
+    connect, processRequest, getHeroEffect, getHeroLevel, addXP
 }
 
 var mongodb, ucollection;
@@ -8,6 +8,7 @@ const logger = require('./log.js');
 const dbManager = require('./dbmanager.js');
 const heroDB = require('../heroes/heroes.json');
 const quests = require('./quest.js');
+const forge = require('./forge.js');
 
 function connect(db) {
     mongodb = db;
@@ -122,7 +123,19 @@ function getHeroLevel(exp) {
     var targetExp = 1.5;
     while((targetExp = Math.pow(1.5, lvl)) < exp) lvl++;
     var rem = (exp/targetExp).toString();
+    
+    if(!rem[2] || !rem[3]) return lvl + '.00';
     return lvl + '.' + rem[2] + rem[3];
+}
+
+function addXP(user, amount) {
+    if(user.hero) {
+        amount = forge.getCardEffect(user, 'heroup', amount)[0];
+        ucollection.update(
+            { discord_id: user.discord_id }, 
+            {$inc: {'hero.exp': amount}}
+        );
+    }
 }
 
 function getHeroEffect(user, action, value, ...params) {
@@ -133,8 +146,8 @@ function getHeroEffect(user, action, value, ...params) {
                 if(action == 'send') return value + (params[0] * 80);
                 break;
             case 'toshino kyoko':
-                if(action == 'addXP') return value * 2;
-                if(action == 'forge') {  }
+                if(action == 'addXP') return value * 1.8;
+                if(action == 'forge') return 0;
                 break;
             case 'funami yui':
                 if(action == 'daily') return value * 80;

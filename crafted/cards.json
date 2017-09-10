@@ -20,9 +20,10 @@
     }, {
         "name": "delightful_sunset",
         "level": 8,
-        "effect": "Reduces claim cosr by 300 🍅 Tomatoes when used [24hr cooldown]",
+        "effect": "Reduces claim cost by __200 🍅 Tomatoes__ when used",
         "cost": 1300,
         "compressed": false,
+        "cooldown": 24,
         "cards": [
             "cherry_sunset", "afterschool_sunset"
         ]
@@ -38,17 +39,18 @@
     }, {
         "name": "long-awaited_date",
         "level": 5,
-        "effect": "When used completes your first quest [20hr cooldown]",
-        "cost": 2200,
+        "effect": "Completes your __first quest__ when used",
+        "cost": 3200,
         "compressed": false,
+        "cooldown": 20,
         "cards": [
             "date_with_ayano", "kyoko_delight"
         ]
     }, {
         "name": "onward_to_victory",
-        "level": 8,
+        "level": 5,
         "effect": "Get 50% more hero expirience",
-        "cost": 1800,
+        "cost": 3800,
         "compressed": false,
         "cards": [
             "onward_to_battle", "sword_of_victory"
@@ -66,26 +68,27 @@
         "name": "sushi_squad",
         "level": 4,
         "effect": "Get 20% more 🍅 Tomatoes when you sell a card",
-        "cost": 2700,
+        "cost": 1700,
         "compressed": false,
         "cards": [
             "rolled_sushi_band", "rolled_sushi_party"
         ]
     }, {
         "name": "the_ruler_jeanne",
-        "level": 10,
+        "level": 12,
         "effect": "Get `->daily` in 15 hours instead of 20",
-        "cost": 2400,
+        "cost": 2900,
         "compressed": false,
         "cards": [
             "dark_jeanne", "light_jeanne"
         ]
     }, {
         "name": "the_space_unity",
-        "level": 6,
-        "effect": "When used gives a random card from **specified collection** [20hr cooldown]",
-        "cost": 2900,
+        "level": 9,
+        "effect": "Gives a random card from __specified collection__ when used",
+        "cost": 3900,
         "compressed": false,
+        "cooldown": 20,
         "cards": [
             "deep_space", "dragon_unity"
         ]

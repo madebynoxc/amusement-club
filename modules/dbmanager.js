@@ -2,7 +2,7 @@ module.exports = {
     connect, disconnect, claim, addXP, getXP, doesUserHave,
     getCards, summon, transfer, sell, award, getUserName,
     pay, daily, fixUserCards, getQuests, getBestCardSorted,
-    leaderboard_new, difference, dynamicSort, countCardLevels
+    leaderboard_new, difference, dynamicSort, countCardLevels, getCardFile
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -130,33 +130,38 @@ function claim(user, guildID, arg, callback) {
 
         let collection = mongodb.collection('cards');
         let guild = guilds.filter(g => g.guild_id == guildID)[0];
-        let find = (guild && !any)? { collection: guild.collection } : {};
+        let find = {};
+        if(guild && !any) find.collection = guild.collection;
+        find = forge.getCardEffect(dbUser, 'claim', find)[0];
 
         collection.find(find).toArray((err, i) => {
             let res = _.sample(i);
             let file = getCardFile(res);
+            let name = utils.toTitleCase(res.name.replace(/_/g, " "));
 
             let heroEffect = !heroes.getHeroEffect(dbUser, 'claim', true);
             nextClaim = heroes.getHeroEffect(dbUser, 'claim_akari', nextClaim);
             let phrase = "**" + user.username + "**, you got **" + name + "** \n";
             if(res.craft) 
-                phrase += "This is a **craft card**. Find pair and `->forge` special card of them!";
+                phrase += "This is a **craft card**. Find pair and `->forge` special card of them!\n";
             
-            if(claimCost >= 500) phrase += "*You are claiming for extremely high price*";
+            if(claimCost >= 500) phrase += "*You are claiming for extremely high price*\n";
+            if(dbUser.cards.filter(
+                c => c.name == res.name && c.collection == re.collection) > 0)
+                phrase += "(*you already own this card*)";
             phrase += "Your next claim will cost **" + nextClaim + "**🍅";
 
-            callback(phrase, file);
             stat.claim++;
-
-            let increment = dbUser.hero? {exp: -claimCost, 'hero.exp': .1} : {exp: -claimCost};
+            heroes.addXP(dbUser, .1);
             ucollection.update(
                 { discord_id: user.id },
                 {
                     $push: {cards: res },
                     $set: {dailystats: stat},
-                    $inc: increment
+                    $inc: {exp: -claimCost}
                 }
             ).then(() => {
+                callback(phrase, file);
                 quest.checkClaim(dbUser, (mes)=>{callback(mes)});
             });
         });
@@ -290,11 +295,9 @@ function summon(user, card, callback) {
             if(!stat) stat = {summon:0, send: 0, claim: 0, quests: 0};
             stat.summon++;
 
-            let req = dbUser.hero? 
-            {$set: {dailystats: stat}, $inc: {'hero.exp': .1}} : 
-            {$set: {dailystats: stat}};
+            heroes.addXP(dbUser, .1);
             collection.update(
-                { discord_id: user.id }, req
+                { discord_id: user.id }, {$set: {dailystats: stat}}
             ).then((e) => {
                 quest.checkSummon(dbUser, (mes)=>{callback(mes)});
             });
@@ -321,9 +324,10 @@ function transfer(from, to, card, callback) {
         }
 
         let match = getBestCardSorted(dbUser.cards, check)[0];
+        
         if(match){
             let name = utils.toTitleCase(match.name.replace(/_/g, " "));
-            let hours = 12 - getHoursDifference(match.frozen);
+            let hours = 12 - utils.getHoursDifference(match.frozen);
             if(hours && hours > 0) {
                 callback("**" + from.username + "**, the card **" 
                     + name + "** is frozen for **" 
@@ -348,11 +352,9 @@ function transfer(from, to, card, callback) {
                         + "** tomatoes to **" + dbUser.username 
                         + "** for sending a card!");
 
-                let req = dbUser.hero? 
-                {$set: {cards: cards, dailystats: stat, exp: fromExp }, $inc: {'hero.exp': .3}} : 
-                {$set: {cards: cards, dailystats: stat }};
+                heroes.addXP(dbUser, .3);
                 collection.update(
-                    { discord_id: from.id }, req
+                    { discord_id: from.id }, {$set: {cards: cards, dailystats: stat }}
                 ).then(() => {
                     quest.checkSend(dbUser, match.level, (mes)=>{callback(mes)});
                 });
@@ -363,7 +365,10 @@ function transfer(from, to, card, callback) {
                     {
                         $push: {cards: match }
                     }
-                );
+                ).then(() => {
+                    forge.getCardEffect(dbUser, 'send', u2, callback);
+                });
+
                 callback("**" + from.username + "** sent **" + name + "** to **" + u2.username + "**");
             });
             return;
@@ -405,14 +410,14 @@ function sell(user, card, callback) {
 
         let match = getBestCardSorted(dbUser.cards, check)[0];
         if(match) {
-            let exp = settings.cardprice[match.level - 1];
-            let increment = dbUser.hero? {exp: exp, 'hero.exp': .1} : {exp: exp}
+            heroes.addXP(dbUser, .1);
+            let exp = forge.getCardEffect(dbUser, 'sell', settings.cardprice[match.level - 1])[0];
             cards.splice(cards.indexOf(match), 1);
             collection.update(
                 { discord_id: user.id },
                 {
                     $set: {cards: cards },
-                    $inc: increment
+                    $inc: {exp: exp}
                 }
             );
 
@@ -433,22 +438,25 @@ function daily(uID, callback) {
         
         if(user.dailystats && user.dailystats.claim) 
             amount = Math.max(heroes.getHeroEffect(user, 'daily', user.dailystats.claim), 100);
+
+        let cardEffect = forge.getCardEffect(user, 'daily', amount, 20);
+        amount = cardEffect[0];
         
         if(stars < 35) amount += 200;
-        let hours = 20 - getHoursDifference(user.lastdaily);
-        let increment = user.hero? {exp: amount, 'hero.exp': 1} : {exp: amount};
+        heroes.addXP(user, 1);
+        let hours = cardEffect[1] - utils.getHoursDifference(user.lastdaily);
         if(!hours || hours <= 0) {
             collection.update(
                 { discord_id: uID },
                 {
                     $set: {lastdaily: new Date(), quests: quest.getRandomQuests()},
                     $unset: {dailystats: ""},
-                    $inc: increment
+                    $inc: {exp: amount}
                 }
             );
         } else {
             if(hours == 1){
-                let mins = 60 - (getMinutesDifference(user.lastdaily) % 60);
+                let mins = 60 - (utils.getMinutesDifference(user.lastdaily) % 60);
                 callback("**" + user.username + "**, you can claim daily 🍅 in **" + mins + " minutes**");
             } else 
                 callback("**" + user.username + "**, you can claim daily 🍅 in **" + hours + " hours**");
@@ -578,16 +586,6 @@ function doesUserHave(name, tgID, card, callback) {
         }
         else callback("**" + name + "**, card with that name was not found");
     });
-}
-
-function getHoursDifference(tg) {
-    let mil = new Date() - tg;
-    return Math.floor(mil / (1000*60*60));
-}
-
-function getMinutesDifference(tg) {
-    let mil = new Date() - tg;
-    return Math.floor(mil / (1000*60));
 }
 
 function nameOwners(col) {

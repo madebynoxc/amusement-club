@@ -1,0 +1,12 @@
+[
+	{
+		"type": ["craft", "forge"],
+		"title": "About card craft/forge/fusion",
+		"body": "This command allows you to get new cards using cards that you have. There are two types of forge, however: *Ordinary cards forge* and *Craft cards forge*\n\n **Ordinary cards forge** can be used to forge simple non-craft cards. You can convert two 1-star cards into 2-star card, four 1-star cards (or two 2-star cards) into 3-star card. New card is completely random, except that if cards that you use for forging are from the same collection (fandom). In this case new card will be also from same collection.\n To forge cards, don’t forget to separate card names by comma:\n `->forge card name 1, second card`\n\n **Craft cards forge** is used when all cards in arguments are craft cards. You have to combine certain cards in order to get a special effect card, that will be added to your inventory. This special card provides valuable effect.\n To see info about effect card (including target cards that you need for this), use:\n `->forge info card name`\n\n **Useful to know:**\n You can’t combine ordinary and craft card\n You can’t combine cards of different level\n Minimum amount of cards is 2\n Craft cards forge require certain hero level and can cost a lot of tomatoes\n Craft cards usually contain part of effect card name"
+	},
+	{
+		"type": ["inv", "inventory"],
+		"title": "About Inventory",
+		"body": "Inventory contains different items that cam be used in game. For example, effect cards (from v1.9.0), claim tickets (from v2.0), etc. Items can be stored unlimited amount of time. Some items provide effect if they are in user’s inventory, some of them should be used. To use item:\n `->inv use some item name`\n Some items might disappear after you used it. You can find out about this in item information by running:\n `->inv info some item name`\n To see the list of your items:\n `->inv`"
+	}
+]
