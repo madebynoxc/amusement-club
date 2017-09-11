@@ -46,61 +46,7 @@ function connect(callback) {
         cardmanager.updateCards(db);
 
         if(callback) callback();   
-        //scanCards();
     });
-}
-
-// OBSOLETE
-function scanCards() {
-    let collection = mongodb.collection('cards');
-    collection.find({}).toArray((err, res) => {
-
-        fs.readdir('./cards', function(err2, items) {
-            items.forEach(item => {
-                let newCards = [];
-                let path = './cards/' + item;
-
-                let files = fs.readdirSync(path);
-                for (let i in files) {
-                    let split = files[i].split('.');
-                    let name = split[0];
-                    let ext = split[1];
-                    
-                    if (res.filter((e) => {
-                        return e.name == name.substr(2) && e.collection === item;
-                    }).length == 0) {
-                        newCards.push(split);
-                    }
-                }
-
-                if(newCards.length != 0)
-                    insertCards(newCards, item);
-                else 
-                    console.log(item + " update not needed");
-            });
-        });
-    });
-}
-
-// OBSOLETE
-function insertCards(names, col) {
-    let cards = [];
-
-    for (let i in names) {
-        let c = {
-            "name": names[i][0].substr(2),
-            "collection": col,
-            "level": parseInt(names[i][0][0]),
-            "animated": names[i][1] == "gif"
-        }
-        cards.push(c);
-    }
-
-    var collection = mongodb.collection('cards');
-    collection.insert(cards, (err, res) => {
-        console.log("Inserted " + cards.length + " new cards from "+ col +" to DB");
-    });
-    console.log(col + " update finished");
 }
 
 function claim(user, guildID, arg, callback) {
@@ -149,7 +95,7 @@ function claim(user, guildID, arg, callback) {
             
             if(claimCost >= 500) phrase += "*You are claiming for extremely high price*\n";
             if(dbUser.cards.filter(
-                c => c.name == res.name && c.collection == res.collection) > 0)
+                c => c.name == res.name && c.collection == res.collection).length > 0)
                 phrase += "(*you already own this card*)";
             phrase += "Your next claim will cost **" + nextClaim + "**🍅";
 
@@ -356,17 +302,17 @@ function transfer(from, to, card, callback) {
 
                 heroes.addXP(dbUser, .3);
                 collection.update(
-                    { discord_id: from.id }, {$set: {cards: cards, dailystats: stat }}
-                ).then(() => {
+                    { discord_id: from.id }, 
+                    {$set: {cards: cards, dailystats: stat }},
+                    {$inc: {exp: fromExp}
+                }).then(() => {
                     quest.checkSend(dbUser, match.level, (mes)=>{callback(mes)});
                 });
 
                 match.frozen = new Date();
                 collection.update(
                     { discord_id: to },
-                    {
-                        $push: {cards: match }
-                    }
+                    { $push: {cards: match }}
                 ).then(() => {
                     forge.getCardEffect(dbUser, 'send', u2, callback);
                 });

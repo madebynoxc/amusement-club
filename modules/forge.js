@@ -144,6 +144,7 @@ function craftCard(user, args, callback) {
                 }
             }
 
+            heroes.addXP(user, 10);
             ucollection.update( 
                 { discord_id: user.discord_id},
                 { 
@@ -209,6 +210,7 @@ function craftOrdinary(user, cards, callback) {
     let req = {level: level};
     let bonus = getCardEffect(user, 'forge', 0);
     if(collection) req.collection = collection;
+    heroes.addXP(user, .2);
     requestCard(user, req, (m, o, c) => {
         user.cards.push(c);
         ucollection.update( 
