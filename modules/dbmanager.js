@@ -96,7 +96,7 @@ function claim(user, guildID, arg, callback) {
             if(claimCost >= 500) phrase += "*You are claiming for extremely high price*\n";
             if(dbUser.cards.filter(
                 c => c.name == res.name && c.collection == res.collection).length > 0)
-                phrase += "(*you already own this card*)";
+                phrase += "(*you already own this card*)\n";
             phrase += "Your next claim will cost **" + nextClaim + "**🍅";
 
             stat.claim++;
@@ -303,9 +303,8 @@ function transfer(from, to, card, callback) {
                 heroes.addXP(dbUser, .3);
                 collection.update(
                     { discord_id: from.id }, 
-                    {$set: {cards: cards, dailystats: stat }},
-                    {$inc: {exp: fromExp}
-                }).then(() => {
+                    { $set: {cards: cards, dailystats: stat, exp: fromExp}}
+                ).then(() => {
                     quest.checkSend(dbUser, match.level, (mes)=>{callback(mes)});
                 });
 
