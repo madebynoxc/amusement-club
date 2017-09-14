@@ -118,7 +118,8 @@ function craftCard(user, args, callback) {
         if(dif.length == 0) {
             let err = "";
             let curName = utils.toTitleCase(crafted[i].name.replace(/_/g, " "));
-            let cost = heroes.getHeroEffect(user, 'forge', crafted[i].cost);
+            //let cost = heroes.getHeroEffect(user, 'forge', crafted[i].cost);
+            let cost = crafted[i].cost;
             if(user.exp < cost) {
                 err += "**" + user.username + "**, you don't have enough 🍅 Tomatoes "
                 + "to craft this card. You need at least **" + cost + "**🍅\n";
@@ -174,6 +175,13 @@ function craftCard(user, args, callback) {
 
 function craftOrdinary(user, cards, callback) {
     let level = cards[0].level;
+    let crCost = heroes.getHeroEffect(user, 'forge', level * 50);
+    if(user.exp < carCost) {
+        callback("**" + user.username + "**, you don't have enough 🍅 Tomatoes to perform forge. "
+            + "You need at least **" + crCost + "** but you have **" + Math.floor(user.exp) + "**");
+        return;
+    }
+
     let collection = cards[0].collection;
     let passed = [];
     for(i in cards) {

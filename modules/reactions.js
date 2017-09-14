@@ -31,6 +31,8 @@ function addNew(user, filter, data, dif = "") {
 function setupPagination(message, author) {
     if(paginations.filter((o)=> o.id == message.id) > 0) return;
     var pgn = paginations.filter((o)=> o.user.username == author)[0];
+    if(!pgn) return;
+
     react(message);
 
     pgn.id = message.id;
@@ -153,14 +155,8 @@ function setFiltering(filter) {
 
     let res = {};
     res.tier = 0;
-    res.multi = filter.includes('multi');
-    res.anim = filter.includes('gif');
     res.collections = [];
     res.keywords = [];
-    if(res.multi) 
-        filter.splice(filter.indexOf('multi'));
-    if(res.anim) 
-        filter.splice(filter.indexOf('gif'));
 
     filter.forEach(element => {
         if(isInt(element))
@@ -168,9 +164,13 @@ function setFiltering(filter) {
 
         else if(element[0] == '-') {
             let el = element.substr(1);
-            res.craft = el === "craft"; 
-            col = collections.filter(c => c.includes(el))[0];
-            if(col) res.collections.push(col);
+            if(el === "craft") res.craft = true; 
+            else if(el === "multi") res.multi = true;
+            else if(el === "gif") res.anim = true;
+            else {
+                col = collections.filter(c => c.includes(el))[0];
+                if(col) res.collections.push(col);
+            }
 
         } else res.keywords.push(element.trim());
     }, this);
