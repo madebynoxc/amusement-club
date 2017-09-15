@@ -175,8 +175,8 @@ function craftCard(user, args, callback) {
 
 function craftOrdinary(user, cards, callback) {
     let level = cards[0].level;
-    let crCost = heroes.getHeroEffect(user, 'forge', level * 50);
-    if(user.exp < carCost) {
+    let crCost = heroes.getHeroEffect(user, 'forge', level * 120);
+    if(user.exp < crCost) {
         callback("**" + user.username + "**, you don't have enough 🍅 Tomatoes to perform forge. "
             + "You need at least **" + crCost + "** but you have **" + Math.floor(user.exp) + "**");
         return;
@@ -225,7 +225,7 @@ function craftOrdinary(user, cards, callback) {
             { discord_id: user.discord_id},
             { 
                 $set: {cards: user.cards },
-                $inc: {exp: bonus[0] }
+                $inc: {exp: bonus[0] - crCost}
             }
         ).then(u => { 
             if(bonus[0] > 0) m += "\nAdded " + bonus[0] + "🍅 Tomatoes from card effect";

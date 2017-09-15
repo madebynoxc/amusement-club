@@ -1,5 +1,14 @@
 [
     {
+        "version": "1.9.1",
+        "changes": [
+            "Fixed errors and server crashes", 
+            "Akari cards claim costs 25% less",
+            "Added cost to ordinary craft",
+            "Changed Kyoko second ability"
+        ]
+    },
+    {
         "version": "1.9.0",
         "changes": [
             "**Major Update**",
