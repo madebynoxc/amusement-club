@@ -275,7 +275,7 @@ function transfer(from, to, card, callback) {
         
         if(match){
             let name = utils.toTitleCase(match.name.replace(/_/g, " "));
-            let hours = 12 - utils.getHoursDifference(match.frozen);
+            let hours = 20 - utils.getHoursDifference(match.frozen);
             if(hours && hours > 0) {
                 callback("**" + from.username + "**, the card **" 
                     + name + "** is frozen for **" 
