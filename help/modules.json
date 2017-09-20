@@ -1,12 +1,381 @@
 [
 	{
+		"type": ["general"],
+	    "title": "\u2B50 Amusement Club \u2B50 Card Game",
+	    "description": "Welcome! You already have **300 🍅 Tomatoes**! Use `->claim` to get cards.\nYou can call `->daily` every **20** hours and get free tomatoes.\nEarn tomatoes from typing and completing `->quests` that you get with `->daily`!",
+	    "fields": [
+	        {
+	            "title": "Quick help",
+	            "description": "use `->?[command]` OR `->?[module]` to get a quick help\ne.g. `->?give`" 
+	        },
+	        {
+	            "title": "Commands. Use `->help [command]` (e.g. `->help claim`)",
+	            "description": "->claim\n->summon\n->daily\n->balance\n->give\n->pay\n->cards\n->sell\n->difference\n->quests\n->has\n->whatsnew"
+	        },
+	        {
+	            "title": "Modules. Use `->help [module]` (e.g. `->help hero`)",
+	            "description": "->leaderboards\n->hero\n->forge\n->inventory\n->stats\n->server"
+	        },
+	        {
+	            "title": "Contacts",
+	            "description": "[Bot Discord](https://discord.gg/kqgAvdX) | [Source Code](https://github.com/NoxCaos/amusement-club/) | [Developer](https://github.com/NoxCaos/)"
+	        },
+	        {
+	            "title": "Invite bot",
+	            "description": "Please run `->help invite` and read the conditions"
+	        }
+	    ]
+	},
+	{
 		"type": ["craft", "forge"],
-		"title": "About card craft/forge/fusion",
-		"body": "This command allows you to get new cards using cards that you have. There are two types of forge, however: *Ordinary cards forge* and *Craft cards forge*\n\n **Ordinary cards forge** can be used to forge simple non-craft cards. You can convert two 1-star cards into 2-star card, four 1-star cards (or two 2-star cards) into 3-star card. New card is completely random, except that if cards that you use for forging are from the same collection (fandom). In this case new card will be also from same collection.\n To forge cards, don’t forget to separate card names by comma:\n `->forge card name 1, second card`\n\n **Craft cards forge** is used when all cards in arguments are craft cards. You have to combine certain cards in order to get a special effect card, that will be added to your inventory. This special card provides valuable effect.\n To see info about effect card (including target cards that you need for this), use:\n `->forge info card name`\n\n **Useful to know:**\n You can’t combine ordinary and craft card\n You can’t combine cards of different level\n Minimum amount of cards is 2\n Craft cards forge require certain hero level and can cost a lot of tomatoes\n Craft cards usually contain part of effect card name"
+		"title": "About card craft/forge",
+		"description": "This command allows you to get new cards using cards that you have. There are two types of forge, however: *Ordinary cards forge* and *Craft cards forge*",
+		"fields": [
+			{
+				"title": "Ordinary cards forge",
+				"description": "Can be used to forge simple non-craft cards. You can convert two 1-star cards into 2-star card, four 1-star cards (or two 2-star cards) into 3-star card. New card is completely random, except that if cards that you use for forging are from the same collection (fandom). In this case new card will be also from same collection. Ordinary forge costs 120 Tomatoes for 1-star cards and 240 Timatoes for 2-star."
+			},
+			{
+				"title": "Craft cards forge",
+				"description": "Used when all cards in arguments are craft cards. You have to combine certain cards in order to get a special effect card, that will be added to your inventory. This special card provides valuable effect. If you get a special *craft card*, try using part of it name to find info (e.g. `->forge info tohru`)."
+			},
+			{
+				"title": "To forge cards",
+				"description": "->forge [card 1 name], [second card]"
+			},
+			{
+				"title": "See info about effect card",
+				"description": "->forge info [card name]"
+			},
+			{
+				"title": "Useful to know",
+				"description": "You can’t combine ordinary and craft card\nYou can’t combine cards of different level\nMinimum amount of cards is 2\nCraft cards usually contain part of effect card name"
+			}
+		]
 	},
 	{
 		"type": ["inv", "inventory"],
-		"title": "About Inventory",
-		"body": "Inventory contains different items that cam be used in game. For example, effect cards (from v1.9.0), claim tickets (from v2.0), etc. Items can be stored unlimited amount of time. Some items provide effect if they are in user’s inventory, some of them should be used. To use item:\n `->inv use some item name`\n Some items might disappear after you used it. You can find out about this in item information by running:\n `->inv info some item name`\n To see the list of your items:\n `->inv`"
+		"title": "About inventory",
+		"description": "Inventory contains different items that cam be used in game. For example, effect cards (from v1.9.0), claim tickets (from v2.0), etc. Items can be stored unlimited amount of time. Some items provide effect if they are in user’s inventory, some of them should be used.",
+		"fields": [
+			{
+				"title": "See the list of your items",
+				"description": "->inv"
+			},
+			{
+				"title": "Use item",
+				"description": "->inv use [some item name]"
+			},
+			{
+				"title": "Get item info",
+				"description": "->inv info [some item name]"
+			}
+		]
+	},
+	{
+		"type": ["lead", "leaderboard", "leaderboards"],
+		"title": "About leaderboards",
+		"description": "Provides a list of players, who have most stars (from cards) Globally or Locally. Card duplicates are not counted.",
+		"fields": [
+			{
+				"title": "Get local rating",
+				"description": "->lead"
+			},
+			{
+				"title": "Get global rating",
+				"description": "->lead global"
+			}
+		]
+	},
+	{
+		"type": ["hero"],
+		"title": "About hero",
+		"description": "Hero is a character with certain set of abilities that help you in the game. You can get hero for free after you get more than 50 \u2B50. You can get your amount of stars by running `->bal`.\nHero change costs 2000 🍅 Tomatoes and resets hero level. To change hero without losing your level, purchase a hero change ticket from `->store` (from v2.0).\nHero gets XP if you are active. Hero level unlocks certain effect cards and also gives more `->daily` 🍌 Bananas (from v2.0)",
+		"fields": [
+			{
+				"title": "Hero club (from v2.0)",
+				"description": "Special for TOP-5 heroes that are chosen every 1st day of month. Members get different daily bonuses and increased *reputation points* (from v1.9.7)"
+			},
+			{
+				"title": "Get your hero info",
+				"description": "->hero"
+			},
+			{
+				"title": "Get list of available heroes",
+				"description": "->hero list"
+			},
+			{
+				"title": "Get info about certain hero",
+				"description": "->hero info [hero name]"
+			},
+			{
+				"title": "Get info about all heroes",
+				"description": "->hero info all"
+			},
+			{
+				"title": "Get/replace hero",
+				"description": "->hero get [hero name]"
+			},
+			{
+				"title": "Global hero rating by level",
+				"description": "->hero lead"
+			}
+		]
+	},
+	{
+		"type": ["stat", "stats", "statistics"],
+		"title": "About bot statistics",
+		"description": "Provides information about server/players/cards",
+		"fields": [
+			{
+				"title": "Get general statistics",
+				"description": "->stats"
+			},
+			{
+				"title": "Get cards statistics",
+				"description": "->stats cards"
+			},
+			{
+				"title": "Get hero statistics",
+				"description": "->stats hero"
+			}
+		]
+	},
+	{
+		"type": ["cl", "claim"],
+		"title": "About card claiming",
+		"description": "You can claim cards as long as you have enough 🍅 Tomatoes. Claim costs start at 50 tomatoes and increase by 50 each claim. The claim cost goes back to minimum after running `->daily`. ",
+		"fields": [
+			{
+				"title": "Useful to know",
+				"description": "This command can be executed only in bot channel (`->help channel` for more info)\nClaim cost can be different for certain *heroes*\nSome *effect cards* can reduce claim cost\nThe message above card shows cost of your next claim and can also include important information about the card"
+			},
+			{
+				"title": "Get a random card",
+				"description": "->claim"
+			}
+		]
+	},
+	{
+		"type": ["sum", "summon"],
+		"title": "About card summon",
+		"description": "You can summon card in any channel on server, but only if you have this card. This operation won't consume card.\nYou can include partial name of the card, but it has to be more than 3 characters long. The system will try to find *most suitable card* using name you provided",
+		"fields": [
+			{
+				"title": "Summon a card",
+				"description": "->sum [card name]"
+			}
+		]
+	},
+	{
+		"type": ["daily"],
+		"title": "About daily bonus",
+		"description": "You can get free **100🍅** Tomatoes every 20 hours. This command will also reset your `->claim` cost and give **2 quests**",
+		"fields": [
+			{
+				"title": "Useful to know",
+				"description": "New players get 300🍅 bonus\nThe daily bonus can be different for certain heroes\n*Effect cards* and *Hero Club* can change daily bonus"
+			},
+			{
+				"title": "Get daily bonus",
+				"description": "->daily"
+			}
+		]
+	},
+	{
+		"type": ["bal", "balance", "economy", "currency", "tomatoes"],
+		"title": "About currencies",
+		"description": "This command will show your amount of 🍅 Tomatoes \u2B50 Stars and 🍌 Bananas (from v2.0).\n**Tomatoes** is a main currency in game, that is used for card `->claim`, trading, forging, etc. You can get them bu completing `->quests` and claiming `->daily`\n**Stars** show you overall (clean) sum of card stars that you have. This is used mostly for rating and some benefits, like *heroes*\n**Bananas** (from v2.0) is a currency used in `->store` to get special items and *premium*. Daily bonus gives Bananas depending on hero level",
+		"fields": [
+			{
+				"title": "Useful to know",
+				"description": ""
+			},
+			{
+				"title": "",
+				"description": ""
+			}
+		]
+	},
+	{
+		"type": ["give", "send", "trading", "trade"],
+		"title": "About __card__ sending",
+		"description": "",
+		"fields": [
+			{
+				"title": "",
+				"description": ""
+			},
+			{
+				"title": "",
+				"description": ""
+			}
+		]
+	},
+	{
+		"type": ["pay"],
+		"title": "",
+		"description": "",
+		"fields": [
+			{
+				"title": "",
+				"description": ""
+			},
+			{
+				"title": "",
+				"description": ""
+			}
+		]
+	},
+	{
+		"type": ["cards"],
+		"title": "",
+		"description": "",
+		"fields": [
+			{
+				"title": "",
+				"description": ""
+			},
+			{
+				"title": "",
+				"description": ""
+			}
+		]
+	},
+	{
+		"type": ["sell"],
+		"title": "",
+		"description": "",
+		"fields": [
+			{
+				"title": "",
+				"description": ""
+			},
+			{
+				"title": "",
+				"description": ""
+			}
+		]
+	},
+	{
+		"type": ["dif", "diff", "difference"],
+		"title": "",
+		"description": "",
+		"fields": [
+			{
+				"title": "",
+				"description": ""
+			},
+			{
+				"title": "",
+				"description": ""
+			}
+		]
+	},
+	{
+		"type": ["quest", "quests"],
+		"title": "",
+		"description": "",
+		"fields": [
+			{
+				"title": "",
+				"description": ""
+			},
+			{
+				"title": "",
+				"description": ""
+			}
+		]
+	},
+	{
+		"type": ["has"],
+		"title": "",
+		"description": "",
+		"fields": [
+			{
+				"title": "",
+				"description": ""
+			},
+			{
+				"title": "",
+				"description": ""
+			}
+		]
+	},
+	{
+		"type": ["whatsnew"],
+		"title": "",
+		"description": "",
+		"fields": [
+			{
+				"title": "",
+				"description": ""
+			},
+			{
+				"title": "",
+				"description": ""
+			}
+		]
+	},
+	{
+		"type": ["channel"],
+		"title": "About bot channels",
+		"description": "Amusement Club is a discord bot that can read commands from any channel. However, there are some limitations",
+		"fields": [
+			{
+				"title": "Any channel",
+				"description": "You can `->summon` cards and call `->help`. Bot uses your messages to add 🍅 Tomatoes to your balance"
+			},
+			{
+				"title": "Bot channel",
+				"description": "Any command is available"
+			},
+			{
+				"title": "Direct messages",
+				"description": "The functionality of DMs is limited to `->help` and `->server` (for bot invites). Please, use server bot chats for full bot functionality"
+			}
+		]
+	},
+	{
+		"type": ["srv", "server"],
+		"title": "",
+		"description": "",
+		"fields": [
+			{
+				"title": "",
+				"description": ""
+			},
+			{
+				"title": "",
+				"description": ""
+			}
+		]
+	},
+	{
+		"type": ["invite"],
+		"title": "About bot invitation",
+		"description": "",
+		"fields": [
+			{
+				"title": "READ THIS",
+				"description": "Bot constantly reads and **logs** all the messages on server in order to give Tomatoes and debug purposes. Feel free to exclude bot from ANY channels, that you want to secure contents of. However, keep in mind, that bot **won't read** messages in those channels, so you won't get Tomatoes from them.\n**Messages in Logs** can be used by **bot administration** to find bugs/errors and cheaters. Make sure that bot is **not** present in channels, that may contain any **confidential** information"
+			},
+			{
+				"title": "Bot administration and disclaimers",
+				"description": "Administration will **never** use information in logs for personal purposes. However, [disclaimer] administration is **NOT RESPONSIBLE** for consequences of you or any Member of server/guild including sensible/confidential information.\nAdministration will **never ask** you about your *discord password* or *administrative permissions* for your server.\n[disclaimer] All information used by bot is in **public chat** and can be accessed by **any** member of the guild/server. If you invite bot to private server, consider that **administration** can see and read the messages"
+			},
+			{
+				"title": "Server administration",
+				"description": "**Please note**, that bot can be invited only by users, that have permission to invite bots to server. If you are NOT target server administrator, send *generated link* to administrator or any person with corresponding role"
+			},
+			{
+				"title": "Any questions?",
+				"description": "If you have any questions regarding bot, please ask them [in bot discord](https://discord.gg/kqgAvdX)"
+			}
+			{
+				"title": "Ready to invite?",
+				"description": "Please, run `->server add [server id]` to register your server. If you won't register your server, bot **will not** work!\n**PLEASE NOTE**: After you run this command, your *discord name* will be visible to anyone else, who decides to invite this bot to the same server"
+			}
+		]
 	}
 ]

@@ -300,7 +300,7 @@ function transfer(from, to, card, callback) {
                         + "** tomatoes to **" + dbUser.username 
                         + "** for sending a card!");
 
-                heroes.addXP(dbUser, .3);
+                heroes.addXP(dbUser, .1);
                 collection.update(
                     { discord_id: from.id }, 
                     { $set: {cards: cards, dailystats: stat, exp: fromExp}}

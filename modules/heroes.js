@@ -144,8 +144,8 @@ function getHeroEffect(user, action, value, ...params) {
             case 'akaza akari':
                 if(action == 'claim_akari') return Math.floor(value *.75);
                 if(action == 'send') {
-                    let p = params[0] * 80;
-                    if(user.dailystats) p -= (p * .1 * user.dailystats.send);
+                    let p = params[0] * 130;
+                    if(user.dailystats) p -= (p * .2 * user.dailystats.send);
                     if(p < 0) p = 0;
                     return value + p;
                 } 

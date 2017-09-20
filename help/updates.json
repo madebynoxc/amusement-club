@@ -1,5 +1,14 @@
 [
     {
+        "version": "1.9.2",
+        "changes": [
+            "Massive improvements to help. Help is now separate module",
+            "Cards now frozen for 20 hours", 
+            "Akari tomato bonus now reduces by 20% after every sending",
+            "Bug fixes and balance improvements"
+        ]
+    },
+    {
         "version": "1.9.1",
         "changes": [
             "Fixed errors and server crashes", 

@@ -3,11 +3,11 @@
         "name": "list",
         "values": [
             "->cards OR ->list",
-            "**->list [?multi] [tier] [collection...] [keywords...]**",
-            "->list multi (cards x2 and more)",
+            "**->list -[multi] [tier] -[collection...] [keywords...]**",
+            "->list -multi (cards x2 and more)",
             "->list 2 (only 2-star cards)",
             "->list yuruyuri (only Yuru Yuri cards)",
-            "->list multi 2 yuruyuri",
+            "->list -multi 2 yuruyuri",
             "Filter parameters can be combined"
         ]
     },
@@ -15,11 +15,11 @@
         "name": "cards",
         "values" : [
             "->cards OR ->list",
-            "**->cards [?multi] [tier] [collection...] [keywords...]**",
-            "->cards multi (cards x2 and more)",
+            "**->cards -[multi] [tier] -[collection...] [keywords...]**",
+            "->cards -multi (cards x2 and more)",
             "->cards 2 (only 2-star cards)",
             "->cards yuruyuri (only Yuru Yuri cards)",
-            "->cards multi 2 yuruyuri",
+            "->cards -multi 2 yuruyuri",
             "Filter parameters can be combined"
         ]
     },
@@ -27,11 +27,11 @@
         "name": "dif",
         "values": [
             "->dif OR ->difference",
-            "**->dif [user] [?multi] [tier] [collection...] [keywords...]**",
+            "**->dif [user] -[multi] [tier] -[collection...] [keywords...]**",
             "->dif @user (shows unique user cards for you)",
             "->dif @user 2 (only 2-star cards)",
             "->dif @user yuruyuri (only Yuru Yuri cards)",
-            "->dif @user multi 2 yuruyuri",
+            "->dif @user -multi 2 yuruyuri",
             "Filter parameters can be combined"
         ]
     },
@@ -39,11 +39,11 @@
         "name": "difference",
         "values": [
             "->dif OR ->difference",
-            "**->dif [user] [?multi] [tier] [collection...] [keywords...]**",
+            "**->dif [user] -[multi] [tier] -[collection...] [keywords...]**",
             "->dif @user (shows unique user cards for you)",
             "->dif @user 2 (only 2-star cards)",
             "->dif @user yuruyuri (only Yuru Yuri cards)",
-            "->dif @user multi 2 yuruyuri",
+            "->dif @user -multi 2 yuruyuri",
             "Filter parameters can be combined"
         ]
     },

@@ -3,7 +3,6 @@ const dbManager = require("./modules/dbmanager.js");
 const utils = require("./modules/localutils.js");
 const logger = require('./modules/log.js');
 const settings = require('./settings/general.json');
-const helpBody = require('./help/general.json');
 const react = require('./modules/reactions.js');
 const quickhelp = require('./help/quick.json');
 const heroDB = require('./modules/heroes.js');
@@ -268,7 +267,9 @@ function getCommand(m, callback) {
                     });
                 }
                 return;
+            case 'stat':
             case 'stats':
+            case 'statistics':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
                     stats.processRequest(cnt, (text, file) => {
@@ -320,19 +321,6 @@ function isAdmin(sender) {
     return settings.admins.includes(sender);
 }
 
-function showHelp(message) {
-    let e = new Discord.RichEmbed();
-    e.setColor(settings.botcolor);
-    e.setAuthor(helpBody.title)
-    helpBody.fields.forEach(function(element) {
-       e.addField(element.title, element.description, false); 
-    }, this);
-
-    message.author.send("", { embed: e });
-
-    if(message.channel.name) return "**" + message.author.username + "**, I've sent you a DM";
-    return undefined;
-}
 function getUserID(inp) {
     try{
         return inp.slice(0, -1).split('@')[1].replace('!', '');
