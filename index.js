@@ -288,6 +288,8 @@ function getCommand(m, callback) {
                     setTimeout(() => { _stop(); }, 2000); 
                 }
                 return;
+            case 'version':
+            case 'updates':
             case 'whatsnew':
                 if(channelType == 1) callback('This command is available only in bot channel');
                 else {
