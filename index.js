@@ -32,6 +32,18 @@ function _init() {
         console.log("Discord Bot Disconnected");
     });
 
+    bot.on("guildMemberAdd", u => {
+        if(u.id === bot.user.id) {
+            u.guild.defaultChannel.send(
+                "**Amusement Club here!**\n"
+                + "Hope you have a beautiful day and from now on you can make it even better!\n"
+                + "Get chance to win one of those cards below!"
+                + "Type `->help` and get started",
+                {file: './invite.png'}
+            );
+        }
+    });
+
     bot.on("message", (message) => {
         if(message.author.bot) {
             if(message.author.id === bot.user.id) {
@@ -241,7 +253,8 @@ function getCommand(m, callback) {
                 }
                 break;
             case 'hero':
-                if(channelType == 1) callback('Hero commands available only in bot channel');
+                if(channelType == 0) callback("Hero commands are possible on server only");
+                else if(channelType == 1) callback('Hero commands available only in bot channel');
                 else {
                     heroDB.processRequest(m.author.id, cnt, (text, file) => {
                         callback(text, file);
@@ -277,9 +290,13 @@ function getCommand(m, callback) {
                     });
                 }
                 return;
-            case 'fix':
-                if(isAdmin(m.author.id)) {
-                    dbManager.fixUserCards();
+            case 'inv':
+            case 'invite':
+                if(channelType != 0) callback('This operation is possible only in Direct Messages to bot');
+                else {
+                    /*servers.processRequest(cnt, (text, file) => {
+                        callback(text, file);
+                    });*/
                 }
                 return;
             case 'kill': 

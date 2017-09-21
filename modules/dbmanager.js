@@ -24,6 +24,7 @@ const cardmanager = require('./cardmanager.js');
 const forge = require('./forge.js');
 const inv = require('./inventory.js');
 const stats = require('./stats.js');
+const invite = require('./invite.js');
 const lev = require('js-levenshtein');
 
 function disconnect() {
@@ -44,6 +45,7 @@ function connect(callback) {
         inv.connect(db);
         stats.connect(db);
         cardmanager.updateCards(db);
+        invite.connect(db);
 
         if(callback) callback();   
     });
@@ -94,7 +96,7 @@ function claim(user, guildID, arg, callback) {
                 phrase += "This is a **craft card**. Find pair and `->forge` special card of them!\n";
             
             if(claimCost >= 500) phrase += "*You are claiming for extremely high price*\n";
-            if(dbUser.cards.filter(
+            if(dbUser.cards && dbUser.cards.filter(
                 c => c.name == res.name && c.collection == res.collection).length > 0)
                 phrase += "(*you already own this card*)\n";
             phrase += "Your next claim will cost **" + nextClaim + "**🍅";
