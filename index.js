@@ -11,6 +11,7 @@ const stats = require('./modules/stats.js');
 const inventory = require('./modules/inventory.js');
 const changelog = require('./help/updates.json');
 const helpMod = require('./modules/help.js');
+const invite = require('./modules/invite.js');
 var bot, curgame = 0;
 
 //https://discordapp.com/oauth2/authorize?client_id=340988108222758934&scope=bot&permissions=125952
@@ -24,7 +25,6 @@ function _init() {
     bot.on("ready", () => {
         console.log("Discord Bot Connected");
         console.log("Discord Bot Ready");
-        //setInterval(gameLoop, 5000);
         bot.user.setGame("->help | ->?cards", "https://www.twitch.tv/");
     });
 
@@ -32,30 +32,38 @@ function _init() {
         console.log("Discord Bot Disconnected");
     });
 
-    bot.on("guildMemberAdd", u => {
-        if(u.id === bot.user.id) {
-            u.guild.defaultChannel.send(
-                "**Amusement Club here!**\n"
-                + "Hope you have a beautiful day and from now on you can make it even better!\n"
-                + "Get chance to win one of those cards below!"
-                + "Type `->help` and get started",
-                {file: './invite.png'}
-            );
-        }
+    bot.on("guildCreate", g => {
+        invite.setInvited(g.id, t => {
+            if(t)
+                dbManager.getDefaultChannel(g, bot.user).send(
+                        "**Amusement Club here!**\n"
+                        + "Hope you have a beautiful day and from now on you can make it even better!\n"
+                        + "Get chance to win one of those cards below!\n"
+                        + "Type `->help` and get started",
+                        {file: './invite.png'});
+            else
+                dbManager.getDefaultChannel(g, bot.user).send(
+                        "**Bot is not registered!**\n"
+                        + "Server administrator has to run `->invite [server_id]` in bot DMs\n"
+                        + "Run `->help invite` for more information");
+        });
     });
 
     bot.on("message", (message) => {
         if(message.author.bot) {
-            if(message.author.id === bot.user.id) {
+            if(message.author.id === bot.user.id)
                 selfMessage(message);
-            }
+
         } else {
             log(message);
-            getCommand(message, (res, obj) => {
-                if(!res && !obj) 
-                    return false;
-                    
-                message.channel.send(res, obj);
+            invite.getStatus(message.guild, t => {
+                if(!t)
+                    getCommand(message, (res, obj) => {
+                        if(!res && !obj) return;   
+                        message.channel.send(res, obj);
+                    });
+                else if(message.content.startsWith(settings.botprefix)) 
+                    message.channel.send("", t);
             });
         }
     });
@@ -71,21 +79,14 @@ function _stop() {
     return bot.destroy();
 }
 
-function log(message) {
+function log(m) {
     var msg = '';
     try {
-		msg = message.guild.name + " : " + message.channel.name + " : " + message.author.username + " : " + message.content;
+		msg = "[" + m.guild.name + "] #" + m.channel.name + " @" + m.author.username + ": " + m.content;
 	} catch(e) {
-		msg = "PW : " + message.author.username + " : " + message.content;
+		msg = "DM @" + m.author.username + ": " + m.content;
 	}
     logger.message(msg);
-}
-
-function gameLoop() {
-    bot.user.setGame(settings.games[curgame], "https://www.twitch.tv/");
-    curgame++;
-    if(curgame >= settings.games.length)
-        curgame = 0;
 }
 
 function selfMessage(m) {
@@ -292,11 +293,11 @@ function getCommand(m, callback) {
                 return;
             case 'inv':
             case 'invite':
-                if(channelType != 0) callback('This operation is possible only in Direct Messages to bot');
+                if(channelType !== 0) callback('This operation is possible only in Direct Messages to bot');
                 else {
-                    /*servers.processRequest(cnt, (text, file) => {
+                    invite.processRequest(m, cnt, (text, file) => {
                         callback(text, file);
-                    });*/
+                    });
                 }
                 return;
             case 'kill': 

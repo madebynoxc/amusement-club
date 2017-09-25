@@ -2,7 +2,8 @@ module.exports = {
     connect, disconnect, claim, addXP, getXP, doesUserHave,
     getCards, summon, transfer, sell, award, getUserName,
     pay, daily, fixUserCards, getQuests, getBestCardSorted,
-    leaderboard_new, difference, dynamicSort, countCardLevels, getCardFile
+    leaderboard_new, difference, dynamicSort, countCardLevels, 
+    getCardFile, getDefaultChannel
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -631,4 +632,10 @@ function getCardFile(card) {
     let ext = card.animated? '.gif' : (card.compressed? '.jpg' : '.png');
     let prefix = card.craft? card.level + 'cr' : card.level;
     return './cards/' + card.collection + '/' + prefix + "_" + card.name + ext;
+}
+
+function getDefaultChannel(guild, clientUser) {
+    return guild.channels
+        .filter(c => c.permissionsFor(clientUser).has('SEND_MESSAGES'))
+        .array().find(c => c.type == 'text');
 }
