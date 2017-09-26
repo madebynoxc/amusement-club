@@ -1,5 +1,15 @@
 [
     {
+        "version": "1.9.4",
+        "changes": [
+            "Setting bot to public",
+            "Added tracking of all bot servers", 
+            "Added server ban and restrictions",
+            "Added functionality and instructions on adding bot",
+            "Use `->help invite` to get instructions"
+        ]
+    },
+    {
         "version": "1.9.2",
         "changes": [
             "Massive improvements to help. Help is now separate module",

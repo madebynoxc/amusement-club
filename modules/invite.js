@@ -1,12 +1,14 @@
 module.exports = {
-    processRequest, connect, setInvited, getStatus
+    processRequest, connect, getStatus, checkStatus, checkOnJoin
 }
 
 var mongodb, ucollection, icollection;
 const Discord = require('discord.js');
 const logger = require('./log.js');
 const utils = require('./localutils.js');
+const settings = require('../settings/general.json');
 const changelog = require('../help/updates.json');
+const dbManager = require("./dbmanager.js");
 const link = "https://discordapp.com/oauth2/authorize?client_id=340988108222758934&scope=bot&permissions=125952";
 
 const col = {
@@ -28,7 +30,7 @@ function processRequest(message, args, callback) {
             getStatus(args[0], callback);
             break;
         case "list":
-            list(callback);
+            //list(callback);
             break;
         case "ban":
             banServer(args[0], callback);
@@ -40,34 +42,91 @@ function processRequest(message, args, callback) {
 
 function setInvited(srvID, callback) {
     icollection.findOne({server_id: srvID}).then(s => {
-        if(s) {
+        if(s && s.status == 'pending') {
             icollection.update(
                 {server_id: srvID},
                 {$set: {status: "active"}}
             );
-            callback(true);
-            return;
-        } callback(false);
+        } 
+
+        if(callback) callback(s? s.status : null);
     }).catch(e => logger.error(e));
 }
 
-function getStatus(srv, callback) {
-    console.log("le");
-    if(!srv) {
+function checkOnJoin(guild, botUser) {
+    let def = dbManager.getDefaultChannel(guild, botUser);
+    let resp = new Discord.RichEmbed();
+    resp.setColor(col.red);
+
+    if(guild.memberCount < 10) {
+        resp.setTitle("Server is invalid");
+        resp.setDescription("For technical reasons bot can't function on small servers.\n"
+            + "Please, invite **Amusement Club** again when you have 10 or more members");
+        def.send("", resp).then(() => guild.leave());
+        return;
+    }
+
+    setInvited(guild.id, t => {
+        if(t == 'pending') {
+            def.send(
+                "**Amusement Club here!**\n"
+                + "I am a card game bot that allows *you* to obtain some nice cards in your collection.\n"
+                + "Get chance to win one of those below!\n"
+                + "Type `->help` and get started",
+                {file: './invite.png'})
+            .then(() => {
+                if(guild.channels.array().filter(c => c.name.includes('bot')).length == 0) {
+                    resp.setColor(col.yellow);
+                    resp.setTitle("Notice");
+                    resp.setDescription("This server has no any **bot** channel.\n"
+                        + "In order to **Amusement Club** function properly, you need to have special channel "
+                        + "that has 'bot' in the name.\n`(e.g. 'bot-commands', 'bot', 'bot_stuff', etc)`");
+                    def.send("", resp);
+                }
+            });
+        }
+        else if(t == 'banned') {
+            resp.setTitle("Bot can't function on this server");
+            resp.setDescription("This bot was banned from this server. **Amusement Club** will leave after this message");
+            def.send("", resp).then(() => m.guild.leave());
+        }
+        else if(t == null) {
+            resp.setTitle("Bot is not registered!");
+            resp.setDescription("Server administrator has to run `->invite [server_id]` in bot DMs\n"
+                + "Run `->help invite` for more information");
+            def.send("", resp);
+        }
+    });
+}
+
+function checkStatus(m, callback) {
+    if(!m.guild) {
         callback(null);
         return;
     }
 
-    icollection.findOne({server_id: srv.id}).then(s => {
+    icollection.findOne({server_id: m.guild.id}).then(s => {
+        let resp = new Discord.RichEmbed();
         resp.setColor(col.red);
         resp.setTitle("Bot can't function on this server");
-        console.log(s);
 
-        if(s.status == "active") {
+        if(!m.content.startsWith(settings.botprefix)
+            || m.content.startsWith(settings.botprefix + 'invite')) {
             callback(null);
             return;
-        } else if(s.status == "banned") 
-            resp.setDescription("This bot was banned from this server");
+        }
+
+        if(s) {
+            if(s.status == "pending") {
+                setInvited(m.guild.id);
+                callback(null);
+                return;
+            } else if(s.status == "banned") {
+                resp.setDescription("This bot was banned from this server. **Amusement Club** will leave after this message");
+                m.guild.leave();
+            } 
+            else {callback(null); return;}
+        }
         else resp.setDescription("This bot is not registered on this server.\n"
             + "Please, ask server administrator to run `->invite [server_id]` to add this server to bot's list");
 
@@ -79,14 +138,14 @@ function tryAdd(author, srvID, callback) {
     let resp = new Discord.RichEmbed();
     if(!srvID) {
         resp.setColor(col.red);
-        resp.setTitle("Error");
-        resp.setDescription("Usage: `->invite [server_id]`");
+        resp.setTitle("Usage");
+        resp.setDescription("`->invite [server_id]`");
         callback("", resp);
         return;
     }
 
     icollection.findOne({server_id: srvID}).then(s => {
-        if(s && !s.status == "pending") {
+        if(s && s.status == "pending") {
             let expHours = 20 - utils.getHoursDifference(s.created);
             resp.setColor(col.yellow);
             resp.setTitle("Can't add this server");
@@ -187,6 +246,17 @@ function getStatus(srvID, callback) {
     });
 }
 
-function list(callback) {
+function banServer(srvID, callback) {
+    icollection.findOne({server_id: srvID}).then(s => {
+        if(s) {
+            icollection.update(
+                {server_id: srvID},
+                {$set: {status: "banned"}}
+            );
+            if(callback) callback("Server with id **" + srvID + "** was banned");
+            return;
+        } 
 
+        if(callback) callback("Can't find server with id **" + srvID + "**");
+    }).catch(e => logger.error(e));
 }

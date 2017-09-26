@@ -33,20 +33,7 @@ function _init() {
     });
 
     bot.on("guildCreate", g => {
-        invite.setInvited(g.id, t => {
-            if(t)
-                dbManager.getDefaultChannel(g, bot.user).send(
-                        "**Amusement Club here!**\n"
-                        + "Hope you have a beautiful day and from now on you can make it even better!\n"
-                        + "Get chance to win one of those cards below!\n"
-                        + "Type `->help` and get started",
-                        {file: './invite.png'});
-            else
-                dbManager.getDefaultChannel(g, bot.user).send(
-                        "**Bot is not registered!**\n"
-                        + "Server administrator has to run `->invite [server_id]` in bot DMs\n"
-                        + "Run `->help invite` for more information");
-        });
+        invite.checkOnJoin(g, bot.user);
     });
 
     bot.on("message", (message) => {
@@ -56,14 +43,13 @@ function _init() {
 
         } else {
             log(message);
-            invite.getStatus(message.guild, t => {
+            invite.checkStatus(message, t => {
                 if(!t)
                     getCommand(message, (res, obj) => {
-                        if(!res && !obj) return;   
+                        if(!res && !obj) return;
                         message.channel.send(res, obj);
                     });
-                else if(message.content.startsWith(settings.botprefix)) 
-                    message.channel.send("", t);
+                else message.channel.send("", t);
             });
         }
     });
@@ -291,14 +277,9 @@ function getCommand(m, callback) {
                     });
                 }
                 return;
-            case 'inv':
             case 'invite':
-                if(channelType !== 0) callback('This operation is possible only in Direct Messages to bot');
-                else {
-                    invite.processRequest(m, cnt, (text, file) => {
-                        callback(text, file);
-                    });
-                }
+                if(channelType !== 0) m.author.send("You should use this command here in Direct Messages to bot");
+                else invite.processRequest(m, cnt, callback);
                 return;
             case 'kill': 
                 if(isAdmin(m.author.id)) {
