@@ -203,7 +203,7 @@ function getCommand(m, callback) {
                 });
                 return;
             case 'award': 
-                if(isAdmin(m.author.id)) {
+                if(dbManager.isAdmin(m.author.id)) {
                     let tusr = getUserID(cnt.shift());
                     let tom = parseInt(cnt);
                     if(tusr && tom){
@@ -282,7 +282,7 @@ function getCommand(m, callback) {
                 else invite.processRequest(m, cnt, callback);
                 return;
             case 'kill': 
-                if(isAdmin(m.author.id)) {
+                if(dbManager.isAdmin(m.author.id)) {
                     callback("Shutting down now");
                     setTimeout(() => { _stop(); }, 2000); 
                 }
@@ -316,10 +316,6 @@ function getHelp(com) {
         return phrases[0].values.join('\n');
     }
     return undefined;
-}
-
-function isAdmin(sender) {
-    return settings.admins.includes(sender);
 }
 
 function getUserID(inp) {

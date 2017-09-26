@@ -639,3 +639,7 @@ function getDefaultChannel(guild, clientUser) {
         .filter(c => c.permissionsFor(clientUser).has('SEND_MESSAGES'))
         .array().find(c => c.type == 'text');
 }
+
+function isAdmin(sender) {
+    return settings.admins.includes(sender);
+}

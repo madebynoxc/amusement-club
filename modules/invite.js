@@ -33,7 +33,8 @@ function processRequest(message, args, callback) {
             //list(callback);
             break;
         case "ban":
-            banServer(args[0], callback);
+            if(isAdmin(m.author.id))
+                banServer(args[0], callback);
             break;
         default:
             tryAdd(message.author, req, callback);
@@ -51,6 +52,13 @@ function setInvited(srvID, callback) {
 
         if(callback) callback(s? s.status : null);
     }).catch(e => logger.error(e));
+}
+
+function getInviteLink() {
+    client.generateInvite(['SEND_MESSAGES', 'MANAGE_GUILD', 'MENTION_EVERYONE'])
+        .then(link => {
+        
+    });
 }
 
 function checkOnJoin(guild, botUser) {
@@ -140,6 +148,18 @@ function tryAdd(author, srvID, callback) {
         resp.setColor(col.red);
         resp.setTitle("Usage");
         resp.setDescription("`->invite [server_id]`");
+        callback("", resp);
+        return;
+    }
+
+    if(isNaN(srvID)) {
+        resp.setColor(col.red);
+        resp.setTitle("The [server_id] should be a number");
+        resp.setDescription("To get it fast:\n"
+            + "1. Go to Discord settings\n"
+            + "2. Turn on 'Developer mode'\n"
+            + "3. Right click on your server icon\n"
+            + "4. Choose 'Copy ID'");
         callback("", resp);
         return;
     }

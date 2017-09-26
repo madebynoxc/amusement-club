@@ -393,7 +393,7 @@
 	{
 		"type": ["inv", "invite"],
 		"title": "About bot invitation",
-		"description": "You can add Amusement Club on any other server, but you have to register this server in bot database first. Type `->invite add [your server id]` and it will be added for 20 hours. If you won't invite bot within that time, link will not be active.",
+		"description": "You can add Amusement Club on any other server, but you have to register this server in bot database first. Type `->invite [your server id]` and it will be added for 20 hours. If you won't invite bot within that time, link will not be active.",
 		"fields": [
 			{
 				"title": "READ THIS",
@@ -413,7 +413,7 @@
 			},
 			{
 				"title": "Ready to invite?",
-				"description": "Please, run `->invite add [server id]` to register your server. If you won't register your server, bot **will not** work!\n**PLEASE NOTE**: After you run this command, your *discord name* will be visible to anyone else, who decides to invite this bot to the same server"
+				"description": "Please, run `->invite [server id]` to register your server. If you won't register your server, bot **will not** work!\n**PLEASE NOTE**: After you run this command, your *discord name* will be visible to anyone else, who decides to invite this bot to the same server"
 			},
 			{
 				"title": "To check invite status",
