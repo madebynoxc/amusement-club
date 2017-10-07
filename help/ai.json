@@ -1,0 +1,20 @@
+{
+    "modules": [
+        {"key": "difference",   "name": "Difference Command"},
+        {"key": "summon",       "name": "Card Summoning"},
+        {"key": "balance",      "name": "Bot Economics"},
+        {"key": "send",         "name": "Card Sending"},
+        {"key": "pay",          "name": "Tomato Sending"},
+        {"key": "quest",        "name": "Quest Functionality"},
+        {"key": "forge",        "name": "Card Forging"},
+        {"key": "craft",        "name": "Card Crafting"},
+        {"key": "inventory",    "name": "Inventory"},
+        {"key": "hero",         "name": "Hero Module"}
+    ],
+
+    "answers": [
+        "**{user}**, seems like you are having troubles with **{module}**.\nThe bot help is always here for you, just run `->help {command}`",
+        "**{user}**, if you have any questions about **{module}** run `->help {command}`",
+        "In case of questions about **{module}** you can run `->help {command}`"
+    ]
+}

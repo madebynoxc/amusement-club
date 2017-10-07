@@ -1,13 +1,16 @@
 module.exports = {
-    processRequest
+    processRequest, processUserInput
 }
 
 const Discord = require("discord.js");
 const logger = require('./log.js');
 const utils = require('./localutils.js');
+const _ = require("lodash");
+
 const helpAll = require('../help/modules.json');
 const settings = require('../settings/general.json');
 const changelog = require('../help/updates.json');
+const ai = require('../help/ai.json');
 
 function processRequest(message, args, callback) {
     var help;
@@ -39,4 +42,19 @@ function getEmbed(o) {
     }, this);
     e.setFooter("Amusement Club | kqgAvdX | v" + changelog[0].version + " | by NoxCaos#4905");
     return e;
+}
+
+function processUserInput(inp, author, callback) {
+    if(inp.startsWith('how') || inp.endsWith('?')) {
+        ai.modules.forEach((e) => {
+            if(inp.includes(e.key)) {
+                res = _.sample(ai.answers);
+                res = res.replace("{user}", author.username);
+                res = res.replace("{module}", e.name);
+                res = res.replace("{command}", e.key);
+                callback(res);
+                return;
+            }
+        }, this);
+    }
 }

@@ -300,8 +300,10 @@ function getCommand(m, callback) {
                     callback(mes);
                 }
                 return;
-        }
-    } 
+        } 
+    } else if(channelType == 2) {
+        helpMod.processUserInput(m.content.toLowerCase(), m.author, callback);
+    }
 }
 
 function getUpdateLog(index) {
