@@ -3,7 +3,7 @@ module.exports = {
     getCards, summon, transfer, sell, award, getUserName,
     pay, daily, fixUserCards, getQuests, getBestCardSorted,
     leaderboard_new, difference, dynamicSort, countCardLevels, 
-    getCardFile, getDefaultChannel
+    getCardFile, getDefaultChannel, isAdmin
 }
 
 var MongoClient = require('mongodb').MongoClient;
