@@ -119,10 +119,11 @@ function assign(dbUser, args, callback) {
 }
 
 function getHeroLevel(exp) {
-    var lvl = 1;
-    var targetExp = 1.5;
+    let lvl = 1;
+    let targetExp = 1.5;
     while((targetExp = Math.pow(1.5, lvl)) < exp) lvl++;
-    var rem = (exp/targetExp).toString();
+    let last = Math.pow(1.5, lvl - 1);
+    let rem = ((exp - last)/(targetExp - last)).toString();
     
     if(!rem[2] || !rem[3]) return lvl + '.00';
     return lvl + '.' + rem[2] + rem[3];
