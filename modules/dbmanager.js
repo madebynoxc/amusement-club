@@ -147,7 +147,7 @@ function claimPromotion(user, dbUser, callback) {
     let claimCost = 100;
     let ucollection = mongodb.collection('users');
 
-    if(dbUser.dailystats) claimCost += 20 * dailystats.claim;
+    if(dbUser.dailystats) claimCost += 20 * dbUser.dailystats.claim;
 
     if(promotions.current == -1) {
         callback("**" + user.username + "**, there are no any promotional cards available now");
