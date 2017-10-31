@@ -1,5 +1,13 @@
 [
     {
+        "version": "1.9.5",
+        "changes": [
+            "Added promotions support",
+            "Fixed bugs and spelling", 
+            "Started halloween promotion"
+        ]
+    },
+    {
         "version": "1.9.4",
         "changes": [
             "Setting bot to public",

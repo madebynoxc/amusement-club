@@ -19,6 +19,7 @@ const _ = require("lodash");
 const randomColor = require('randomcolor');
 const settings = require('../settings/general.json');
 const guilds = require('../settings/servers.json');
+const promotions = require('../settings/promotions.json');
 const utils = require('./localutils.js');
 const listing = require('./reactions.js');
 const cardmanager = require('./cardmanager.js');
@@ -27,6 +28,12 @@ const inv = require('./inventory.js');
 const stats = require('./stats.js');
 const invite = require('./invite.js');
 const lev = require('js-levenshtein');
+
+var collections = [];
+fs.readdir('./cards', (err, items) => {
+    if(err) console.log(err);
+    collections = items;
+});
 
 function disconnect() {
     isConnected = false;
@@ -57,6 +64,18 @@ function claim(user, guildID, arg, callback) {
     ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
         if(!dbUser) return;
 
+        let any = false;
+        let promo = false;
+        try { 
+            any = (arg[0].trim() == 'any' || arg[0].trim() == 'all');
+            promo = (arg[0].trim() == 'promo' || arg[0].trim() == 'promo');
+        } catch(e){}
+
+        if(promo) {
+            claimPromotion(user, dbUser, callback);
+            return;
+        }
+
         let stat = dbUser.dailystats;
         if(!stat) stat = {summon:0, send: 0, claim: 0, quests: 0};
 
@@ -75,9 +94,6 @@ function claim(user, guildID, arg, callback) {
                 + "It will be reset next time you successfully run `->daily`");
             return;
         }
-
-        let any = false;
-        try { any = (arg[0].trim() == 'any' || arg[0].trim() == 'all') } catch(e){}
 
         let collection = mongodb.collection('cards');
         let guild = guilds.filter(g => g.guild_id == guildID)[0];
@@ -102,6 +118,14 @@ function claim(user, guildID, arg, callback) {
                 phrase += "(*you already own this card*)\n";
             phrase += "Your next claim will cost **" + nextClaim + "**🍅";
 
+            let incr = {exp: -claimCost};
+            if(promotions.current > -1) {
+                let prm = promotions.list[promotions.current];
+                let addedpromo = Math.floor(claimCost / 2);
+                incr = {exp: -claimCost, promoexp: addedpromo};
+                phrase += "\n You got additional **" + addedpromo + "** " + prm.currency;
+            }
+
             stat.claim++;
             heroes.addXP(dbUser, .1);
             ucollection.update(
@@ -109,12 +133,61 @@ function claim(user, guildID, arg, callback) {
                 {
                     $push: {cards: res },
                     $set: {dailystats: stat},
-                    $inc: {exp: -claimCost}
+                    $inc: incr
                 }
             ).then(() => {
                 callback(phrase, file);
                 quest.checkClaim(dbUser, (mes)=>{callback(mes)});
             });
+        });
+    });
+}
+
+function claimPromotion(user, dbUser, callback) {
+    let claimCost = 100;
+    let ucollection = mongodb.collection('users');
+
+    if(promotions.current == -1) {
+        callback("**" + user.username + "**, there are no any promotional cards available now");
+        return;
+    }
+
+    let promo = promotions.list[promotions.current];
+    if(!dbUser.promoexp){
+        callback("**" + user.username + "**, you have to earn some " + promo.currency + " first.\n"
+            + "To earn them claim cards or complete quests");
+        return;
+    }
+    
+    if(dbUser.promoexp < claimCost) {
+        callback("**" + user.username + "**, you don't have enough " + promo.currency + " to claim a card \n" 
+            + "You need at least " + claimCost + ", but you have " + Math.floor(dbUser.promoexp));
+        return;
+    }
+    
+    let collection = mongodb.collection('promocards');
+    let find = {collection: promo.name};
+
+    collection.find(find).toArray((err, i) => {
+        let res = _.sample(i);
+        let file = getCardFile(res);
+        let name = utils.toTitleCase(res.name.replace(/_/g, " "));
+
+        let phrase = "**" + user.username + "**, you got **" + name + "** \n";        
+        if(dbUser.cards && dbUser.cards.filter(
+            c => c.name == res.name && c.collection == res.collection).length > 0)
+            phrase += "(*you already have this card*)\n";
+        phrase += "You have now **" + (dbUser.promoexp - claimCost) + "** " + promo.currency;
+
+        heroes.addXP(dbUser, .15);
+        ucollection.update(
+            { discord_id: user.id },
+            {
+                $push: {cards: res },
+                $inc: {promoexp: -claimCost}
+            }
+        ).then(() => {
+            callback(phrase, file);
         });
     });
 }
@@ -186,6 +259,14 @@ function getXP(user, callback) {
                 msg += "Your claim now costs " + claimCost + " 🍅 Tomatoes\n";
             }
             if(!u.hero && stars >= 50) msg += "You have enough \u2B50 stars to get a hero! use `->hero list`";
+
+            if(promotions.current > -1 && u.promoexp) {
+                let promo = promotions.list[promotions.current];
+                msg += "A special promotion is now going until **" + promo.ends + "**!\n"
+                    + "You have **" + u.promoexp + "** " + promo.currency + "\n"
+                    + "Use `->claim promo` to get special limited time cards";
+            }
+   
             callback(msg);
         } 
     });
@@ -195,17 +276,24 @@ function getQuests(user, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: user.id }).then((u) => {
         if(u) {
+            let res = "**" + user.username + "**";
             if(!u.quests || u.quests.length <= 0){
-                callback("**" + user.username + "**, you don't have any quests. \n"
+                callback(res + ", you don't have any quests. \n"
                     + "New quests will appear after successfull '->daily' command");
-                return;
+            } else {
+
+                res += ", your quests for today: \n";
+                for(let i=0; i<u.quests.length; i++) {
+                    res += (i+1).toString() + ". " + u.quests[i].description;
+                    res += " [" + u.quests[i].award + "🍅] \n";
+                }
             }
 
-            let res = "**" + user.username + "**, your quests for today: \n";
-            for(let i=0; i<u.quests.length; i++) {
-                res += (i+1).toString() + ". " + u.quests[i].description;
-                res += " [" + u.quests[i].award + "🍅] \n";
-            }
+            /*if(promotions.current > -1) {
+                let promo = promotions.list[promotions.current];
+                let active = promo.quests.filter(q => !u.dailystats.promoquests.includes(q.name));
+                res += "\nAdditional limited time quests:\n";
+            }*/
             callback(res);
         }
     });
@@ -333,6 +421,11 @@ function pay(from, to, amount, callback) {
     collection.find({ discord_id: from }).toArray((err, u) => {
         if(u.length == 0) return;
 
+        if(from == to) {
+            callback("Did you actually think it would work?");
+            return;
+        }
+
         if(u[0].exp >= amount) {
             collection.find({ discord_id: to }).toArray((err, u2) => {
                 if(u2.length == 0) return;
@@ -394,17 +487,8 @@ function daily(uID, callback) {
         
         if(stars < 35) amount += 200;
         heroes.addXP(user, 1);
-        let hours = cardEffect[1] - utils.getHoursDifference(user.lastdaily);
-        if(!hours || hours <= 0) {
-            collection.update(
-                { discord_id: uID },
-                {
-                    $set: {lastdaily: new Date(), quests: quest.getRandomQuests()},
-                    $unset: {dailystats: ""},
-                    $inc: {exp: amount}
-                }
-            );
-        } else {
+        let hours = cardEffect[1] - utils.getHoursDifference(user.lastdaily);           
+        if(hours && hours > 0) {
             if(hours == 1){
                 let mins = 60 - (utils.getMinutesDifference(user.lastdaily) % 60);
                 callback("**" + user.username + "**, you can claim daily 🍅 in **" + mins + " minutes**");
@@ -420,7 +504,26 @@ function daily(uID, callback) {
         msg += "You also got **2 daily quests**. To view them use `->quests`\n";
         
         if(!user.hero && stars >= 50) 
-            msg += "You have enough stars to get a hero! use `->hero list`";
+            msg += "You have enough stars to get a hero! use `->hero list`\n";
+
+        let incr = {exp: amount};
+        if(promotions.current > -1) {
+            let promo = promotions.list[promotions.current];
+            let tgexp = user.dailystats? user.dailystats.claim * 100 : 0;
+            incr = {exp: amount, promoexp: tgexp + 300};
+            msg += "A special promotion is now going until **" + promo.ends + "**!\n"
+                + "You got **" + (tgexp + 300) + "** " + promo.currency + "\n"
+                + "Use `->claim promo` to get special limited time cards";
+        }
+
+        collection.update(
+            { discord_id: uID }, {
+                $set: {lastdaily: new Date(), quests: quest.getRandomQuests()},
+                $unset: {dailystats: ""},
+                $inc: incr
+            }
+        );
+
         callback(msg);
     });
 }
@@ -631,7 +734,8 @@ function getCardFile(card) {
     let name = utils.toTitleCase(card.name.replace(/_/g, " "));
     let ext = card.animated? '.gif' : (card.compressed? '.jpg' : '.png');
     let prefix = card.craft? card.level + 'cr' : card.level;
-    return './cards/' + card.collection + '/' + prefix + "_" + card.name + ext;
+    let col = collections.filter(c => c.includes(card.collection))[0];
+    return './cards/' + col + '/' + prefix + "_" + card.name + ext;
 }
 
 function getDefaultChannel(guild, clientUser) {

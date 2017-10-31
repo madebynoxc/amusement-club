@@ -11,7 +11,9 @@ const logger = require('./log.js');
 var collections = [];
 fs.readdir('./cards', (err, items) => {
     if(err) console.log(err);
-    collections = items;
+    for (var i = 0; i < items.length; i++) {
+        collections.push(items[i].replace('=', ''));
+    }
 });
 
 function addNew(user, filter, data, dif = "") {

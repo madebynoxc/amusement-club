@@ -7,6 +7,7 @@ var mongodb, col;
 const _ = require("lodash");
 const questList = require('./quests.json');
 const heroes = require('./heroes.js');
+const promotions = require('../settings/promotions.json');
 
 function getRandomQuests() {
     let res = _.sampleSize(questList, 2);
@@ -98,11 +99,13 @@ function removeQuest(user, quest, callback) {
     } else daily = {summon: 0, send: 0, claim: 0, quests: 1};
 
     var award = heroes.getHeroEffect(user, 'questReward', quest.award);
+    let incr = {exp: award};
+    if(promotions.current > -1) incr = {exp: award, promoexp: Math.floor(award/2)};
     col.update(
         { discord_id: user.discord_id },
         {   
             $set: {dailystats: daily},
-            $inc: {exp: award},
+            $inc: incr,
             $pull: {quests: {name: quest.name} },
         }
     ).then(e => {
@@ -113,7 +116,13 @@ function removeQuest(user, quest, callback) {
 
 function completeMsg(user, q){
     var award = heroes.getHeroEffect(user, 'questReward', q.award);
-    return "**" + user.username + "**, you completed '" 
+    let msg = "**" + user.username + "**, you completed '" 
     + q.description + "'. " 
     + "**" + award + "** Tomatoes were added to your account!";
+
+    if(promotions.current > -1) {
+        let promo = promotions.list[promotions.current];
+        msg += "\nYou also got extra **" + Math.floor(award/2) + "** " + promo.currency;
+    }
+    return msg;
 }
