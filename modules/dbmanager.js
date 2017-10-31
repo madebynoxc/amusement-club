@@ -147,6 +147,8 @@ function claimPromotion(user, dbUser, callback) {
     let claimCost = 100;
     let ucollection = mongodb.collection('users');
 
+    if(dbUser.dailystats) claimCost += 20 * dailystats.claim;
+
     if(promotions.current == -1) {
         callback("**" + user.username + "**, there are no any promotional cards available now");
         return;
@@ -509,10 +511,10 @@ function daily(uID, callback) {
         let incr = {exp: amount};
         if(promotions.current > -1) {
             let promo = promotions.list[promotions.current];
-            let tgexp = user.dailystats? user.dailystats.claim * 100 : 0;
-            incr = {exp: amount, promoexp: tgexp + 300};
+            let tgexp = (user.dailystats? user.dailystats.claim * 80 : 0) + 100;
+            incr = {exp: amount, promoexp: tgexp};
             msg += "A special promotion is now going until **" + promo.ends + "**!\n"
-                + "You got **" + (tgexp + 300) + "** " + promo.currency + "\n"
+                + "You got **" + tgexp + "** " + promo.currency + "\n"
                 + "Use `->claim promo` to get special limited time cards";
         }
 

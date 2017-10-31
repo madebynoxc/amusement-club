@@ -208,6 +208,7 @@ function nameCard(card, count) {
 
         res += "]  ";
         if(card.craft) res += "[craft]  ";
+        if(card.collection == "halloween") res += "[promo]  ";
         res += utils.toTitleCase(card.name.replace(/_/g, " "));
         
         if(count > 1) res += " (x" + count + ")";
