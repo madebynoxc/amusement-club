@@ -327,6 +327,7 @@ function getClaimedCard(user, fullName, args, callback) {
                 if(err){ logger.error(err); return; }
 
                 let res = _.sample(i);
+                if(!res) return;
                 let name = utils.toTitleCase(res.name.replace(/_/g, " "));
                 ucollection.update(
                     { discord_id: user.discord_id },

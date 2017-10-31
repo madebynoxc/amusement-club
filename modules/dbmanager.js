@@ -278,8 +278,8 @@ function getQuests(user, callback) {
         if(u) {
             let res = "**" + user.username + "**";
             if(!u.quests || u.quests.length <= 0){
-                callback(res + ", you don't have any quests. \n"
-                    + "New quests will appear after successfull '->daily' command");
+                res += ", you don't have any quests. \n"
+                    + "New quests will appear after successfull '->daily' command";
             } else {
 
                 res += ", your quests for today: \n";
