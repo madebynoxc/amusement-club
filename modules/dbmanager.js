@@ -249,27 +249,28 @@ function getXP(user, callback) {
             let stars = countCardLevels(u.cards);
             let claimCost = (stat.claim + 1) * 50;
             claimCost = heroes.getHeroEffect(u, 'claim_akari', claimCost);
-            let msg = "**" + user.username + "**, you have **" + Math.floor(bal) + "** 🍅 Tomatoes ";
-            msg += "and " + stars + " \u2B50 stars!\n";
+            let msg = [];
+            msg.push("**" + user.username + "**, you have **" + Math.floor(bal) + "** 🍅 Tomatoes "
+                + "and " + stars + " \u2B50 stars!");
 
             var blockClaim = heroes.getHeroEffect(u, 'claim', stat.claim >= 30);
             if(blockClaim) {
-                msg += "You can't claim more cards, as you reached your daily claim limit.\n"
+                msg.push("You can't claim more cards, as you reached your daily claim limit.")
             } else {
                 if(bal > claimCost) 
-                    msg += "You can claim " + getClaimsAmount(stat.claim, bal) + " cards today! Use `->claim` \n";
-                msg += "Your claim now costs " + claimCost + " 🍅 Tomatoes\n";
+                    msg.push("You can claim " + getClaimsAmount(stat.claim, bal) + " cards today! Use `->claim`");
+                msg.push("Your claim now costs " + claimCost + " 🍅 Tomatoes");
             }
-            if(!u.hero && stars >= 50) msg += "You have enough \u2B50 stars to get a hero! use `->hero list`";
+            if(!u.hero && stars >= 50) msg.push("You have enough \u2B50 stars to get a hero! use `->hero list`");
 
             if(promotions.current > -1 && u.promoexp) {
                 let promo = promotions.list[promotions.current];
-                msg += "A special promotion is now going until **" + promo.ends + "**!\n"
-                    + "You have **" + u.promoexp + "** " + promo.currency + "\n"
-                    + "Use `->claim promo` to get special limited time cards";
+                msg.push("A special promotion is now going until **" + promo.ends + "**!");
+                msg.push("You have **" + u.promoexp + "** " + promo.currency);
+                msg.push("Use `->claim promo` to get special limited time cards");
             }
    
-            callback(msg);
+            callback(msg.join("\n"));
         } 
     });
 }
