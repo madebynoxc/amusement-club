@@ -322,6 +322,16 @@ function getHelp(com) {
 
 function getUserID(inp) {
     try{
+        if (/^\d+$/.test(inp)) {
+            // Filters out most names that start with a number while only
+            // filtering out the first month of snowflakes
+            // Since Discord wasn't launched until March of the year,
+            // you'd have to have a user made before its release to be filtered
+            // 1000 ms/s * 60 s/m * 60 m/h * 24 h/d * 30 d/M * 2 ** 22 snowflake date offset
+            if (inp > (1000 * 60 * 60 * 24 * 30 * 2 ** 22)) {
+                return inp
+            }
+        }
         return inp.slice(0, -1).split('@')[1].replace('!', '');
     } catch(e) {
         return null;
