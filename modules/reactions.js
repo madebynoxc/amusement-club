@@ -136,7 +136,7 @@ function getCardList(arr, flt) {
             cnt = 1;
         } else cnt++;
     }
-    if (flt.tier == 0 || current.level == flt.tier) {
+    if (current && (flt.tier == 0 || current.level == flt.tier)) {
         if(!flt.col || flt.collections.includes(current.collection)) {
             if(!flt.craft || current.craft) {
                 let c = nameCard(current, cnt);
