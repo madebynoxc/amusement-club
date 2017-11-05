@@ -103,8 +103,8 @@ function buildCardList(pgn) {
     let resp = "";
 
     if(pgn.dif) resp += "**" + pgn.user.username 
-        + "**, **" + pgn.dif + "** has following unique cards: \n";
-    else resp += "**" + pgn.user.username + "**, you have: \n";
+        + "**, **" + pgn.dif + "** has following unique cards (**" + pgn.data.length + "** results): \n";
+    else resp += "**" + pgn.user.username + "**, you have (**" + pgn.data.length + "** results): \n";
 
     resp += pgn.data.slice(((pgn.page - 1) * 15), max).join('\n');
     if(pages > 1) resp += "\n \u{1F4C4} Page "+ pgn.page +" of " + pages;
