@@ -489,7 +489,6 @@ function daily(uID, callback) {
         amount = cardEffect[0];
         
         if(stars < 35) amount += 200;
-        heroes.addXP(user, 1);
         let hours = cardEffect[1] - utils.getHoursDifference(user.lastdaily);           
         if(hours && hours > 0) {
             if(hours == 1){
@@ -499,6 +498,8 @@ function daily(uID, callback) {
                 callback("**" + user.username + "**, you can claim daily 🍅 in **" + hours + " hours**");
             return;
         }
+
+        heroes.addXP(user, 1);
 
         var msg = "**" + user.username + "** recieved daily **" + amount + "** 🍅 You now have " 
         + (Math.floor(user.exp) + amount) + "🍅 \n";
