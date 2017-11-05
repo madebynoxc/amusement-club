@@ -67,7 +67,6 @@ function processEmoji(e, message) {
             message.edit(buildCardList(pgn));
             break;
     }
-    //resetReact(message);
 }
 
 function react(message) {
@@ -85,7 +84,9 @@ function react(message) {
 function removeExisting(userID) {
     var pgn = paginations.filter((o)=> o.user.id == userID)[0];
     if(pgn){
-        if(pgn.message) pgn.message.clearReactions();
+        try { if(pgn.message) pgn.message.clearReactions(); }
+        catch(e) {}
+
         var index = paginations.indexOf(pgn);
         paginations.splice(index, 1);
     }
@@ -144,8 +145,13 @@ function getCardList(arr, flt) {
         }
     }
     res.sort((a, b) => {
-        if(a.match(/★/g) < b.match(/★/g)) return 1;
-        if(a.match(/★/g) > b.match(/★/g)) return -1;
+        let match1 = a.match(/★/g);
+        let match2 = b.match(/★/g);
+
+        if(!match1) return 1;
+        if(!match2) return -1;
+        if(match1 < match2) return 1;
+        if(match1 > match2) return -1;
         return 0;
     });
 
@@ -203,12 +209,13 @@ function nameCard(card, count) {
     try {
         let res = "[";
 
-        for(let i=0; i<parseInt(card.level); i++)
-            res += "★";
-
+        if(card.collection == "halloween") res += "H";
+        else {
+            for(let i=0; i<parseInt(card.level); i++)
+                res += "★"; 
+        }
         res += "]  ";
         if(card.craft) res += "[craft]  ";
-        if(card.collection == "halloween") res += "[promo]  ";
         res += utils.toTitleCase(card.name.replace(/_/g, " "));
         
         if(count > 1) res += " (x" + count + ")";
