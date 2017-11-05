@@ -18,6 +18,7 @@ function connect(db) {
     mongodb = db;
     ucollection = db.collection('users');
     ccollection = db.collection('cards');
+    pcollection = db.collection('promocards');
 }
 
 function processRequest(args, callback) {
@@ -61,19 +62,23 @@ function cards(callback) {
     promises.push(ccollection.count());
     promises.push(ccollection.find({animated: true}).count());
     promises.push(ccollection.find({craft: true}).count());
-    for(i=0; i<collections.length; i++)  
-        promises.push(ccollection.find({collection: collections[i]}).count());
+    for(i=0; i<collections.length; i++) {
+        let col = collections[i];
+        if(col[0] == '=') 
+            promises.push(pcollection.find({collection: col.replace('=', '')}).count());
+        else promises.push(ccollection.find({collection: col}).count());
+    }
     for(i=0; i<=5; i++) 
         promises.push(ccollection.find({level: i}).count());
 
     Promise.all(promises).then(v => {
         res = "__**General cards statistics**__\n";
         res += "Overall cards: **" + v[0] + "**\n"; 
-        res += "By collection: ";
+        res += "By collection:\n";
         for(i=0; i<collections.length; i++) { 
-            res += collections[i] + ' -- **';
+            res += collections[i].replace('=', '') + ' -- **';
             res += v[i + 3] + "**";
-            if(i + 1 < collections.length) res += ' | ';
+            res += '\n';
         }
         res += "\nBy level: ";
         for(i=1; i<=5; i++) { 
