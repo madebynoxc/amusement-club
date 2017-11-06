@@ -16,7 +16,10 @@ const inv = require("./inventory.js");
 var collections = [];
 fs.readdir('./cards', (err, items) => {
     if(err) console.log(err);
-    collections = items;
+    for (var i = 0; i < items.length; i++) {
+        if(items[i][0] != '=' && items[i] != "special")
+            collections.push(items[i]);
+    }
 });
 
 function connect(db) {
