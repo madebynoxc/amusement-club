@@ -1,5 +1,13 @@
 [
     {
+        "version": "1.9.6",
+        "changes": [
+            "Added `->miss` command that allows you to find missing cards",
+            "Fixed multiple bugs", 
+            "Improved sorting and card matching"
+        ]
+    },
+    {
         "version": "1.9.5",
         "changes": [
             "Added promotions support",

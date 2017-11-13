@@ -267,6 +267,11 @@ function getCommand(m, callback) {
                     });
                 }
                 return;
+            case 'miss':
+                dbManager.needsCards(m.author, cnt, (text) => {
+                    callback(text);
+                });
+                return;
             case 'stat':
             case 'stats':
             case 'statistics':

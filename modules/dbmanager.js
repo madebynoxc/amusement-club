@@ -3,7 +3,7 @@ module.exports = {
     getCards, summon, transfer, sell, award, getUserName,
     pay, daily, fixUserCards, getQuests, getBestCardSorted,
     leaderboard_new, difference, dynamicSort, countCardLevels, 
-    getCardFile, getDefaultChannel, isAdmin
+    getCardFile, getDefaultChannel, isAdmin, needsCards
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -536,7 +536,7 @@ function leaderboard_new(arg, guild, callback) {
         users.forEach(function(element) {
             if(element.cards) {
                 let lvl = countCardLevels(element.cards);
-                lvl = heroes.getHeroEffect(element, 'rating', lvl);
+                //lvl = heroes.getHeroEffect(element, 'rating', lvl);
                 usrLevels.push({
                     id: element.discord_id,
                     name: element.username,
@@ -641,6 +641,30 @@ function doesUserHave(name, tgID, card, callback) {
     });
 }
 
+function needsCards(discUser, args, callback) {
+    let term = args.join('_');
+    let collection = mongodb.collection('users');
+    let ccollection = term.startsWith('-h')? 
+        mongodb.collection('promocards') : mongodb.collection('cards');
+    
+    let isCol = term[0] == '-';
+    let match = {'name':new RegExp(term, 'i')};
+    if(isCol) match = {'collection':new RegExp(term.replace('-', ''), 'i')};
+
+    collection.findOne({"discord_id":discUser.id}).then(user => {
+        if(!user) return;
+
+        ccollection.find(match).toArray((err, res) => {
+            let dif = res.filter(x => user.cards.filter(y => x.name == y.name) == 0);
+            
+            if(dif.length > 0) 
+                callback(listing.addNew(discUser, args, dif, 'database'));
+            else
+                callback("**Database** has no any unique cards for you\n");
+        });
+    });
+}
+
 function nameOwners(col) {
     let res = '';
     for(let i=0; i<col.length; i++) {
@@ -683,10 +707,15 @@ function countCardLevels(cards) {
     let sum = 0;
     let metCards = [];
     if(!cards) return 0;
-    cards.forEach(function(element) {
-        if(!metCards.includes(element.name)) {
-            sum += element.level;
-            metCards.push(element.name);
+    cards.forEach(e => {
+        if(metCards.filter(m => {
+            return m.name == e.name && 
+            m.collection == e.collection}).length == 0) {
+            sum += e.level;
+            metCards.push({
+                name: e.name, 
+                collection: e.collection
+            });
         }
     }, this);
     return sum;
