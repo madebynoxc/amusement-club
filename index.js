@@ -131,6 +131,8 @@ function getCommand(m, callback) {
             case 'dif':
             case 'diff':
             case 'difference':
+                if(channelType == 0) callback('Available only on servers');
+                else if(channelType == 1) callback('This operation is possible in bot channel only');
                 dbManager.difference(m.author, getUserID(cnt.shift()), cnt, (text) => {
                     callback(text);
                 });
@@ -210,6 +212,7 @@ function getCommand(m, callback) {
                 return;
             case 'quest':
             case 'quests':
+                if(channelType == 1) callback('This operation is possible in bot channel only');
                 dbManager.getQuests(m.author, (text) =>{
                     callback(text);
                 });
@@ -280,6 +283,7 @@ function getCommand(m, callback) {
                 }
                 return;
             case 'miss':
+                if(channelType == 1) callback('This operation is possible in bot channel only');
                 dbManager.needsCards(m.author, cnt, (text) => {
                     callback(text);
                 });

@@ -243,7 +243,7 @@ function getCardEffect(user, action, ...params) {
         case 'claim':
             if(inv.has(user, 'gift_from_tohru') 
                 && (!user.dailystats || user.dailystats.claim == 0)) {
-                params[0][0].$match.level = 3;
+                params[0] = true;
             }
             break;
         case 'heroup':
