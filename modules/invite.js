@@ -81,7 +81,7 @@ function checkOnJoin(guild, botUser) {
                 + "I am a card game bot that allows *you* to obtain some nice cards in your collection.\n"
                 + "Get chance to win one of those below!\n"
                 + "Type `->help` and get started",
-                {file: './invite.png'})
+                './invite.png')
             .then(() => {
                 if(guild.channels.array().filter(c => c.name.includes('bot')).length == 0) {
                     resp.setColor(col.yellow);

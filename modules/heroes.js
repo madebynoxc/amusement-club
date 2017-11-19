@@ -52,7 +52,7 @@ function getHero(dbUser, callback) {
     }
 
     callback(h.subname + " **" + h.name + "** level **" + getHeroLevel(h.exp) + "** arrives!", 
-        { file: "./heroes/" + h.name.toLowerCase().replace(/ /g, "_") + ".png" });
+        "./heroes/" + h.name.toLowerCase().replace(/ /g, "_") + ".png");
 }
 
 function getHeroes(dbUser, callback) {
@@ -63,7 +63,7 @@ function getHeroes(dbUser, callback) {
         return;
     }
     
-    callback("Use `->hero info [hero name]` or `->hero info all`", { file: "./heroes/list.png" });
+    callback("Use `->hero info [hero name]` or `->hero info all`", "./heroes/list.png");
 }
 
 function getInfo(dbUser, args, callback) {
@@ -71,7 +71,7 @@ function getInfo(dbUser, args, callback) {
     if(req == 'all') {
         callback("Use `->hero get [hero name]`.\n"
             + "Use `->hero info [hero name]` to get specific hero info", 
-            { file: "./heroes/all.png" });
+            "./heroes/all.png");
         return;
     }
 
@@ -80,7 +80,7 @@ function getInfo(dbUser, args, callback) {
     if(h) {
         console.log(h.name.toLowerCase().replace(/ /g, "_"));
         callback("Use `->hero get [hero name]`.", 
-            { file: "./heroes/" + h.name.toLowerCase().replace(/ /g, "_") + ".png" });
+            "./heroes/" + h.name.toLowerCase().replace(/ /g, "_") + ".png");
     }
 }
 

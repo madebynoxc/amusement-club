@@ -66,8 +66,7 @@ function getInfo(user, name, callback, image = false) {
         if(card.cooldown) res += "\nCooldown: **" + card.cooldown + "**";
         if(!image) res += "\nUse `->forge [card1], [card2], ...`";
         callback(res, image? 
-            {file: "./crafted/" + card.name + (card.compressed? '.jpg' : '.png')} : 
-            undefined);
+            "./crafted/" + card.name + (card.compressed? '.jpg' : '.png') : undefined);
     } else callback("**" + user.username + 
         "**, forged card with name **" + name.replace(/_/g, " ") + 
         "** was not found");
@@ -166,7 +165,7 @@ function craftCard(user, args, callback) {
                 + "Card was added to your inventory, and now gives you:\n**"
                 + crafted[i].effect + "**\n"
                 + "Use `->inv` to check your inventory", 
-                {file: "./crafted/" + crafted[i].name + (crafted[i].compressed? '.jpg' : '.png')});
+                "./crafted/" + crafted[i].name + (crafted[i].compressed? '.jpg' : '.png'));
             }).catch(e => logger.error(e));
             return;
         }
@@ -339,7 +338,7 @@ function getClaimedCard(user, fullName, args, callback) {
                     { $push: {cards: res } }
                 ).then(u => {
                     callback("**" + user.username + "**, you got **" + name + "**!",
-                        {file: dbManager.getCardFile(res)});
+                        dbManager.getCardFile(res));
                 }).catch(e => logger.error(e));
             });
             return true;
@@ -371,7 +370,7 @@ function requestCard(user, findObj, callback) {
                     { $push: {cards: res } }
             ).then(u => {
                 callback("**" + user.username + "**, you got **" + name + "**!",
-                    {file: dbManager.getCardFile(res)}, res);
+                     dbManager.getCardFile(res), res);
         }).catch(e => logger.error(e));
     });
 }
