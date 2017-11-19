@@ -161,6 +161,10 @@
 			{
 				"title": "Get any random card",
 				"description": "->claim any"
+			},
+			{
+				"title": "Get several cards",
+				"description": "->claim [amount]"
 			}
 		]
 	},

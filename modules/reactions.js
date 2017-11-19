@@ -1,5 +1,5 @@
 module.exports = {
-    setupPagination, addNew
+    setupPagination, addNew, nameCard
 }
 
 var paginations = [];

@@ -223,6 +223,7 @@ function craftOrdinary(user, cards, callback) {
     if(collection) req.collection = collection;
     heroes.addXP(user, .2);
     requestCard(user, req, (m, o, c) => {
+        quest.checkForge(user, level, callback);
         user.cards.push(c);
         ucollection.update( 
             { discord_id: user.discord_id},
@@ -242,8 +243,9 @@ function getCardEffect(user, action, ...params) {
     switch(action) {
         case 'claim':
             if(inv.has(user, 'gift_from_tohru') 
-                && (!user.dailystats || user.dailystats.claim == 0)) 
-                params[0].level = 3;
+                && (!user.dailystats || user.dailystats.claim == 0)) {
+                params[0][0].$match.level = 3;
+            }
             break;
         case 'heroup':
             if(inv.has(user, 'onward_to_victory')) params[0] += params[0] * .5;

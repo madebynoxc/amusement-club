@@ -66,24 +66,33 @@ function claim(user, guildID, arg, callback) {
 
         let any = false;
         let promo = false;
+        let amount = 1;
         try { 
-            any = (arg[0].trim() == 'any' || arg[0].trim() == 'all');
-            promo = (arg[0].trim() == 'promo' || arg[0].trim() == 'promo');
-        } catch(e){}
+            arg.forEach(e => {
+                if(utils.isInt(e)) amount = parseInt(e);
+                else {
+                    any = e == 'any';
+                    promo = e == 'promo';
+                }
+            }, this);
+        } catch(exc){}
 
         if(promo) {
             claimPromotion(user, dbUser, callback);
             return;
         }
 
+        amount = Math.min(Math.max(parseInt(amount), 1), 30);
+
         if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, quests: 0};
 
-        let claimCost = (dbUser.dailystats.claim + 1) * 50;
-        let nextClaim = claimCost + 50;
-        claimCost = heroes.getHeroEffect(dbUser, 'claim_akari', claimCost);
+        let claimCost = getClaimsCost(dbUser, amount);
+        let nextClaim = 50 * (dbUser.dailystats.claim + amount);
+        //claimCost = heroes.getHeroEffect(dbUser, 'claim_akari', claimCost);
         if(dbUser.exp < claimCost) {
-            callback("**" + user.username + "**, you don't have enough 🍅 Tomatoes to claim a card \n" 
-                + "You need at least " + claimCost + ", but you have " + Math.floor(dbUser.exp));
+            callback("**" + user.username + "**, you don't have enough 🍅 Tomatoes "
+                + ((amount == 1)? "to claim a card" : "to claim **" + amount + "** cards")
+                + "\nYou need at least **" + claimCost + "**, but you have **" + Math.floor(dbUser.exp) + "**");
             return;
         }
 
@@ -96,25 +105,39 @@ function claim(user, guildID, arg, callback) {
 
         let collection = mongodb.collection('cards');
         let guild = guilds.filter(g => g.guild_id == guildID)[0];
-        let find = {};
-        if(guild && !any) find.collection = guild.collection;
-        find = forge.getCardEffect(dbUser, 'claim', find)[0];
+        let query = [ 
+            { $match: { } },
+            { $sample: { size: amount } } 
+        ]
 
-        collection.find(find).toArray((err, i) => {
-            let res = _.sample(i);
-            let file = getCardFile(res);
-            let name = utils.toTitleCase(res.name.replace(/_/g, " "));
+        if(guild && !any) query[0].$match.collection = guild.collection;
+        query = forge.getCardEffect(dbUser, 'claim', query)[0];
 
-            let heroEffect = !heroes.getHeroEffect(dbUser, 'claim', true);
+        collection.aggregate(query).toArray((err, res) => {
+            let phrase = "**" + user.username + "**, you got";
             nextClaim = heroes.getHeroEffect(dbUser, 'claim_akari', nextClaim);
-            let phrase = "**" + user.username + "**, you got **" + name + "** \n";
-            if(res.craft) 
-                phrase += "This is a **craft card**. Find pair and `->forge` special card of them!\n";
-            
-            if(claimCost >= 500) phrase += "*You are claiming for extremely high price*\n";
-            if(dbUser.cards && dbUser.cards.filter(
-                c => c.name == res.name && c.collection == res.collection).length > 0)
-                phrase += "(*you already own this card*)\n";
+            res.sort(dynamicSort('-level'));
+
+            if(amount == 1) {
+                let names = [];
+                phrase += " **" + utils.toTitleCase(res[0].name.replace(/_/g, " ")) + "**\n";
+                if(res[0].craft) phrase += "This is a **craft card**. Find pair and `->forge` special card of them!\n";
+                if(dbUser.cards && dbUser.cards.filter(
+                    c => c.name == res[0].name && c.collection == res[0].collection).length > 0)
+                    phrase += "(*you already have this card*)\n";
+            } else {
+                phrase += " (new cards are bold):\n"
+                for (var i = 0; i < res.length; i++) {
+                    if(dbUser.cards 
+                        && dbUser.cards.filter(c => c.name == res[i].name && c.collection == res[i].collection).length > 0)
+                        phrase += (i + 1) + ". " + listing.nameCard(res[i], 1);
+                    else phrase += (i + 1) + ". **" + listing.nameCard(res[i], 1) + "**";
+                    phrase += "\n";
+                }
+                phrase += "\nUse `->sum [card name]` to summon a card\n";
+            }
+
+            //if(claimCost >= 500) phrase += "*You are claiming for extremely high price*\n";            
             phrase += "Your next claim will cost **" + nextClaim + "**🍅";
 
             let incr = {exp: -claimCost};
@@ -125,19 +148,19 @@ function claim(user, guildID, arg, callback) {
                 phrase += "\n You got additional **" + addedpromo + "** " + prm.currency;
             }
 
-            dbUser.dailystats.claim++;
+            dbUser.dailystats.claim += amount;
             heroes.addXP(dbUser, .1);
             ucollection.update(
                 { discord_id: user.id },
                 {
-                    $push: {cards: res },
+                    $pushAll: {cards: res },
                     $set: {dailystats: dbUser.dailystats},
                     $inc: incr
                 }
             ).then(() => {
-                callback(phrase, file);
-                quest.checkClaim(dbUser, (mes)=>{callback(mes)});
-            });
+                callback(phrase, ((amount == 1)? getCardFile(res[0]) : null));
+                quest.checkClaim(dbUser, callback);
+            }).catch(e => console.log(e));
         });
     });
 }
@@ -200,13 +223,13 @@ function addXP(user, amount, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: user.id}).then((res) => {
         if(res) {
-            let increment = res.hero? {exp: amount, 'hero.exp': amount * .01} : {exp: amount}
+            //let increment = res.hero? {exp: amount, 'hero.exp': amount * .01} : 
             amount = heroes.getHeroEffect(res, 'addXP', amount);
             collection.update( 
                 { discord_id: user.id},
                 {
                     $set: { username: user.username },
-                    $inc: increment
+                    $inc: {exp: amount}
                 },
                 { upsert: true }
             ).then((u)=>{
@@ -227,8 +250,8 @@ function addXP(user, amount, callback) {
     });
     
 
-    cooldownList.push(user.id);
-    setTimeout(() => removeFromCooldown(user.id), 6000);
+    //cooldownList.push(user.id);
+    //setTimeout(() => removeFromCooldown(user.id), 6000);
 }
 
 function removeFromCooldown(userID) {
@@ -256,7 +279,7 @@ function getXP(user, callback) {
                 msg.push("You can't claim more cards, as you reached your daily claim limit.")
             } else {
                 if(bal > claimCost) 
-                    msg.push("You can claim " + getClaimsAmount(u.dailystats.claim, bal) + " cards today! Use `->claim`");
+                    msg.push("You can claim " + getClaimsAmount(u, u.dailystats.claim, bal) + " cards today! Use `->claim`");
                 msg.push("Your claim now costs " + claimCost + " 🍅 Tomatoes");
             }
             if(!u.hero && stars >= 50) msg.push("You have enough \u2B50 stars to get a hero! use `->hero list`");
@@ -655,7 +678,8 @@ function needsCards(discUser, args, callback) {
         if(!user) return;
 
         ccollection.find(match).toArray((err, res) => {
-            let dif = res.filter(x => user.cards.filter(y => x.name == y.name) == 0);
+            let dif = res.filter(x => user.cards.filter(y => 
+                (x.name == y.name && x.collection == y.collection)) == 0);
             
             if(dif.length > 0) 
                 callback(listing.addNew(discUser, args, dif, 'database'));
@@ -688,7 +712,7 @@ function dynamicSort(property) {
     }
 }
 
-function getClaimsAmount(claims, exp) {
+function getClaimsAmount(dbUser, claims, exp) {
     let res = 0;
     let total = claims * 50;
     let allowed = 30 - claims;
@@ -697,10 +721,20 @@ function getClaimsAmount(claims, exp) {
     while(exp >= total) {
         claims++;
         res++;
-        total += claims * 50;
+        total += heroes.getHeroEffect(dbUser, 'claim_akari', claims * 50);
     }
 
     return Math.min(res, allowed);
+}
+
+function getClaimsCost(dbUser, amount) {
+    let total = 0;
+    let claims = dbUser.dailystats.claim;
+    for (var i = 0; i < amount; i++) {
+        total += heroes.getHeroEffect(dbUser, 'claim_akari', claims * 50);
+        claims++;
+    }
+    return total;
 }
 
 function countCardLevels(cards) {

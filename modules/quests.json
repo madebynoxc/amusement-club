@@ -15,38 +15,18 @@
         "award" : 200
     },
     {
-        "name" : "send2",
-        "description" : "Send a 2-star card to anyone else",
-        "award" : 200
-    },
-    {
         "name" : "send3",
         "description" : "Send a 3-star card to anyone else",
         "award" : 300
     },
     {
-        "name" : "send3",
-        "description" : "Send a 3-star card to anyone else",
+        "name" : "forge2",
+        "description" : "Forge a 2-star card",
         "award" : 300
     },
     {
-        "name" : "gain500",
-        "description" : "Get 500 tomatoes balance",
-        "award" : 200
-    },
-    {
-        "name" : "gain1000",
-        "description" : "Get 1000 tomatoes balance",
+        "name" : "forge3",
+        "description" : "Forge a 3-star card",
         "award" : 400
-    },
-    {
-        "name" : "gain1500",
-        "description" : "Get 1500 tomatoes balance",
-        "award" : 800
-    },
-    {
-        "name" : "sum2",
-        "description" : "Summon at least 2 cards",
-        "award" : 200
     }
 ]

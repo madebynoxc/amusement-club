@@ -1,5 +1,16 @@
 [
     {
+        "version": "1.9.7",
+        "changes": [
+            "Hero level is now calculated by new formula",
+            "`->claim` now accepts [amount] as parameter", 
+            "Added command anti-spam protection",
+            "Removed 'get [tomato] amount' quest",
+            "Removed summoning quests",
+            "Added card forge related quests"
+        ]
+    },
+    {
         "version": "1.9.6",
         "changes": [
             "Added `->miss` command that allows you to find missing cards",

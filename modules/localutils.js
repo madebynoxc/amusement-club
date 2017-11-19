@@ -7,7 +7,9 @@ module.exports = {
     toTitleCase,
     getMinutesDifference,
     getHoursDifference,
-    getFullTimeDifference
+    getFullTimeDifference,
+    isInt,
+    sortByStars
 }
 
 function getSourceFormat(str) {
@@ -75,4 +77,24 @@ function getMinutesDifference(tg) {
 function getFullTimeDifference(tg) {
     let mil = new Date() - tg;
     return msToTime(mil);
+}
+
+function isInt(value) {
+    return !isNaN(value) && 
+        parseInt(Number(value)) == value && 
+        !isNaN(parseInt(value, 10));
+}
+
+function sortByStars(cards) {
+    cards.sort((a, b) => {
+        let match1 = a.name.match(/★/g);
+        let match2 = b.name.match(/★/g);
+
+        if(!match1) return 1;
+        if(!match2) return -1;
+        if(match1 < match2) return 1;
+        if(match1 > match2) return -1;
+        return 0;
+    });
+    return cards;
 }

@@ -1,9 +1,10 @@
 module.exports = {
     checkClaim, connect, getRandomQuests, completeNext,
-    checkXP, checkSend, checkSummon, addBonusQuest
+    checkXP, checkSend, checkSummon, addBonusQuest, checkForge
 }
 
 var mongodb, col;
+const Discord = require('discord.js');
 const _ = require("lodash");
 const questList = require('./quests.json');
 const heroes = require('./heroes.js');
@@ -76,6 +77,17 @@ function checkXP(user, callback) {
     }
 }
 
+function checkForge(user, lvl, callback) {
+    let q = getQuest(user, 'forge');
+    if(!q) return;
+
+    if((q.name == 'forge2' && lvl == 2) || 
+        (q.name == 'forge3' && lvl == 3)) {
+        callback(completeMsg(user, q));
+        removeQuest(user, q, callback);
+    }
+}
+
 function addBonusQuest(user, callback) {
     col.update(
         { discord_id: user.discord_id },
@@ -114,15 +126,19 @@ function removeQuest(user, quest, callback) {
     });
 }
 
-function completeMsg(user, q){
+function completeMsg(user, q) {
+    var embed = new Discord.RichEmbed();
+    embed.setColor('#77B520');
+
     var award = heroes.getHeroEffect(user, 'questReward', q.award);
-    let msg = "**" + user.username + "**, you completed '" 
-    + q.description + "'. " 
-    + "**" + award + "** Tomatoes were added to your account!";
+    let title = "**" + user.username + "**, you completed '" + q.description + "'";
+    let desc =  "**" + award + "**🍅 Tomatoes were added to your account!";
 
     if(promotions.current > -1) {
         let promo = promotions.list[promotions.current];
         msg += "\nYou also got extra **" + Math.floor(award/2) + "** " + promo.currency;
     }
-    return msg;
+    embed.setTitle(title);
+    embed.setDescription(desc);
+    return embed;
 }

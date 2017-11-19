@@ -14,6 +14,8 @@ const helpMod = require('./modules/help.js');
 const invite = require('./modules/invite.js');
 var bot, curgame = 0;
 
+var cooldownList = [];
+
 //https://discordapp.com/oauth2/authorize?client_id=340988108222758934&scope=bot&permissions=125952
 
 dbManager.connect();
@@ -44,11 +46,16 @@ function _init() {
         } else {
             log(message);
             invite.checkStatus(message, t => {
-                if(!t)
+                if(!t){
+                    if(cooldownList.includes(message.author.id)) return;
+                    cooldownList.push(message.author.id);
+                    setTimeout(() => removeFromCooldown(message.author.id), 2000);
+
                     getCommand(message, (res, obj) => {
                         if(!res && !obj) return;
-                        message.channel.send(res, obj);
+                        message.channel.send(res, obj? {file: obj} : null);
                     });
+                }
                 else message.channel.send("", t);
             });
         }
@@ -58,6 +65,11 @@ function _init() {
     bot.login(settings.token).catch((reason) => {
         console.log(reason);
     });
+}
+
+function removeFromCooldown(userID) {
+    let i = cooldownList.indexOf(userID);
+    cooldownList.splice(i, 1);
 }
 
 function _stop() {
@@ -112,7 +124,7 @@ function getCommand(m, callback) {
                 else if(channelType == 1) callback('Claiming is possible only in bot channel');
                 else {
                     dbManager.claim(m.author, m.guild.id, cnt, (text, img) => {
-                        callback(text, {file: img });
+                        callback(text, img);
                     });
                 }
                 return;
@@ -129,7 +141,7 @@ function getCommand(m, callback) {
                     callback("Please, specify card name");
                 else {
                     dbManager.summon(m.author, cd, (text, img) => {
-                        callback(text, {file: img });
+                        callback(text, img);
                     });
                 }
                 return;
