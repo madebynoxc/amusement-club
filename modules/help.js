@@ -1,5 +1,5 @@
 module.exports = {
-    processRequest, processUserInput
+    processRequest, processUserInput, mongodb
 }
 
 const Discord = require("discord.js");
@@ -12,6 +12,12 @@ const settings = require('../settings/general.json');
 const changelog = require('../help/updates.json');
 const ai = require('../help/ai.json');
 
+var mongodb;
+
+function connect(db) {
+    mongodb = db;
+}
+
 function processRequest(message, args, callback) {
     var help;
     var req = args.shift();
@@ -22,7 +28,7 @@ function processRequest(message, args, callback) {
     if(help) {
         message.author.send("", { embed: getEmbed(help) }).then(m =>{
             if(message.channel.name) 
-                callback("**" + message.author.username + "**, look! A new message! I wonder what it is about");
+                callback("**" + message.author.username + "**, help was sent to you");
         }).catch(e => {
             if(message.channel.name) 
                 callback("**" + message.author.username 
@@ -46,15 +52,20 @@ function getEmbed(o) {
 
 function processUserInput(inp, author, callback) {
     if(inp.startsWith('how') || inp.endsWith('?')) {
-        ai.modules.forEach((e) => {
-            if(inp.includes(e.key)) {
-                res = _.sample(ai.answers);
-                res = res.replace("{user}", author.username);
-                res = res.replace("{module}", e.name);
-                res = res.replace("{command}", e.key);
-                callback(res);
-                return;
+        let collection = mongodb.collection('users');
+        collection.findOne({ discord_id: author.id }).then(dbUser => {
+            if(dbUser.cards.length < 100) {
+                ai.modules.forEach((e) => {
+                    if(inp.includes(e.key)) {
+                        res = _.sample(ai.answers);
+                        res = res.replace("{user}", author.username);
+                        res = res.replace("{module}", e.name);
+                        res = res.replace("{command}", e.key);
+                        callback(res);
+                        return;
+                    }
+                }, this);
             }
-        }, this);
+        });
     }
 }

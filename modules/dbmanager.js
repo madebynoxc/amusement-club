@@ -27,6 +27,7 @@ const forge = require('./forge.js');
 const inv = require('./inventory.js');
 const stats = require('./stats.js');
 const invite = require('./invite.js');
+const helpMod = require('./help.js');
 const lev = require('js-levenshtein');
 
 var collections = [];
@@ -37,7 +38,6 @@ fs.readdir('./cards', (err, items) => {
 
 function disconnect() {
     isConnected = false;
-    media.clearTemp();
     mongodb.close();
 }
 
@@ -54,6 +54,7 @@ function connect(callback) {
         stats.connect(db);
         cardmanager.updateCards(db);
         invite.connect(db);
+        helpMod.connect(db);
 
         if(callback) callback();   
     });
@@ -87,8 +88,7 @@ function claim(user, guildID, arg, callback) {
         if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, quests: 0};
 
         let claimCost = getClaimsCost(dbUser, amount);
-        let nextClaim = 50 * (dbUser.dailystats.claim + amount);
-        //claimCost = heroes.getHeroEffect(dbUser, 'claim_akari', claimCost);
+        let nextClaim = 50 * (dbUser.dailystats.claim + amount + 1);
         if(dbUser.exp < claimCost) {
             callback("**" + user.username + "**, you don't have enough 🍅 Tomatoes "
                 + ((amount == 1)? "to claim a card" : "to claim **" + amount + "** cards")
@@ -112,14 +112,17 @@ function claim(user, guildID, arg, callback) {
 
         if(guild && !any) query[0].$match.collection = guild.collection;
 
-        collection.findOne({level:3}).then(extra => {
+        collection.aggregate([ 
+            { $match: { level : 3 } },
+            { $sample: { size: 1 } } 
+        ]).toArray((err, extra) => {
             collection.aggregate(query).toArray((err, res) => {
                 let phrase = "**" + user.username + "**, you got";
                 nextClaim = heroes.getHeroEffect(dbUser, 'claim_akari', nextClaim);
 
                 if(forge.getCardEffect(dbUser, 'claim', false)[0]) {
                     res.shift();
-                    res.push(extra);
+                    res.push(extra[0]);
                 } 
 
                 res.sort(dynamicSort('-level'));
@@ -577,7 +580,7 @@ function leaderboard_new(arg, guild, callback) {
 
         usrLevels.sort(dynamicSort('-levels'));
         if(global) {
-            callback("**Global TOP5 Card Owners:**\n" + nameOwners(usrLevels));
+            callback("**Global TOP Card Owners:**\n" + nameOwners(usrLevels));
         } else if(guild) {
             let includedUsers = [];
             try {
@@ -586,13 +589,13 @@ function leaderboard_new(arg, guild, callback) {
                         if(mem.user.id == elem.id) {
                             includedUsers.push(elem);
                         }
-                        if(includedUsers.length >= 5) throw BreakException;
+                        if(includedUsers.length >= 10) throw BreakException;
                     }, this);
                 }, this);
             } catch(e) {}
 
             if(includedUsers.length > 0) {
-                callback("**Local TOP5 Card Owners:**\n" + nameOwners(includedUsers));
+                callback("**Local TOP Card Owners:**\n" + nameOwners(includedUsers));
             }
         }
     });

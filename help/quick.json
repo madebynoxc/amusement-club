@@ -63,8 +63,9 @@
     {
         "name": "claim",
         "values" : [
-            "**->claim OR ->cl**",
+            "**->claim [amount] OR ->cl [amount]**",
             "->claim (spawns a random card)",
+            "->claim [n] (spawns n random cards)",
             "->claim any (any card not related server theme)"
         ]
     },

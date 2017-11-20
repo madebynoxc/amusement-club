@@ -7,7 +7,7 @@
     {
         "name" : "claim6",
         "description" : "Claim at least 6 cards today",
-        "award" : 600
+        "award" : 500
     },
     {
         "name" : "send2",
@@ -21,12 +21,12 @@
     },
     {
         "name" : "forge2",
-        "description" : "Forge a 2-star card",
+        "description" : "Forge a 2-star card (`->help forge`)",
         "award" : 300
     },
     {
         "name" : "forge3",
-        "description" : "Forge a 3-star card",
+        "description" : "Forge a 3-star card (`->help forge`)",
         "award" : 400
     }
 ]
