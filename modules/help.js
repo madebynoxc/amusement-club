@@ -1,5 +1,5 @@
 module.exports = {
-    processRequest, processUserInput, mongodb
+    processRequest, processUserInput, connect
 }
 
 const Discord = require("discord.js");
