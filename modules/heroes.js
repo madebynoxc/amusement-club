@@ -149,7 +149,7 @@ function getHeroEffect(user, action, value, ...params) {
                 if(action == 'forge') return 0;
                 break;
             case 'funami yui':
-                if(action == 'daily') return value * 80;
+                if(action == 'daily') return value * 90;
                 if(action == 'rating') return value + countAnimated(user.cards);
                 break;
             case 'yoshikawa chinatsu':

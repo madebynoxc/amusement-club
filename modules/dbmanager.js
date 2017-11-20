@@ -518,6 +518,7 @@ function daily(uID, callback) {
         amount = cardEffect[0];
         
         if(stars < 35) amount += 200;
+        console.log(utils.getHoursDifference(user.lastdaily));
         let hours = cardEffect[1] - utils.getHoursDifference(user.lastdaily);           
         if(hours && hours > 0) {
             if(hours == 1){

@@ -70,7 +70,7 @@ function checkOnJoin(guild, botUser) {
         resp.setTitle("Server is invalid");
         resp.setDescription("For technical reasons bot can't function on small servers.\n"
             + "Please, invite **Amusement Club** again when you have 10 or more members");
-        def.send("", resp).then(() => guild.leave());
+        def.send(resp).then(() => guild.leave());
         return;
     }
 
@@ -89,20 +89,20 @@ function checkOnJoin(guild, botUser) {
                     resp.setDescription("This server has no any **bot** channel.\n"
                         + "In order to **Amusement Club** function properly, you need to have special channel "
                         + "that has 'bot' in the name.\n`(e.g. 'bot-commands', 'bot', 'bot_stuff', etc)`");
-                    def.send("", resp);
+                    def.send(resp);
                 }
             });
         }
         else if(t == 'banned') {
             resp.setTitle("Bot can't function on this server");
             resp.setDescription("This bot was banned from this server. **Amusement Club** will leave after this message");
-            def.send("", resp).then(() => m.guild.leave());
+            def.send(resp).then(() => m.guild.leave());
         }
         else if(t == null) {
             resp.setTitle("Bot is not registered!");
             resp.setDescription("Server administrator has to run `->invite [server_id]` in bot DMs\n"
                 + "Run `->help invite` for more information");
-            def.send("", resp);
+            def.send(resp);
         }
     });
 }
@@ -148,7 +148,7 @@ function tryAdd(author, srvID, callback) {
         resp.setColor(col.red);
         resp.setTitle("Usage");
         resp.setDescription("`->invite [server_id]`");
-        callback("", resp);
+        callback(resp);
         return;
     }
 
@@ -160,7 +160,7 @@ function tryAdd(author, srvID, callback) {
             + "2. Turn on 'Developer mode'\n"
             + "3. Right click on your server icon\n"
             + "4. Choose 'Copy ID'");
-        callback("", resp);
+        callback(resp);
         return;
     }
 
@@ -178,20 +178,20 @@ function tryAdd(author, srvID, callback) {
                     resp.setDescription("**" + s.inviter_name 
                         + "** already added this server to list, but invite is still pending. "
                         + "\n[Press here to invite](" + link + ")");
-                callback("", resp);
+                callback(resp);
                 return;
             }
         } else if(s && s.status == "active")  {
             resp.setColor(col.red);
             resp.setTitle("Can't add this server");
             resp.setDescription("Bot is already on this server");
-            callback("", resp);
+            callback(resp);
             return;
         } else if(s && s.status == "banned")  {
             resp.setColor(col.red);
             resp.setTitle("Can't add this server");
             resp.setDescription("This server is marked as banned");
-            callback("", resp);
+            callback(resp);
             return;
         }
 
@@ -211,20 +211,20 @@ function tryAdd(author, srvID, callback) {
                 + "If you don't have permission to add bots to this server, forward the invide link to server administrator\n"
                 + "[Press to invite](" + link + ")\n");
             resp.addField("OR forward this invite link", "`" + link + "`", false);
-            callback("", resp);
+            callback(resp);
 
         }).catch(() => {
             resp.setColor(col.red);
             resp.setTitle("Internal error");
             resp.setDescription("Can't add invite right now. Please try again later");
-            callback("", resp);
+            callback(resp);
         });
 
     }).catch(e => {
         resp.setColor(col.red);
         resp.setTitle("Internal error");
         resp.setDescription(e);
-        callback("", resp);
+        callback(resp);
     });
 }
 
@@ -257,12 +257,12 @@ function getStatus(srvID, callback) {
             resp.setTitle("Can't find server");
             resp.setDescription("Seems like bot was not invited to this server yet. Go ahead and invite it!");
         }
-        callback("", resp);
+        callback(resp);
     }).catch(e => {
         resp.setColor(col.red);
         resp.setTitle("Internal error");
         resp.setDescription(e);
-        callback("", resp);
+        callback(resp);
     });
 }
 

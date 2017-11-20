@@ -1,27 +1,27 @@
 [
     {
         "name": "blue_free_eyes",
-        "level": 4,
+        "level": 20,
         "effect": "+ 200 🍅 Tomatoes in `->daily` bonus",
-        "cost": 1500,
+        "cost": 4500,
         "compressed": false,
         "cards": [
             "blue_eyes", "free_butterfly"
         ]
     }, {
         "name": "cherry_blossoms",
-        "level": 5,
+        "level": 35,
         "effect": "Get 200 🍅 Tomatoes every time you forge ordinary cards",
-        "cost": 2000,
+        "cost": 6000,
         "compressed": false,
         "cards": [
             "censored_akari", "cherry_attacks"
         ]
     }, {
         "name": "delightful_sunset",
-        "level": 8,
+        "level": 40,
         "effect": "Reduces claim cost by __200 🍅 Tomatoes__ when used",
-        "cost": 1300,
+        "cost": 2300,
         "compressed": false,
         "cooldown": 24,
         "cards": [
@@ -29,18 +29,18 @@
         ]
     }, {
         "name": "gift_from_tohru",
-        "level": 6,
+        "level": 60,
         "effect": "Get 3-star card every first claim per day",
-        "cost": 2200,
+        "cost": 6200,
         "compressed": false,
         "cards": [
             "gift_to_kobayashi", "tohru's_delight"
         ]
     }, {
         "name": "long-awaited_date",
-        "level": 5,
+        "level": 45,
         "effect": "Completes your __first quest__ when used",
-        "cost": 3200,
+        "cost": 6200,
         "compressed": false,
         "cooldown": 20,
         "cards": [
@@ -48,45 +48,45 @@
         ]
     }, {
         "name": "onward_to_victory",
-        "level": 5,
+        "level": 80,
         "effect": "Get 50% more hero expirience",
-        "cost": 3800,
+        "cost": 8800,
         "compressed": false,
         "cards": [
             "onward_to_battle", "sword_of_victory"
         ]
     }, {
         "name": "skies_of_friendship",
-        "level": 8,
+        "level": 40,
         "effect": "Everyone who sends you a card, will get 100 🍅 Tomatoes",
-        "cost": 1000,
+        "cost": 10000,
         "compressed": false,
         "cards": [
             "clear_skies", "dragon_friend"
         ]
     }, {
         "name": "sushi_squad",
-        "level": 4,
+        "level": 50,
         "effect": "Get 20% more 🍅 Tomatoes when you sell a card",
-        "cost": 1700,
+        "cost": 3700,
         "compressed": false,
         "cards": [
             "rolled_sushi_band", "rolled_sushi_party"
         ]
     }, {
         "name": "the_ruler_jeanne",
-        "level": 12,
+        "level": 90,
         "effect": "Get `->daily` in 15 hours instead of 20",
-        "cost": 2900,
+        "cost": 15000,
         "compressed": false,
         "cards": [
             "dark_jeanne", "light_jeanne"
         ]
     }, {
         "name": "the_space_unity",
-        "level": 9,
+        "level": 75,
         "effect": "Gives a random card from __specified collection__ when used",
-        "cost": 3900,
+        "cost": 6900,
         "compressed": false,
         "cooldown": 20,
         "cards": [
