@@ -133,9 +133,11 @@ function getCommand(m, callback) {
             case 'difference':
                 if(channelType == 0) callback('Available only on servers');
                 else if(channelType == 1) callback('This operation is possible in bot channel only');
-                dbManager.difference(m.author, getUserID(cnt.shift()), cnt, (text) => {
-                    callback(text);
-                });
+                else {
+                    dbManager.difference(m.author, getUserID(cnt.shift()), cnt, (text) => {
+                        callback(text);
+                    });
+                }
                 return;
             case 'sum': 
             case 'summon':
@@ -213,9 +215,11 @@ function getCommand(m, callback) {
             case 'quest':
             case 'quests':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
-                dbManager.getQuests(m.author, (text) =>{
-                    callback(text);
-                });
+                else {
+                    dbManager.getQuests(m.author, (text) =>{
+                        callback(text);
+                    });
+                }
                 return;
             case 'award': 
                 if(dbManager.isAdmin(m.author.id)) {
@@ -284,9 +288,11 @@ function getCommand(m, callback) {
                 return;
             case 'miss':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
-                dbManager.needsCards(m.author, cnt, (text) => {
-                    callback(text);
-                });
+                else {
+                    dbManager.needsCards(m.author, cnt, (text) => {
+                        callback(text);
+                    });
+                }
                 return;
             case 'stat':
             case 'stats':
