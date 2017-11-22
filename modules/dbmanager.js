@@ -631,13 +631,8 @@ function difference(discUser, targetID, args, callback) {
             if(!user2) return;
 
             let dif = user2.cards.filter(x => user.cards.filter(y => x.name == y.name) == 0);
-            let cards = [];
-            dif.forEach(element => {
-                cards.push(element);
-            }, this);
-            
-            if(cards.length > 0) 
-                callback(listing.addNew(discUser, args, cards, user2.username));
+            if(dif.length > 0) 
+                callback(listing.addNew(discUser, args, dif, user2.username));
             else
                 callback("**" + user2.username + "** has no any unique cards for you\n");
         });
@@ -681,14 +676,14 @@ function needsCards(discUser, args, callback) {
     let ccollection = term.startsWith('-h')? 
         mongodb.collection('promocards') : mongodb.collection('cards');
     
-    let isCol = term[0] == '-';
-    let match = {'name':new RegExp(term, 'i')};
-    if(isCol) match = {'collection':new RegExp(term.replace('-', ''), 'i')};
+    //let isCol = term[0] == '-';
+    //let match = {'name':new RegExp(term, 'i')};
+    //if(isCol) match = {'collection':new RegExp(term.replace('-', ''), 'i')};
 
     collection.findOne({"discord_id":discUser.id}).then(user => {
         if(!user) return;
 
-        ccollection.find(match).toArray((err, res) => {
+        ccollection.find().toArray((err, res) => {
             let dif = res.filter(x => user.cards.filter(y => 
                 (x.name == y.name && x.collection == y.collection)) == 0);
             

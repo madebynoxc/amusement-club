@@ -7,6 +7,7 @@ const fs = require('fs');
 const logger = require('./log.js');
 const utils = require('./localutils.js');
 const forge = require('./forge.js');
+const heroes = require('./heroes.js');
 
 function connect(db) {
     mongodb = db;
@@ -86,7 +87,7 @@ function useItem (user, args, callback) {
     let isComplete = false;
     if(item) {
         if(item.lastused) {
-            let cooldown = item.cooldown - utils.getHoursDifference(item.lastused);
+            let cooldown = heroes.getHeroEffect(user, 'cooldown', item.cooldown) - utils.getHoursDifference(item.lastused);
             let itemname = utils.toTitleCase(item.name.replace(/_/g, " "));
             if(cooldown && cooldown > 0){
                 callback("**" + user.username + "**, the item **" + itemname

@@ -10,8 +10,8 @@
         ]
     }, {
         "name": "cherry_blossoms",
-        "level": 35,
-        "effect": "Get 200 🍅 Tomatoes every time you forge ordinary cards",
+        "level": 15,
+        "effect": "__Any__ card forge is 50% cheaper",
         "cost": 6000,
         "compressed": false,
         "cards": [
@@ -49,7 +49,7 @@
     }, {
         "name": "onward_to_victory",
         "level": 50,
-        "effect": "Get 50% more hero expirience",
+        "effect": "Get 50% more hero experience",
         "cost": 8800,
         "compressed": false,
         "cards": [

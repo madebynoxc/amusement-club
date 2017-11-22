@@ -143,15 +143,12 @@ function getHeroEffect(user, action, value, ...params) {
                     if(p < 0) p = 0;
                     return value + p;
                 } 
-                break;
             case 'toshino kyoko':
                 if(action == 'addXP') return value * 1.8;
                 if(action == 'forge') return 0;
-                break;
             case 'funami yui':
-                if(action == 'daily') return value * 90;
-                if(action == 'rating') return value + countAnimated(user.cards);
-                break;
+                if(action == 'daily') return value * 100;
+                if(action == 'cooldown') return Math.floor(value * .5);
             case 'yoshikawa chinatsu':
                 if(action == 'questReward') return Math.floor(value * 1.8);
                 if(action == 'questComplete') {
@@ -159,11 +156,12 @@ function getHeroEffect(user, action, value, ...params) {
                         value("Dark spell from Chinatsu granted you another quest! Use `->quest` to see it");
                     });
                 }
-                break;
         }
     }
     return value;
 }
+
+
 
 function getRating(user, callback) {
     ucollection.find({ }).sort({'hero.exp': -1}).toArray((err, users) => {

@@ -47,20 +47,20 @@ function processRequest(userID, args, callback) {
 }
 
 function getCardByName(name) {
-    return crafted.filter(c => c.name.includes(name))[0];
+    return crafted.filter(c => c.name.includes(name) || c.cards.filter(cc => cc.includes(name)) != 0)[0];
 }
 
 function getInfo(user, name, callback, image = false) {
-    var card = crafted.filter(c => c.name.includes(name))[0];
+    var card = getCardByName(name);
     if(card) {
         let cardName = utils.toTitleCase(card.name.replace(/_/g, " "));
         let res = "Info about **" + cardName + "** craft card:";
-        res += "\nForge cost: **" + card.cost + "**🍅";
+        res += "\nForge cost: **" +  getCardEffect(user, 'forge', card.cost) + "**🍅";
         res += "\nRequired hero level: **" + card.level + "**";
         res += "\nRequired cards: ";
         for(i in card.cards) {
             res += "**" + utils.toTitleCase(card.cards[i].replace(/_/g, " ")) + "**";
-            res += (i == card.cards.length)? " " : ", ";
+            res += ((i == card.cards.length - 1)? " " : ", ");
         }
         res += "\nEffect: *" + card.effect + "*";
         if(card.cooldown) res += "\nCooldown: **" + card.cooldown + "**";
@@ -121,7 +121,7 @@ function craftCard(user, args, callback) {
             let err = "";
             let curName = utils.toTitleCase(crafted[i].name.replace(/_/g, " "));
             //let cost = heroes.getHeroEffect(user, 'forge', crafted[i].cost);
-            let cost = crafted[i].cost;
+            let cost =  getCardEffect(user, 'forge', crafted[i].cost);
             if(user.exp < cost) {
                 err += "**" + user.username + "**, you don't have enough 🍅 Tomatoes "
                 + "to craft this card. You need at least **" + cost + "**🍅\n";
@@ -177,7 +177,7 @@ function craftCard(user, args, callback) {
 
 function craftOrdinary(user, cards, callback) {
     let level = cards[0].level;
-    let crCost = heroes.getHeroEffect(user, 'forge', level * 120);
+    let crCost =  getCardEffect(user, 'forge', heroes.getHeroEffect(user, 'forge', level * 120));
     if(user.exp < crCost) {
         callback("**" + user.username + "**, you don't have enough 🍅 Tomatoes to perform forge. "
             + "You need at least **" + crCost + "** but you have **" + Math.floor(user.exp) + "**");
@@ -218,7 +218,6 @@ function craftOrdinary(user, cards, callback) {
     }
 
     let req = {level: level};
-    let bonus = getCardEffect(user, 'forge', 0);
     if(collection) req.collection = collection;
     heroes.addXP(user, .2);
     requestCard(user, req, (m, o, c) => {
@@ -228,10 +227,10 @@ function craftOrdinary(user, cards, callback) {
             { discord_id: user.discord_id},
             { 
                 $set: {cards: user.cards },
-                $inc: {exp: bonus[0] - crCost}
+                $inc: {exp: -crCost}
             }
         ).then(u => { 
-            if(bonus[0] > 0) m += "\nAdded " + bonus[0] + "🍅 Tomatoes from card effect";
+            //if(bonus[0] > 0) m += "\nAdded " + bonus[0] + "🍅 Tomatoes from card effect";
             callback(m, o);
         }).catch(e => {logger.error(e)});
     });
@@ -257,7 +256,7 @@ function getCardEffect(user, action, ...params) {
             if(inv.has(user, 'the_ruler_jeanne')) params[1] = 15;
             break;
         case 'forge':
-            if(inv.has(user, 'cherry_blossoms')) params[0] = 200;
+            if(inv.has(user, 'cherry_blossoms')) params *= .5;
             break;
         case 'send':
             if(params[0].inventory && inv.has(params[0], 'skies_of_friendship')) {
