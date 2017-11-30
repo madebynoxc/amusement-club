@@ -1,7 +1,7 @@
 module.exports = {
     connect, disconnect, claim, addXP, getXP, doesUserHave,
     getCards, summon, transfer, sell, award, getUserName,
-    pay, daily, fixUserCards, getQuests, getBestCardSorted,
+    pay, daily, getQuests, getBestCardSorted,
     leaderboard_new, difference, dynamicSort, countCardLevels, 
     getCardFile, getDefaultChannel, isAdmin, needsCards
 }
@@ -463,7 +463,7 @@ function transfer(from, to, card, callback) {
                     { discord_id: from.id }, 
                     { 
                         $set: { cards: cards, dailystats: dbUser.dailystats, exp: fromExp },
-                        $inc: { sends: 1 }
+                        $inc: { sends: match.level }
                     }
                 ).then(() => {
                     quest.checkSend(dbUser, match.level, (mes)=>{callback(mes)});
@@ -474,7 +474,7 @@ function transfer(from, to, card, callback) {
                     { discord_id: to },
                     { 
                         $push: { cards: match },
-                        $inc: { gets: 1 }
+                        $inc: { gets: match.level }
                     }
                 ).then(() => {
                     forge.getCardEffect(dbUser, 'send', u2, callback);
@@ -811,25 +811,6 @@ function countCardLevels(cards) {
         }
     }, this);
     return sum;
-}
-
-function fixUserCards() {
-    let newUsers = []
-    let collection = mongodb.collection('users');
-    collection.find({}).toArray((err, users) => {
-        users.forEach(function(u) {
-            if(u.cards) {
-                u.cards.forEach(function(elem) {
-                    elem.level = parseInt(elem.level);
-                }, this);
-            }
-            newUsers.push(u);
-
-            collection.remove({ _id: u._id }).then(()=>{
-                collection.insertOne(u);
-            });
-        }, this);
-    });
 }
 
 function getBestCardSorted(cards, name) {

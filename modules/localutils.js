@@ -10,19 +10,17 @@ module.exports = {
     getFullTimeDifference,
     isInt,
     sortByStars,
-<<<<<<< Updated upstream
     containsCard,
     cardsMatch,
     canSend,
     canGet,
-    formatError
-}
-
-const discord = require("discord.js");
-=======
+    formatError,
+    formatConfirm,
+    formatInfo,
     getRequestFromFilters
 }
 
+const discord = require("discord.js");
 const fs = require('fs');
 
 let collections = [];
@@ -32,7 +30,6 @@ fs.readdir('./cards', (err, items) => {
         collections.push(items[i].replace('=', ''));
     }
 });
->>>>>>> Stashed changes
 
 function getSourceFormat(str) {
     return str.replace(' ', '');
@@ -169,26 +166,22 @@ function canGet(user) {
 }
 
 function formatError(user, title, body) {
-    let emb = new discord.RichEmbed();
-    emb.title = title;
-    emb.description = user.username + ", " + body;
-    emb.color = "#f51d1d";
-    return emb;
+    return getEmbed(user, title, body, "#f51d1d");
 }
 
 function formatConfirm(user, title, body) {
-    let emb = new discord.RichEmbed();
-    emb.title = title;
-    emb.description = user.username + ", " + body;
-    emb.color = "#26dc26";
-    return emb;
+    return getEmbed(user, title, body, "#26dc26");
 }
 
 function formatInfo(user, title, body) {
+    return getEmbed(user, title, body, "#15aaec");
+}
+
+function getEmbed(user, title, body, color) {
     let emb = new discord.RichEmbed();
-    emb.title = title;
-    emb.description = user.username + ", " + body;
-    emb.color = "#15aaec";
+    emb.setTitle(title);
+    emb.setDescription("**" + user.username + "**, " + body);
+    emb.setColor(color);
     return emb;
 }
 
