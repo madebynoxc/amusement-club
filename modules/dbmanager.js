@@ -395,6 +395,13 @@ function transfer(from, to, card, callback) {
             return;
         }
 
+        if(!utils.canSend(dbUser)) {
+            callback(utils.formatError(from.username, 
+                "Can't send card!",
+                "you can't send more cards. Please, trade fare and consider **getting** more cards from users. Details: `->help trade`"));
+            return;
+        }
+
         let match = getBestCardSorted(dbUser.cards, check)[0];
         
         if(match){
@@ -409,6 +416,13 @@ function transfer(from, to, card, callback) {
 
             collection.findOne({ discord_id: to }).then(u2 => {
                 if(!u2) return;
+
+                if(!utils.canGet(dbUser)) {
+                    callback(utils.formatError(from.username, 
+                        "Can't send card!",
+                        "user **" + u2.username + "** got too many cards. That user has to **send** more cards. Details: `->help trade`"));
+                    return;
+                }
 
                 let i = cards.indexOf(match);
                 cards.splice(i, 1);
@@ -426,7 +440,10 @@ function transfer(from, to, card, callback) {
                 heroes.addXP(dbUser, .1);
                 collection.update(
                     { discord_id: from.id }, 
-                    { $set: {cards: cards, dailystats: dbUser.dailystats, exp: fromExp}}
+                    { 
+                        $set: { cards: cards, dailystats: dbUser.dailystats, exp: fromExp },
+                        $inc: { sends: 1 }
+                    }
                 ).then(() => {
                     quest.checkSend(dbUser, match.level, (mes)=>{callback(mes)});
                 });
@@ -434,40 +451,44 @@ function transfer(from, to, card, callback) {
                 match.frozen = new Date();
                 collection.update(
                     { discord_id: to },
-                    { $push: {cards: match }}
+                    { 
+                        $push: { cards: match },
+                        $inc: { gets: 1 }
+                    }
                 ).then(() => {
                     forge.getCardEffect(dbUser, 'send', u2, callback);
                 });
 
-                callback("**" + from.username + "** sent **" + name + "** to **" + u2.username + "**");
+                callback(utils.formatConfirm(from, "Sent successfully", "you sent **" + name + "** to **" + u2.username + "**"));
             });
             return;
         }
-        callback("**" + from.username + "** you have no card named **'" + card + "'**");
+        callback(utils.formatError(from, "Can't send card", "you have no card matching **'" + card + "'**"));
     });
 }
 
 function pay(from, to, amount, callback) {
     let collection = mongodb.collection('users');
     amount = Math.abs(amount);
-    collection.find({ discord_id: from }).toArray((err, u) => {
-        if(u.length == 0) return;
+    collection.findOne({ discord_id: from }).then(dbUser => {
+        if(!dbUser) return;
 
         if(from == to) {
             callback("Did you actually think it would work?");
             return;
         }
 
-        if(u[0].exp >= amount) {
-            collection.find({ discord_id: to }).toArray((err, u2) => {
-                if(u2.length == 0) return;
-                collection.update({ discord_id: from }, {$inc: {exp: -amount }});
-                collection.update({ discord_id: to }, {$inc: {exp: amount }});
-                callback("**" + u[0].username + "** sent **" + amount + "** 🍅 Tomatoes to **" + u2[0].username + "**");
+        if(dbUser.exp >= amount) {
+            collection.findOne({ discord_id: to }).then(user2 => {
+                if(!user2) return;
+
+                collection.update({ discord_id: from }, {$inc: {exp: -amount, sends: Math.floor(amount/100) }});
+                collection.update({ discord_id: to }, {$inc: {exp: amount, gets: Math.floor(amount/100) }});
+                callback(utils.formatConfirm(dbUser, "Tomatoes sent", "you sent **" + amount + "**🍅 to **" + user2.username + "**"));
             });
             return;
         }
-        callback("**" + u[0].username + "**, you don't have enough funds");
+        callback(utils.formatError(dbUser.username, "Can't send Tomatoes", "you don't have enough funds"));
     });
 }
 
@@ -688,7 +709,7 @@ function needsCards(discUser, args, callback) {
                 (x.name == y.name && x.collection == y.collection)) == 0);
             
             if(dif.length > 0) 
-                callback(listing.addNew(discUser, args, dif, 'database'));
+                callback(listing.addNew(discUser, args, dif, 'Database'));
             else
                 callback("**Database** has no any unique cards for you\n");
         });

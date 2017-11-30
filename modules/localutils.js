@@ -9,8 +9,15 @@ module.exports = {
     getHoursDifference,
     getFullTimeDifference,
     isInt,
-    sortByStars
+    sortByStars,
+    containsCard,
+    cardsMatch,
+    canSend,
+    canGet,
+    formatError
 }
+
+const discord = require("discord.js");
 
 function getSourceFormat(str) {
     return str.replace(' ', '');
@@ -98,3 +105,88 @@ function sortByStars(cards) {
     });
     return cards;
 }
+
+function getRequestFromFilters(str) {
+    let query = {};
+    let keywords = [];
+    let collections = [];
+    fs.readdir('./cards', (err, items) => {
+        if(err) console.log(err);
+        for (let i = 0; i < items.length; i++) {
+            collections.push(items[i].replace('=', ''));
+        }
+    });
+
+    str.split(' ').forEach(element => {
+        if(isInt(element))
+            query.level = parseInt(element);
+
+        else if(element[0] == '-') {
+            let el = element.substr(1);
+            if(el === "craft") query.craft = true; 
+            else if(el === "multi") query.amount = {$gte: 1};
+            else if(el === "gif") query.anim = true;
+            else {
+                col = collections.filter(c => c.includes(el))[0];
+                if(col) query.collections.push(col);
+            }
+
+        } else keywords.push(element.trim());
+    }, this);
+
+    if(keywords) query.name = new RegExp(keywords.join('_'), 'ig');
+
+    return query;
+}
+
+function containsCard(array, card) {
+    return array.filter(c => cardsMatch(c, card)) == 0;
+}
+
+function cardsMatch(card1, card2) {
+    return (card1.name === card2.name && 
+            card1.collection === card2.collection && 
+            card1.level === card2.level);
+}
+
+function canSend(user) {
+    var rel = user.sends / user.gets;
+    return (user.sends + user.gets < 20) || isNaN(rel) || rel < 2.5;
+}
+
+function canGet(user) {
+    var rel = user.gets / user.sends;
+    return (user.sends + user.gets < 20) || isNaN(rel) || rel < 2.5;
+}
+
+function formatError(user, title, body) {
+    let emb = new discord.RichEmbed();
+    emb.title = title;
+    emb.description = user.username + ", " + body;
+    emb.color = "#f51d1d";
+    return emb;
+}
+
+function formatConfirm(user, title, body) {
+    let emb = new discord.RichEmbed();
+    emb.title = title;
+    emb.description = user.username + ", " + body;
+    emb.color = "#26dc26";
+    return emb;
+}
+
+function formatInfo(user, title, body) {
+    let emb = new discord.RichEmbed();
+    emb.title = title;
+    emb.description = user.username + ", " + body;
+    emb.color = "#15aaec";
+    return emb;
+}
+
+// db.getCollection('users').aggregate([
+// {"$match":{"discord_id":"218871036962275338"}},
+// {"$unwind":"$cards"},
+// {"$match":{"cards.level":3, "cards.name":/illya/i}},
+// {"$group": {_id: 0, cards: {"$push": "$cards"}}},
+// {"$project": {cards: '$cards', _id: 0}}
+// ])
