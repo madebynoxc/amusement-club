@@ -158,7 +158,7 @@ function claim(user, guildID, arg, callback) {
                 }
 
                 dbUser.dailystats.claim += amount;
-                heroes.addXP(dbUser, .1);
+                heroes.addXP(dbUser, .2 * amount);
                 ucollection.update(
                     { discord_id: user.id },
                     {
@@ -347,35 +347,56 @@ function getCards(userID, callback) {
     });
 }
 
-function summon(user, card, callback) {
-    let collection = mongodb.collection('users');
-    collection.findOne({ discord_id: user.id }).then(dbUser => {
-        if(!dbUser) return;
+// function summon(user, card, callback) {
+//     let collection = mongodb.collection('users');
+//     collection.findOne({ discord_id: user.id }).then(dbUser => {
+//         if(!dbUser) return;
 
-        let check = card.toLowerCase().replace(/ /g, "_");
-        if(!dbUser.cards){
-            callback(user.username + ", you have no any cards");
-            return;
-        }
+//         let check = card.toLowerCase().replace(/ /g, "_");
+//         if(!dbUser.cards){
+//             callback(user.username + ", you have no any cards");
+//             return;
+//         }
 
-        let match = getBestCardSorted(dbUser.cards, check)[0];
-        if(match){
-            let name = utils.toTitleCase(match.name.replace(/_/g, " "));
-            let file = getCardFile(match);
-            callback("**" + user.username + "** summons **" + name + "!**", file);
+//         let match = getBestCardSorted(dbUser.cards, check)[0];
+//         if(match){
+//             let name = utils.toTitleCase(match.name.replace(/_/g, " "));
+//             let file = getCardFile(match);
+//             callback("**" + user.username + "** summons **" + name + "!**", file);
 
-            if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, quests: 0};
-            dbUser.dailystats.summon++;
+//             if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, quests: 0};
+//             dbUser.dailystats.summon++;
 
-            heroes.addXP(dbUser, .1);
-            collection.update(
-                { discord_id: user.id }, {$set: {dailystats: dbUser.dailystats}}
-            ).then((e) => {
-                quest.checkSummon(dbUser, (mes)=>{callback(mes)});
-            });
-        } else 
-            callback("**" + user.username + "** you have no card named **'" + card + "'**");
-    }).catch(e => logger.error(e));
+//             heroes.addXP(dbUser, .1);
+//             collection.update(
+//                 { discord_id: user.id }, {$set: {dailystats: dbUser.dailystats}}
+//             ).then((e) => {
+//                 quest.checkSummon(dbUser, (mes)=>{callback(mes)});
+//             });
+//         } else 
+//             callback("**" + user.username + "** you have no card named **'" + card + "'**");
+//     }).catch(e => logger.error(e));
+// }
+
+function summon(user, args, callback) {
+    if(!args) return callback("**" + user.username + "**, please specify name/collection/level");
+    let query = utils.getRequestFromFilters(args);
+    getUserCards(user, query).toArray((err, objects) => {
+        let cards = objects[0].cards;
+        let match = query.name? getBestCardSorted(cards, query.name)[0] : cards[0];
+        if(!match) return callback("**" + user.username + "**, can't find card matching that request");
+
+        callback("**" + user.username + "** summons **" + utils.toTitleCase(match.name.replace(/_/g, " ")) + "!**", getCardFile(match));
+
+        /*if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, quests: 0};
+        dbUser.dailystats.summon++;
+
+        collection.update(
+            { discord_id: user.id }, {$set: {dailystats: dbUser.dailystats}}
+        ).then((e) => {
+            quest.checkSummon(dbUser, (mes)=>{callback(mes)});
+        });*/
+    });
 }
 
 function transfer(from, to, card, callback) {
@@ -550,7 +571,7 @@ function daily(uID, callback) {
             return;
         }
 
-        heroes.addXP(user, 1);
+        heroes.addXP(user, 2);
 
         var msg = "**" + user.username + "** recieved daily **" + amount + "** 🍅 You now have " 
         + (Math.floor(user.exp) + amount) + "🍅 \n";
@@ -714,6 +735,16 @@ function needsCards(discUser, args, callback) {
                 callback("**Database** has no any unique cards for you\n");
         });
     });
+}
+
+function getUserCards(user, query) {
+    return mongodb.collection('users').aggregate([
+        {"$match":{"discord_id":user.id}},
+        {"$unwind":"$cards"},
+        {"$match":query},
+        {"$group": {_id: 0, cards: {"$push": "$cards"}}},
+        {"$project": {cards: '$cards', _id: 0}}
+    ]);
 }
 
 function nameOwners(col) {

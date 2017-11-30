@@ -10,6 +10,7 @@ module.exports = {
     getFullTimeDifference,
     isInt,
     sortByStars,
+<<<<<<< Updated upstream
     containsCard,
     cardsMatch,
     canSend,
@@ -18,6 +19,20 @@ module.exports = {
 }
 
 const discord = require("discord.js");
+=======
+    getRequestFromFilters
+}
+
+const fs = require('fs');
+
+let collections = [];
+fs.readdir('./cards', (err, items) => {
+    if(err) console.log(err);
+    for (let i = 0; i < items.length; i++) {
+        collections.push(items[i].replace('=', ''));
+    }
+});
+>>>>>>> Stashed changes
 
 function getSourceFormat(str) {
     return str.replace(' ', '');
@@ -106,35 +121,29 @@ function sortByStars(cards) {
     return cards;
 }
 
-function getRequestFromFilters(str) {
+function getRequestFromFilters(args) {
     let query = {};
     let keywords = [];
-    let collections = [];
-    fs.readdir('./cards', (err, items) => {
-        if(err) console.log(err);
-        for (let i = 0; i < items.length; i++) {
-            collections.push(items[i].replace('=', ''));
-        }
-    });
 
-    str.split(' ').forEach(element => {
+    console.log(args);
+    args.forEach(element => {
         if(isInt(element))
-            query.level = parseInt(element);
+            query['cards.level'] = parseInt(element);
 
         else if(element[0] == '-') {
             let el = element.substr(1);
-            if(el === "craft") query.craft = true; 
-            else if(el === "multi") query.amount = {$gte: 1};
-            else if(el === "gif") query.anim = true;
+            if(el === "craft") query['cards.craft'] = true; 
+            //else if(el === "multi") query.amount = {$gte: 1};
+            else if(el === "gif") query['cards.anim'] = true;
             else {
                 col = collections.filter(c => c.includes(el))[0];
-                if(col) query.collections.push(col);
+                if(col) query['cards.collection'] = col;
             }
 
         } else keywords.push(element.trim());
     }, this);
 
-    if(keywords) query.name = new RegExp(keywords.join('_'), 'ig');
+    if(keywords) query['cards.name'] = new RegExp(keywords.join('_'), 'ig');
 
     return query;
 }

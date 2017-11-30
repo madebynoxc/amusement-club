@@ -141,13 +141,7 @@ function getCommand(m, callback) {
                 return;
             case 'sum': 
             case 'summon':
-                if(cd.length < 3) 
-                    callback("Please, specify card name");
-                else {
-                    dbManager.summon(m.author, cd, (text, img) => {
-                        callback(text, img);
-                    });
-                }
+                dbManager.summon(m.author, cnt, callback);
                 return;
             case 'bal': 
             case 'balance': 
