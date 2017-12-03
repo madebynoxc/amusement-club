@@ -678,12 +678,12 @@ function difference(discUser, targetID, args, callback) {
     let query = utils.getRequestFromFilters(args);
     getUserCards(discUser.id, query).toArray((err, objs) => {
         if(!objs[0]) 
-            return callback(utils.formatError(user, null, "no cards found that match your request"));
+            return callback(utils.formatError(discUser, null, "no cards found that match your request"));
 
         let cardsU1 = objs[0].cards;
         getUserCards(targetID, query).toArray((err, objs2) => {
             if(!objs2[0]) 
-                return callback(utils.formatError(user, null, "no cards found that match your request"));
+                return callback(utils.formatError(discUser, null, "no cards found that match your request"));
 
             let cardsU2 = objs2[0].cards;
             let dbUser2 = objs2[0]._id;
