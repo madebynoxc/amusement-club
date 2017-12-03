@@ -403,8 +403,6 @@ function summon(user, args, callback) {
 }
 
 function transfer(from, to, args, callback) {
-    if(!to) return;
-
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: from.id }).then(dbUser => {
         if(!dbUser) return;
@@ -425,6 +423,8 @@ function transfer(from, to, args, callback) {
             callback(dbUser.username + ", did you actually think it would work?");
             return;
         }
+
+        if(!to) return;
 
         if(!utils.canSend(dbUser)) {
             callback(utils.formatError(dbUser, 
