@@ -676,7 +676,7 @@ function difference(discUser, targetID, args, callback) {
     if(!targetID) return;
 
     let query = utils.getRequestFromFilters(args);
-    getUserCards(discUser.id, query).toArray((err, objs) => {
+    getUserCards(discUser.id, {}).toArray((err, objs) => {
         if(!objs[0]) 
             return callback(utils.formatError(discUser, null, "no cards found that match your request"));
 
@@ -732,7 +732,7 @@ function needsCards(user, args, callback) {
     if(args.includes('-multi'))
         return callback(utils.formatError(user, "Request error", "flag `-multi` is not valid for this request"));
 
-    let ccollection = args.includes('-halloween')? 
+    let ccollection = args.filter(a => a.includes('-h')).length > 0? 
         mongodb.collection('promocards') : mongodb.collection('cards');
 
     let query = utils.getRequestFromFilters(args);

@@ -227,18 +227,24 @@ function getEmbed(user, title, body, color) {
 }
 
 function getUserID(inp) {
+    let ret = { };
     for (var i = 0; i < inp.length; i++) {
         try {
-            let id = inp[i].slice(0, -1).split('@')[1].replace('!', '');
-            inp.splice(i, 1);
-            return {
-                id: id, 
-                input: inp
-            };
+            if (/^\d+$/.test(inp[i]) && inp[i] > (1000 * 60 * 60 * 24 * 30 * 2 ** 22)){
+                ret.id = inp[i];
+                inp.splice(i, 1);
+                break;
+            }
+            else {
+                ret.id = inp[i].slice(0, -1).split('@')[1].replace('!', '');
+                inp.splice(i, 1);
+                break;
+            }
         }
         catch(err) {continue}
     }
-    return { input: inp };
+    ret.input = inp;
+    return ret;
 }
 
 // db.getCollection('users').aggregate([
