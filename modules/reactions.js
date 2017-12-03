@@ -106,7 +106,7 @@ function buildCardList(pgn) {
 
     emb.setDescription(pgn.data.slice(((pgn.page - 1) * 15), max).join('\n'));
     if(pages > 1) emb.setFooter("> Page "+ pgn.page +" of " + pages);
-    emb.setColor("#26dc26");
+    emb.setColor("#77B520");
     return emb;
 }
 

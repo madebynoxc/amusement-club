@@ -6,7 +6,8 @@
             "All commands that require card name now accept filters", 
             "Improved speed for commands like `->diff` `->miss` and `->lead`",
             "Improved bot messages",
-            "Changed the way database stores dupe cards"
+            "Changed the way database stores dupe cards",
+            "Craft cards are not dropped on locked servers anymore"
         ]
     },
     {

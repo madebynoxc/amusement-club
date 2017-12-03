@@ -140,14 +140,14 @@ function craftCard(user, args, callback) {
             for(j in cardNames) {
                 let match = user.cards.filter(c => c.name.toLowerCase() == cardNames[j])[0];
                 if(match) {
-                    user.cards.splice(user.cards.indexOf(match), 1);
+                    user.cards = dbManager.removeCardFromUser(user.cards, match);
                 } else {
                     callback("**" + user.username + "**, can't find needed card among yours");
                     return;
                 }
             }
 
-            heroes.addXP(user, 10);
+            heroes.addXP(user, 20);
             ucollection.update( 
                 { discord_id: user.discord_id},
                 { 
@@ -213,8 +213,8 @@ function craftOrdinary(user, cards, callback) {
     else if(level != 3) level += 1;
 
     for(j in cards) {
-        let match = user.cards.filter(c => c.name == cards[j].name)[0];
-        if(match) user.cards.splice(user.cards.indexOf(match), 1);
+        let match = utils.containsCard(user.cards, cards[j]);
+        if(match) user.cards = dbManager.removeCardFromUser(user.cards, match);
     }
 
     let req = {level: level};
@@ -222,7 +222,7 @@ function craftOrdinary(user, cards, callback) {
     heroes.addXP(user, .2);
     requestCard(user, req, (m, o, c) => {
         quest.checkForge(user, level, callback);
-        user.cards.push(c);
+        user.cards = dbManager.addCardToUser(user.cards, c);
         ucollection.update( 
             { discord_id: user.discord_id},
             { 
@@ -331,10 +331,12 @@ function getClaimedCard(user, fullName, args, callback) {
 
                 let res = _.sample(i);
                 if(!res) return;
+
+                user.cards = dbManager.addCardToUser(user.cards, res);
                 let name = utils.toTitleCase(res.name.replace(/_/g, " "));
                 ucollection.update(
                     { discord_id: user.discord_id },
-                    { $push: {cards: res } }
+                    { $set: {cards: user.cards } }
                 ).then(u => {
                     callback("**" + user.username + "**, you got **" + name + "**!",
                         dbManager.getCardFile(res));
@@ -361,15 +363,9 @@ function requestCard(user, findObj, callback) {
     ccollection.find(findObj).toArray((err, i) => {
         if(err){ logger.error(err); return; }
 
-            let res = _.sample(i);
-            if(!res) return;
-            let name = utils.toTitleCase(res.name.replace(/_/g, " "));
-            ucollection.update(
-                    { discord_id: user.discord_id },
-                    { $push: {cards: res } }
-            ).then(u => {
-                callback("**" + user.username + "**, you got **" + name + "**!",
-                     dbManager.getCardFile(res), res);
-        }).catch(e => logger.error(e));
+        let res = _.sample(i);
+        
+        let name = utils.toTitleCase(res.name.replace(/_/g, " "));
+        callback("**" + user.username + "**, you got **" + name + "**!", dbManager.getCardFile(res), res);   
     });
 }
