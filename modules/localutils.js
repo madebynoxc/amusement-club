@@ -17,7 +17,10 @@ module.exports = {
     formatError,
     formatConfirm,
     formatInfo,
-    getRequestFromFilters
+    getRequestFromFilters,
+    getRequestFromFiltersNoPrefix,
+    getUserID,
+    getRatio
 }
 
 const discord = require("discord.js");
@@ -122,7 +125,8 @@ function getRequestFromFilters(args) {
     let query = {};
     let keywords = [];
 
-    console.log(args);
+    //console.log(args);
+    if(!args) return {};
     args.forEach(element => {
         if(isInt(element))
             query['cards.level'] = parseInt(element);
@@ -130,8 +134,8 @@ function getRequestFromFilters(args) {
         else if(element[0] == '-') {
             let el = element.substr(1);
             if(el === "craft") query['cards.craft'] = true; 
-            //else if(el === "multi") query.amount = {$gte: 1};
-            else if(el === "gif") query['cards.anim'] = true;
+            else if(el === "multi") query['cards.amount'] = {$gte: 2};
+            else if(el === "gif") query['cards.animated'] = true;
             else {
                 col = collections.filter(c => c.includes(el))[0];
                 if(col) query['cards.collection'] = col;
@@ -145,8 +149,36 @@ function getRequestFromFilters(args) {
     return query;
 }
 
+function getRequestFromFiltersNoPrefix(args) {
+    let query = {};
+    let keywords = [];
+
+    //console.log(args);
+    if(!args) return {};
+    args.forEach(element => {
+        if(isInt(element))
+            query.level = parseInt(element);
+
+        else if(element[0] == '-') {
+            let el = element.substr(1);
+            if(el === "craft") query.craft = true; 
+            else if(el === "multi") query.amount = {$gte: 2};
+            else if(el === "gif") query.animated = true;
+            else {
+                col = collections.filter(c => c.includes(el))[0];
+                if(col) query.collection = col;
+            }
+
+        } else keywords.push(element.trim());
+    }, this);
+
+    if(keywords) query.name = new RegExp(keywords.join('_'), 'ig');
+
+    return query;
+}
+
 function containsCard(array, card) {
-    return array.filter(c => cardsMatch(c, card)) == 0;
+    return array.filter(c => cardsMatch(c, card))[0];
 }
 
 function cardsMatch(card1, card2) {
@@ -156,13 +188,21 @@ function cardsMatch(card1, card2) {
 }
 
 function canSend(user) {
-    var rel = user.sends / user.gets;
-    return (user.sends + user.gets < 20) || isNaN(rel) || rel < 2.5;
+    var snd = user.sends || 1;
+    var get = user.gets || 1;
+    var rel = snd/get;
+    return snd + get < 20 || rel < 2.5;
 }
 
 function canGet(user) {
-    var rel = user.gets / user.sends;
-    return (user.sends + user.gets < 20) || isNaN(rel) || rel < 2.5;
+    var snd = user.sends || 1;
+    var get = user.gets || 1;
+    var rel = get/snd;
+    return snd + get < 20 || rel < 2.5;
+}
+
+function getRatio(user) {
+    return (user.sends || 1)/(user.gets || 1);
 }
 
 function formatError(user, title, body) {
@@ -170,7 +210,7 @@ function formatError(user, title, body) {
 }
 
 function formatConfirm(user, title, body) {
-    return getEmbed(user, title, body, "#26dc26");
+    return getEmbed(user, title, body, "#77B520");
 }
 
 function formatInfo(user, title, body) {
@@ -179,10 +219,26 @@ function formatInfo(user, title, body) {
 
 function getEmbed(user, title, body, color) {
     let emb = new discord.RichEmbed();
-    emb.setTitle(title);
-    emb.setDescription("**" + user.username + "**, " + body);
+    if(title) emb.setTitle(title);
+    if(user) emb.setDescription("**" + user.username + "**, " + body);
+    else emb.setDescription(body);
     emb.setColor(color);
     return emb;
+}
+
+function getUserID(inp) {
+    for (var i = 0; i < inp.length; i++) {
+        try {
+            let id = inp[i].slice(0, -1).split('@')[1].replace('!', '');
+            inp.splice(i, 1);
+            return {
+                id: id, 
+                input: inp
+            };
+        }
+        catch(err) {continue}
+    }
+    return { input: inp };
 }
 
 // db.getCollection('users').aggregate([

@@ -210,13 +210,44 @@
 		]
 	},
 	{
-		"type": ["give", "send", "trading", "trade"],
+		"type": ["give", "send"],
 		"title": "About __card__ sending",
-		"description": "You can send cards to other users. Note, that this command has no confirmation, so it will send best matched card at once. To make sure, that you will send the correct card, type full card name, or summon it first to check if the name is correct",
+		"description": "You can send cards to other users. Note, that this command has no confirmation, so it will send best matched card at once. To make sure, that you will send the correct card, type full card name, or summon it first to check if the name is correct.\n**Since v1.9.8 bot has trading limits. To see them run `->help trade`**",
 		"fields": [
 			{
 				"title": "Send card to a user",
-				"description": "->send @username [card name]"
+				"description": "->send @username [name/-collection/-filters]"
+			},
+			{
+				"title": "Get your G/G ratio",
+				"description":"->send -ratio"
+			}
+		]
+	},
+	{
+		"type": ["trading", "trade"],
+		"title": "About trading rules",
+		"description": "Since v1.9.8 Amusement Club has limits to user trading. In order to keep card balance between users the **give/get ratio system** was implemented. When you send or get cards, Amusement Club will count your send/receive (officially give/get or g/g) ratio. If you send or receive too many cards, trading will be blocked. The g/g ratio is calculated from amount of **stars** and **tomatoes** traded",
+		"fields": [
+			{
+				"title": "Ratio is higher than 2.5",
+				"description":"You sent too many cards and have to get more cards or tomatoes from other users"
+			},
+			{
+				"title": "Ratio is lower than 0.4",
+				"description":"You got too many cards from users. Feel free to thank them with tomatoes or by sending other cards"
+			},
+			{
+				"title": "Get your G/G ratio",
+				"description":"->send -ratio"
+			},
+			{
+				"title": "Send Tomatoes",
+				"description":"100 Tomatoes = 1 star"
+			},
+			{
+				"title": "Daily won't reset your ratio",
+				"description": "`->daily` won't reset G/G ratio, however it will improve ratio, so you can trade a few cards. This is done specially for users who don't trade, but still have daily quests to complete"
 			}
 		]
 	},

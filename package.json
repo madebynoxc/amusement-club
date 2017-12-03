@@ -16,7 +16,8 @@
     "mkdirp": "^0.5.1",
     "mongod": "^2.0.0",
     "mongodb": "^2.2.30",
-    "randomcolor": "^0.5.3"
+    "randomcolor": "^0.5.3",
+    "s3": "^4.4.0"
   },
   "repository": "https://github.com/NoxCaos/amusement-club.git"
 }

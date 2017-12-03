@@ -7,6 +7,7 @@ const fs = require('fs');
 const dbManager = require("./dbmanager.js");
 const utils = require('./localutils.js');
 const logger = require('./log.js');
+const discord = require("discord.js");
 
 var collections = [];
 fs.readdir('./cards', (err, items) => {
@@ -16,14 +17,13 @@ fs.readdir('./cards', (err, items) => {
     }
 });
 
-function addNew(user, filter, data, dif = "") {
+function addNew(user, data, dif = "") {
     removeExisting(user.id);
-    var flt = setFiltering(filter);
+    //var flt = setFiltering(filter);
     var pgn = {
         "page": 1, 
         "user": user, 
-        "filter": flt, 
-        "data": getCardList(data, flt), 
+        "data": nameCardList(data),
         "dif": dif
     };
     paginations.push(pgn);
@@ -47,9 +47,7 @@ function setupPagination(message, author) {
         processEmoji(r.emoji.name.trim(), message);
         r.remove(pgn.user.id).catch();
     });
-    collector.on('end', collected => {
-        removeExisting(pgn.user.id);
-    });
+    setTimeout(()=> removeExisting(pgn.user.id), 100000);
 }
 
 function processEmoji(e, message) {
@@ -78,7 +76,7 @@ function react(message) {
         + "You can call this command in Direct Messages for now"); 
         return;
     }), 50);
-    setTimeout(()=> message.react("➡").catch(), 400)
+    setTimeout(()=> message.react("➡").catch(), 500)
 }
 
 function removeExisting(userID) {
@@ -101,16 +99,50 @@ function buildCardList(pgn) {
 
     var max = Math.min((pgn.page * 15), pgn.data.length);
     let resp = "";
+    let emb = new discord.RichEmbed();
 
-    if(pgn.dif) resp += "**" + pgn.user.username 
-        + "**, **" + pgn.dif + "** has following unique cards (**" + pgn.data.length + "** results): \n";
-    else resp += "**" + pgn.user.username + "**, you have (**" + pgn.data.length + "** results): \n";
+    if(pgn.dif) emb.setTitle("**" + pgn.user.username + "**, **" + pgn.dif + "** has following unique cards (**" + pgn.data.length + "** results):");
+    else emb.setTitle("**" + pgn.user.username + "**, you have (**" + pgn.data.length + "** results):");
 
-    resp += pgn.data.slice(((pgn.page - 1) * 15), max).join('\n');
-    if(pages > 1) resp += "\n \u{1F4C4} Page "+ pgn.page +" of " + pages;
-    return resp;
+    emb.setDescription(pgn.data.slice(((pgn.page - 1) * 15), max).join('\n'));
+    if(pages > 1) emb.setFooter("> Page "+ pgn.page +" of " + pages);
+    emb.setColor("#26dc26");
+    return emb;
 }
 
+function nameCardList(arr) {
+    let res = [];
+    let passedCards = [];
+    arr.map(card => {
+        let dupe = passedCards.filter(c => (c.name === card.name))[0];
+        let name = nameCard(card);
+
+        if(dupe) {
+            let d = res.findIndex(c => (c.includes(name)));
+            if(d >= 0 && !res[d].includes(dupe.collection)) 
+                res[d] += " [" + dupe.collection + "]";
+            name += " [" + card.collection + "]";
+        }
+
+        passedCards.push(card);
+        res.push(name);
+    });
+
+    res.sort((a, b) => {
+        let match1 = a.match(/★/g);
+        let match2 = b.match(/★/g);
+
+        if(!match1) return 1;
+        if(!match2) return -1;
+        if(match1 < match2) return 1;
+        if(match1 > match2) return -1;
+        return 0;
+    });
+
+    return res;
+}
+
+//OBSOLETE
 function getCardList(arr, flt) {
     arr.sort(dbManager.dynamicSort("name"));
 
@@ -158,6 +190,7 @@ function getCardList(arr, flt) {
     return res;
 }
 
+//OBSOLETE
 function setFiltering(filter) {
     if(!filter) return {tier: 0};
 
@@ -205,7 +238,7 @@ function countPages(arr) {
     return Math.floor(realArr.length / 15) + 1;
 }
 
-function nameCard(card, count) {
+function nameCard(card) {
     try {
         let res = "[";
 
@@ -218,7 +251,7 @@ function nameCard(card, count) {
         if(card.craft) res += "[craft]  ";
         res += utils.toTitleCase(card.name.replace(/_/g, " "));
         
-        if(count > 1) res += " (x" + count + ")";
+        if(card.amount > 1) res += " (x" + card.amount + ")";
         return res;
     } catch (e) {logger.error(e);}
     return null;

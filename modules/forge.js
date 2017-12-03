@@ -75,7 +75,7 @@ function getInfo(user, name, callback, image = false) {
 function craftCard(user, args, callback) {
     var cards = args.join('_').split(',');
     if(!cards || cards.length < 2) {
-        callback("Minimum **2** cards required for forge");
+        callback("Minimum **2** cards required for forge\nDon't forget to put `,` between card names\nInclude only card **name**");
         return;
     }
 

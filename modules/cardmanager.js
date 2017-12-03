@@ -4,7 +4,16 @@ module.exports = {
 
 var mongodb;
 const fs = require('fs');
+const s3 = require('s3');
 const logger = require('./log.js');
+
+/*var client = s3.createClient({
+  s3Options: {
+    accessKeyId: "your s3 key",
+    secretAccessKey: "your s3 secret",
+    region: "your region",
+  },
+});*/
 
 function updateCards(connection) {
     logger.message("Launched module [CardManager 2.2]"); 
@@ -42,6 +51,22 @@ function updateCards(connection) {
             });
         });
     });
+}
+
+function updateCardsS3(connection) {
+    logger.message("Launched module [CardManager S3.1]"); 
+    logger.message("Updating cards..."); 
+    mongodb = connection;
+
+
+
+    /*let collection = mongodb.collection('cards');
+    let collection2 = mongodb.collection('promocards');
+    collection.find({}).toArray((err, res) => {
+        collection2.find({}).toArray((err2, res2) => {
+            
+        });
+    });*/
 }
 
 function getCardObject(name, collection) {

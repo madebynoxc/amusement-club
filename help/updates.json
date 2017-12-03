@@ -1,5 +1,15 @@
 [
     {
+        "version": "1.9.8",
+        "changes": [
+            "Added give/get ratio system. More: `->help trade`",
+            "All commands that require card name now accept filters", 
+            "Improved speed for commands like `->diff` `->miss` and `->lead`",
+            "Improved bot messages",
+            "Changed the way database stores dupe cards"
+        ]
+    },
+    {
         "version": "1.9.7",
         "changes": [
             "Hero level is now calculated by new formula",
