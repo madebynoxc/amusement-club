@@ -361,9 +361,10 @@ function getClaimedCard(user, fullName, args, callback) {
 function requestCard(user, findObj, callback) {
     if(!findObj) findObj = {};
     ccollection.find(findObj).toArray((err, i) => {
-        if(err){ logger.error(err); return; }
+        if(err){ return logger.error(err) }
 
         let res = _.sample(i);
+        if(!res) return;
         
         let name = utils.toTitleCase(res.name.replace(/_/g, " "));
         callback("**" + user.username + "**, you got **" + name + "**!", dbManager.getCardFile(res), res);   
