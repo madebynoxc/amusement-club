@@ -1,5 +1,5 @@
 {
-	"id":"update198",
-	"title":"Amusement club was updated!",
-	"body":"new version **1.9.8** has lots of new features, where most important is new give/get ratio system. Learn more by running `->help trade`\nTo see all updates: `->whatsnew`"
+	"id":"update1985",
+	"title":"Update to ratio and card pricing",
+	"body":"after testing a new give/get ratio mechanics some things were changed. Now when you trade, always use `->eval [card name]` to get a recommended bot price.\nMore at `->help eval`\nTo see all updates: `->whatsnew`"
 }

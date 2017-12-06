@@ -20,7 +20,8 @@ module.exports = {
     getRequestFromFilters,
     getRequestFromFiltersNoPrefix,
     getUserID,
-    getRatio
+    getRatio,
+    getCardQuery
 }
 
 const discord = require("discord.js");
@@ -144,7 +145,7 @@ function getRequestFromFilters(args) {
         } else keywords.push(element.trim());
     }, this);
 
-    if(keywords) query['cards.name'] = new RegExp(keywords.join('_'), 'ig');
+    if(keywords) query['cards.name'] = new RegExp("(_|^)" + keywords.join('_'), 'ig');
 
     return query;
 }
@@ -172,9 +173,17 @@ function getRequestFromFiltersNoPrefix(args) {
         } else keywords.push(element.trim());
     }, this);
 
-    if(keywords) query.name = new RegExp(keywords.join('_'), 'ig');
+    if(keywords) query.name = new RegExp("(_|^)" + keywords.join('_'), 'ig');
 
     return query;
+}
+
+function getCardQuery(card) {
+    return {
+        name: card.name,
+        collection: card.collection,
+        level: card.level
+    }
 }
 
 function containsCard(array, card) {

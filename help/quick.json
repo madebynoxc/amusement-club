@@ -110,8 +110,9 @@
     {
         "name": "pay",
         "values": [
-            "**->pay [person] [tomatoes]**",
-            "->pay @person 42 (will transfer 42 tomatoes to a person)"
+            "**->pay [person] [tomatoes] [?-ignore]**",
+            "->pay @person 42 (will transfer 42 tomatoes to a person)",
+            "->pay @person 42 -ignore (will not count transfer to give/get ratio)"
         ]
     },
     {
@@ -202,6 +203,13 @@
         "values": [
             "**->has [user] [card]**",
             "->has @user chiina mirakurun"
+        ]
+    },
+    {
+        "name": "eval",
+        "values": [
+            "**->eval [card name/-collection/level]**",
+            "->eval legendary smirk"
         ]
     },
     {

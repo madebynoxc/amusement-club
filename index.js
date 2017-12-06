@@ -148,6 +148,9 @@ function getCommand(m, callback) {
             case 'summon':
                 dbManager.summon(m.author, cnt, callback);
                 return;
+            case 'eval':
+                dbManager.eval(m.author, cnt, callback);
+                return;
             case 'bal': 
             case 'balance': 
                 dbManager.getXP(m.author, (bal) =>{
@@ -165,17 +168,22 @@ function getCommand(m, callback) {
                     });
                 }
                 return;
+            case 'ratio':
+                if(channelType == 1) callback('This operation is possible in bot channel only');
+                else {
+                    dbManager.transfer(m.author, null, '-ratio', (text) =>{
+                        callback(text);
+                    });
+                }
+                return;
             case 'pay':
                 if(channelType == 0) callback('Tomato transfer is possible only on servers');
                 else if(channelType == 1) callback('Tomato transfer is possible only in bot channel');
                 else {
-                    let tusr = getUserID(cnt.shift());
-                    let tom = parseInt(cnt);
-                    if(tusr && tom){
-                        dbManager.pay(m.author.id, tusr, tom, (text) =>{
-                            callback(text);
-                        });
-                    }
+                    let inp = utils.getUserID(cnt);
+                    dbManager.pay(m.author.id, inp.id, inp.input, (text) =>{
+                        callback(text);
+                    });
                 }
                 return;
             case 'list':

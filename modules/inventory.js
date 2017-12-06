@@ -96,9 +96,10 @@ function useItem (user, args, callback) {
             }
         }
 
+        passArgs.shift();
         switch(item.type) {
             case 'craft':
-                isComplete = forge.useCard(user, item.name, passArgs[1], callback);
+                isComplete = forge.useCard(user, item.name, passArgs? passArgs.join(','):null, callback);
                 break;
         }
 

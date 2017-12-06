@@ -4,7 +4,7 @@ module.exports = {
     pay, daily, getQuests, getBestCardSorted,
     leaderboard_new, difference, dynamicSort, countCardLevels, 
     getCardFile, getDefaultChannel, isAdmin, needsCards,
-    removeCardFromUser, addCardToUser
+    removeCardFromUser, addCardToUser, eval
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -30,6 +30,7 @@ const inv = require('./inventory.js');
 const stats = require('./stats.js');
 const invite = require('./invite.js');
 const helpMod = require('./help.js');
+const ratioInc = require('./ratioincrease.json');
 const lev = require('js-levenshtein');
 
 var collections = [];
@@ -389,7 +390,9 @@ function summon(user, args, callback) {
 
         let cards = objs[0].cards;
         let dbUser = objs[0]._id;
-        let match = query.name? getBestCardSorted(cards, query.name)[0] : cards[0];
+        let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
+
+        console.log(getBestCardSorted(cards, query['cards.name']));
 
         callback("**" + user.username + "** summons **" + utils.toTitleCase(match.name.replace(/_/g, " ")) + "!**", getCardFile(match));
 
@@ -417,6 +420,8 @@ function transfer(from, to, args, callback) {
             return;
         }
 
+        if(!dbUser.dailystats) dbUser.dailystats = {summon: 0, send: 0, claim: 0};
+
         if(!args) return callback("**" + user.username + "**, please specify name/collection/level");
 
         if(from.id == to) {
@@ -426,7 +431,7 @@ function transfer(from, to, args, callback) {
 
         if(!to) return;
 
-        if(!utils.canSend(dbUser)) {
+        if(dbUser.dailystats.send < 2 && !utils.canSend(dbUser)) {
             callback(utils.formatError(dbUser, 
                 "Can't send card!",
                 "you can't send more cards. Please, trade fairly and consider **getting** more cards from users. Details: `->help trade`\n"
@@ -439,7 +444,7 @@ function transfer(from, to, args, callback) {
             if(!objs[0]) return callback(utils.formatError(dbUser, "Can't find card", "can't find card matching that request"));
 
             let cards = objs[0].cards;
-            let match = query.name? getBestCardSorted(cards, query.name)[0] : cards[0];
+            let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
 
             let name = utils.toTitleCase(match.name.replace(/_/g, " "));
             let hours = 20 - utils.getHoursDifference(match.frozen);
@@ -454,7 +459,7 @@ function transfer(from, to, args, callback) {
             collection.findOne({ discord_id: to }).then(u2 => {
                 if(!u2) return;
 
-                if(!utils.canGet(u2)) {
+                if(dbUser.dailystats.send < 2 && !utils.canGet(u2)) {
                     callback(utils.formatError(dbUser, 
                         "Can't send card!",
                         "user **" + u2.username + "** recieved too many cards. This user has to **send** more cards. Details: `->help trade`"));
@@ -463,8 +468,6 @@ function transfer(from, to, args, callback) {
 
                 dbUser.cards = removeCardFromUser(dbUser.cards, match);
                 u2.cards = addCardToUser(u2.cards, match);
-
-                if(!dbUser.dailystats) dbUser.dailystats = {summon: 0, send: 0, claim: 0};
                 dbUser.dailystats.send++;
 
                 var fromExp = dbUser.exp;
@@ -475,35 +478,46 @@ function transfer(from, to, args, callback) {
                         + "** for sending a card!");
 
                 heroes.addXP(dbUser, .2);
-                collection.update(
-                    { discord_id: from.id }, 
-                    { 
-                        $set: { cards: dbUser.cards, dailystats: dbUser.dailystats, exp: fromExp },
-                        $inc: { sends: match.level }
-                    }
-                ).then(() => {
-                    quest.checkSend(dbUser, match.level, callback);
-                });
+                getCardValue(match, price => {
+                    let ratioIncrease = (price === Infinity? 0 : price/100);
+                    if(dbUser.dailystats.send < 3) ratioIncrease = 0;
 
-                match.frozen = new Date();
-                collection.update(
-                    { discord_id: to },
-                    { 
-                        $set: { cards: u2.cards },
-                        $inc: { gets: match.level }
-                    }
-                ).then(() => {
-                    forge.getCardEffect(dbUser, 'send', u2, callback);
-                });
+                    collection.update(
+                        { discord_id: from.id }, 
+                        { 
+                            $set: { cards: dbUser.cards, dailystats: dbUser.dailystats, exp: fromExp },
+                            $inc: { sends: ratioIncrease }
+                        }
+                    ).then(() => {
+                        quest.checkSend(dbUser, match.level, callback);
+                    });
 
-                callback(utils.formatConfirm(from, "Sent successfully", "you sent **" + name + "** to **" + u2.username + "**"));
+                    match.frozen = new Date();
+                    collection.update(
+                        { discord_id: to },
+                        { 
+                            $set: { cards: u2.cards },
+                            $inc: { gets: ratioIncrease }
+                        }
+                    ).then(() => {
+                        forge.getCardEffect(dbUser, 'send', u2, callback);
+                    });
+
+                    callback(utils.formatConfirm(from, "Sent successfully", "you sent **" + name + "** to **" + u2.username + "**\n"
+                        + "Recommended price for this card: **" + Math.floor(price) + "**🍅"));
+                });
             });
         });
     });
 }
 
-function pay(from, to, amount, callback) {
+function pay(from, to, args, callback) {
     let collection = mongodb.collection('users');
+    let amount = args.filter(a => utils.isInt(a))[0];
+    let ignore = args.includes('-ignore');
+
+    if(!amount || !to) return;
+
     amount = Math.abs(amount);
     collection.findOne({ discord_id: from }).then(dbUser => {
         if(!dbUser) return;
@@ -517,8 +531,10 @@ function pay(from, to, amount, callback) {
             collection.findOne({ discord_id: to }).then(user2 => {
                 if(!user2) return;
 
-                collection.update({ discord_id: from }, {$inc: {exp: -amount, sends: Math.floor(amount/100) }});
-                collection.update({ discord_id: to }, {$inc: {exp: amount, gets: Math.floor(amount/100) }});
+                let ratio = amount/100;
+                if(ignore) ratio = 0;
+                collection.update({ discord_id: from }, {$inc: {exp: -amount, sends: ratio }});
+                collection.update({ discord_id: to }, {$inc: {exp: amount, gets: ratio }});
                 callback(utils.formatConfirm(dbUser, "Tomatoes sent", "you sent **" + amount + "**🍅 to **" + user2.username + "**"));
             });
             return;
@@ -534,7 +550,7 @@ function sell(user, args, callback) {
         if(!objs[0]) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
         let cards = objs[0].cards;
-        let match = query.name? getBestCardSorted(cards, query.name)[0] : cards[0];
+        let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
 
         mongodb.collection('users').findOne({ discord_id: user.id }).then(dbUser => {
 
@@ -696,6 +712,38 @@ function difference(discUser, targetID, args, callback) {
     });
 }
 
+function eval(user, args, callback) {
+    if(!args[0]) return;
+    if(args.includes('-multi'))
+        return callback(utils.formatError(user, "Request error", "flag `-multi` is not valid for this request"));
+
+    let ccollection = args.filter(a => a.includes('-h')).length > 0? 
+        mongodb.collection('promocards') : mongodb.collection('cards');
+
+    let query = utils.getRequestFromFiltersNoPrefix(args);
+    ccollection.find(query).toArray((err, res) => {
+        let match = query.name? getBestCardSorted(res, query.name)[0] : res[0];
+        if(!match)
+            return callback(utils.formatError(user, null, "no cards found that match your request"));
+
+        getCardValue(match, price => {
+            let name = utils.toTitleCase(match.name.replace(/_/g, " "));
+            callback(utils.formatInfo(user, null, "the card **" + name + "** is worth around **" + Math.floor(price) + "**🍅"));
+        });
+    });
+}
+
+function getCardValue(card, callback) {
+    mongodb.collection('users').count({"cards":{"$elemMatch": utils.getCardQuery(card)}}).then(amount => {
+        let price = (ratioInc.star[card.level] 
+                    + (card.craft? ratioInc.craft : 0) + (card.animated? ratioInc.gif : 0)) * 100;
+        mongodb.collection('users').count({"lastdaily":{$exists:true}}).then(userCount => {
+            price *= ((userCount * 0.045)/amount);
+            callback(price);
+        });
+    });
+}
+
 function getUserName(uID, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: uID }).then((user) => {
@@ -722,7 +770,7 @@ function doesUserHave(user, tgID, args, callback) {
             return callback(utils.formatError(user, null, "no cards found that match your request"));
 
         let cards = objs[0].cards;
-        let match = query.name? getBestCardSorted(cards, query.name)[0] : cards[0];
+        let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
         let cardname = utils.toTitleCase(match.name.replace(/_/g, " "));
         callback(utils.formatConfirm(user, null, "matched card **" + cardname + "**"));
     });
@@ -751,10 +799,6 @@ function needsCards(user, args, callback) {
                 callback("**--Database--** has no any unique cards that match your request\n");
         });
     });
-}
-
-function eval(discUser, args, callback) {
-    //mongodb.collection('cards')
 }
 
 function getUserCards(userID, query) {
@@ -841,8 +885,13 @@ function countCardLevels(cards) {
     return sum;
 }
 
-function getBestCardSorted(cards, name) {
-    let filtered = cards.filter(c => c.name.toLowerCase().includes(name.replace(' ', '_')));
+function getBestCardSorted(cards, n) {
+    let name = n;
+    if(n instanceof RegExp) 
+        name = n.toString().split('/')[1].replace('(_|^)', '');
+    else name = n.replace(' ', '_');
+
+    let filtered = cards.filter(c => c.name.toLowerCase().includes(name));
     filtered.sort((a, b) => {
         let dist1 = lev(a.name, name);
         let dist2 = lev(b.name, name);
