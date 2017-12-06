@@ -391,8 +391,7 @@ function summon(user, args, callback) {
         let cards = objs[0].cards;
         let dbUser = objs[0]._id;
         let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
-
-        console.log(getBestCardSorted(cards, query['cards.name']));
+        if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
         callback("**" + user.username + "** summons **" + utils.toTitleCase(match.name.replace(/_/g, " ")) + "!**", getCardFile(match));
 
@@ -445,6 +444,7 @@ function transfer(from, to, args, callback) {
 
             let cards = objs[0].cards;
             let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
+            if(!match) return callback(utils.formatError(dbUser, "Can't find card", "can't find card matching that request"));
 
             let name = utils.toTitleCase(match.name.replace(/_/g, " "));
             let hours = 20 - utils.getHoursDifference(match.frozen);
@@ -551,6 +551,7 @@ function sell(user, args, callback) {
 
         let cards = objs[0].cards;
         let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
+        if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
         mongodb.collection('users').findOne({ discord_id: user.id }).then(dbUser => {
 
@@ -771,6 +772,8 @@ function doesUserHave(user, tgID, args, callback) {
 
         let cards = objs[0].cards;
         let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
+        if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
+
         let cardname = utils.toTitleCase(match.name.replace(/_/g, " "));
         callback(utils.formatConfirm(user, null, "matched card **" + cardname + "**"));
     });
