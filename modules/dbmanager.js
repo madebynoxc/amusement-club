@@ -738,7 +738,7 @@ function getCardValue(card, callback) {
         let price = (ratioInc.star[card.level] 
                     + (card.craft? ratioInc.craft : 0) + (card.animated? ratioInc.gif : 0)) * 100;
         mongodb.collection('users').count({"lastdaily":{$exists:true}}).then(userCount => {
-            price *= ((userCount * 0.045)/amount);
+            price *= ((userCount * 0.04)/amount);
             callback(price);
         });
     });
