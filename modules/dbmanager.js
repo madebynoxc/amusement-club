@@ -710,10 +710,16 @@ function getCardValue(card, callback) {
         let price = (ratioInc.star[card.level] 
                     + (card.craft? ratioInc.craft : 0) + (card.animated? ratioInc.gif : 0)) * 100;
         mongodb.collection('users').count({"lastdaily":{$exists:true}}).then(userCount => {
-            price *= ((userCount * 0.04)/amount);
+            price *= limitPriceGrowth((userCount * 0.035)/amount);
             callback(price);
         });
     });
+}
+
+function limitPriceGrowth(x) { 
+    if(x<1) return x; 
+    else if(x<10) return (Math.log(x)/1.301)+Math.sqrt(x)*(-0.013*Math.pow(x,2)+0.182*x+0.766); 
+    else return Math.pow(x,0.2) + 4.25;
 }
 
 function getUserName(uID, callback) {
