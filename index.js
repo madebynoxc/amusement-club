@@ -80,7 +80,7 @@ function _stop() {
 function log(m) {
     var msg = '';
     try {
-		msg = "[" + m.guild.name + "] #" + m.channel.name + " @" + m.author.username + ": " + m.content;
+		msg = "[" + m.guild.name + "'" + .guild.id + "'] #" + m.channel.name + " @" + m.author.username + ": " + m.content;
 	} catch(e) {
 		msg = "DM @" + m.author.username + ": " + m.content;
 	}
