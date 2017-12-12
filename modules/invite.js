@@ -118,6 +118,12 @@ function checkStatus(m, callback) {
         resp.setColor(col.red);
         resp.setTitle("Bot can't function on this server");
 
+        if(s && s.status == "banned") {
+            resp.setDescription("This bot was banned from this server. **Amusement Club** will leave after this message");
+            m.guild.leave();
+            return callback(resp);
+        }
+
         if(!m.content.startsWith(settings.botprefix)
             || m.content.startsWith(settings.botprefix + 'invite')) {
             callback(null);
@@ -129,11 +135,7 @@ function checkStatus(m, callback) {
                 setInvited(m.guild.id);
                 callback(null);
                 return;
-            } else if(s.status == "banned") {
-                resp.setDescription("This bot was banned from this server. **Amusement Club** will leave after this message");
-                m.guild.leave();
-            } 
-            else {callback(null); return;}
+            } else {callback(null); return;}
         }
         else resp.setDescription("This bot is not registered on this server.\n"
             + "Please, ask server administrator to run `->invite [server_id]` to add this server to bot's list");
