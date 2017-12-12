@@ -259,7 +259,9 @@ function addXP(user, amount, callback) {
                         discord_id: user.id,
                         username: user.username,
                         cards: [],
-                        exp: 300
+                        exp: 300,
+                        gets: 50,
+                        sends: 50
                     },
                 }, { upsert: true }
             );
@@ -351,37 +353,6 @@ function getCards(user, args, callback) {
     });
 }
 
-// function summon(user, card, callback) {
-//     let collection = mongodb.collection('users');
-//     collection.findOne({ discord_id: user.id }).then(dbUser => {
-//         if(!dbUser) return;
-
-//         let check = card.toLowerCase().replace(/ /g, "_");
-//         if(!dbUser.cards){
-//             callback(user.username + ", you have no any cards");
-//             return;
-//         }
-
-//         let match = getBestCardSorted(dbUser.cards, check)[0];
-//         if(match){
-//             let name = utils.toTitleCase(match.name.replace(/_/g, " "));
-//             let file = getCardFile(match);
-//             callback("**" + user.username + "** summons **" + name + "!**", file);
-
-//             if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, quests: 0};
-//             dbUser.dailystats.summon++;
-
-//             heroes.addXP(dbUser, .1);
-//             collection.update(
-//                 { discord_id: user.id }, {$set: {dailystats: dbUser.dailystats}}
-//             ).then((e) => {
-//                 quest.checkSummon(dbUser, (mes)=>{callback(mes)});
-//             });
-//         } else 
-//             callback("**" + user.username + "** you have no card named **'" + card + "'**");
-//     }).catch(e => logger.error(e));
-// }
-
 function summon(user, args, callback) {
     if(!args) return callback("**" + user.username + "**, please specify name/collection/level");
     let query = utils.getRequestFromFilters(args);
@@ -430,7 +401,7 @@ function transfer(from, to, args, callback) {
 
         if(!to) return;
 
-        if(dbUser.dailystats.send < 2 && !utils.canSend(dbUser)) {
+        if(dbUser.dailystats.send < 1 && !utils.canSend(dbUser)) {
             callback(utils.formatError(dbUser, 
                 "Can't send card!",
                 "you can't send more cards. Please, trade fairly and consider **getting** more cards from users. Details: `->help trade`\n"
@@ -459,7 +430,7 @@ function transfer(from, to, args, callback) {
             collection.findOne({ discord_id: to }).then(u2 => {
                 if(!u2) return;
 
-                if(dbUser.dailystats.send < 2 && !utils.canGet(u2)) {
+                if(!utils.canGet(u2)) {
                     callback(utils.formatError(dbUser, 
                         "Can't send card!",
                         "user **" + u2.username + "** recieved too many cards. This user has to **send** more cards. Details: `->help trade`"));
@@ -480,7 +451,7 @@ function transfer(from, to, args, callback) {
                 heroes.addXP(dbUser, .2);
                 getCardValue(match, price => {
                     let ratioIncrease = (price === Infinity? 0 : price/100);
-                    if(dbUser.dailystats.send < 3) ratioIncrease = 0;
+                    if(dbUser.dailystats.send < 2) ratioIncrease = 0;
 
                     collection.update(
                         { discord_id: from.id }, 

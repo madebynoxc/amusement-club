@@ -33,7 +33,7 @@ function processRequest(message, args, callback) {
             //list(callback);
             break;
         case "ban":
-            if(isAdmin(m.author.id))
+            if(dbManager.isAdmin(m.author.id))
                 banServer(args[0], callback);
             break;
         default:
