@@ -1,5 +1,5 @@
 {
-	"id":"update1985",
-	"title":"Update to ratio and card pricing",
-	"body":"after testing a new give/get ratio mechanics some things were changed. Now when you trade, always use `->eval [card name]` to get a recommended bot price.\nMore at `->help eval`\nTo see all updates: `->whatsnew`"
+	"id":"christmas1",
+	"title":"Christmas is coming!",
+	"body":"Amusement Club is celebrating this Holiday season with a **Christmas Event** and you can help us make it happen!\n[Join the official bot server](https://discord.gg/cCRBSqs) to download the card templates and **start making Christmas Cards!**"
 }
