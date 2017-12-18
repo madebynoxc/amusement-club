@@ -452,13 +452,23 @@ function transfer(from, to, args, callback) {
                 getCardValue(match, price => {
                     let ratioIncrease = (price === Infinity? 0 : price/100);
                     if(dbUser.dailystats.send < 2) ratioIncrease = 0;
+                    let newSends = objs[0]._id.sends + ratioIncrease;
+                    let newGets = objs[0]._id.gets;
+
+                    if(newGets + newSends > 200) {
+                        newGets /= 2;
+                        newSends /= 2;
+                    }
 
                     collection.update(
-                        { discord_id: from.id }, 
-                        { 
-                            $set: { cards: dbUser.cards, dailystats: dbUser.dailystats, exp: fromExp },
-                            $inc: { sends: ratioIncrease }
-                        }
+                        { discord_id: from.id }, { 
+                            $set: { 
+                                cards: dbUser.cards, 
+                                dailystats: dbUser.dailystats, 
+                                exp: fromExp, 
+                                sends: newSends,
+                                gets: newGets
+                            }}
                     ).then(() => {
                         quest.checkSend(dbUser, match.level, callback);
                     });
@@ -718,7 +728,7 @@ function getCardValue(card, callback) {
 
 function limitPriceGrowth(x) { 
     if(x<1) return x; 
-    else if(x<10) return (Math.log(x)/1.301)+Math.sqrt(x)*(-0.013*Math.pow(x,2)+0.182*x+0.766); 
+    else if(x<10) return (Math.log(x)/1.3)+Math.sqrt(x)*(-0.013*Math.pow(x,2)+0.182*x+0.766); 
     else return Math.pow(x,0.2) + 4.25;
 }
 
@@ -792,7 +802,9 @@ function getUserCards(userID, query) {
                 username: "$username", 
                 dailystats: "$dailystats",
                 exp: "$exp",
-                quests: "$quests"
+                quests: "$quests",
+                gets: "$gets",
+                sends: "$sends"
             }, 
             cards: {"$push": "$cards"}}
         }
@@ -868,7 +880,7 @@ function countCardLevels(cards) {
 function getBestCardSorted(cards, n) {
     let name = n;
     if(n instanceof RegExp) 
-        name = n.toString().split('/')[1].replace('(_|^)', '');
+        name = n.toString().split('/')[1].replace('(_|^)', '').replace(/\?/g, '');
     else name = n.replace(' ', '_');
 
     let filtered = cards.filter(c => c.name.toLowerCase().includes(name));
