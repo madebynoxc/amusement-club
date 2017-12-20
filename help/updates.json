@@ -1,5 +1,27 @@
 [
     {
+        "version": "1.9.8.5",
+        "changes": [
+            "Improvements and fixes to card searching",
+            "Added `->eval` command to get card price", 
+            "Improved give/get ratio counter",
+            "Added 2 free sends per day that don't influence on g/g ratio",
+            "Added new craft card 'The Judgment Day'",
+            "Give/get ratio counter was reset to new default value"
+        ]
+    },
+    {
+        "version": "1.9.8",
+        "changes": [
+            "Added give/get ratio system. More: `->help trade`",
+            "All commands that require card name now accept filters", 
+            "Improved speed for commands like `->diff` `->miss` and `->lead`",
+            "Improved bot messages",
+            "Changed the way database stores dupe cards",
+            "Craft cards are not dropped on locked servers anymore"
+        ]
+    },
+    {
         "version": "1.9.7",
         "changes": [
             "Hero level is now calculated by new formula",

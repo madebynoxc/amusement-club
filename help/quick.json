@@ -6,8 +6,8 @@
             "**->list -[multi] [tier] -[collection...] [keywords...]**",
             "->list -multi (cards x2 and more)",
             "->list 2 (only 2-star cards)",
-            "->list yuruyuri (only Yuru Yuri cards)",
-            "->list -multi 2 yuruyuri",
+            "->list -yuruyuri (only Yuru Yuri cards)",
+            "->list -multi 2 -yuruyuri",
             "Filter parameters can be combined"
         ]
     },
@@ -18,8 +18,8 @@
             "**->cards -[multi] [tier] -[collection...] [keywords...]**",
             "->cards -multi (cards x2 and more)",
             "->cards 2 (only 2-star cards)",
-            "->cards yuruyuri (only Yuru Yuri cards)",
-            "->cards -multi 2 yuruyuri",
+            "->cards -yuruyuri (only Yuru Yuri cards)",
+            "->cards -multi 2 -yuruyuri",
             "Filter parameters can be combined"
         ]
     },
@@ -30,8 +30,8 @@
             "**->dif [user] -[multi] [tier] -[collection...] [keywords...]**",
             "->dif @user (shows unique user cards for you)",
             "->dif @user 2 (only 2-star cards)",
-            "->dif @user yuruyuri (only Yuru Yuri cards)",
-            "->dif @user -multi 2 yuruyuri",
+            "->dif @user -yuruyuri (only Yuru Yuri cards)",
+            "->dif @user -multi 2 -yuruyuri",
             "Filter parameters can be combined"
         ]
     },
@@ -42,8 +42,8 @@
             "**->dif [user] -[multi] [tier] -[collection...] [keywords...]**",
             "->dif @user (shows unique user cards for you)",
             "->dif @user 2 (only 2-star cards)",
-            "->dif @user yuruyuri (only Yuru Yuri cards)",
-            "->dif @user -multi 2 yuruyuri",
+            "->dif @user -yuruyuri (only Yuru Yuri cards)",
+            "->dif @user -multi 2 -yuruyuri",
             "Filter parameters can be combined"
         ]
     },
@@ -110,8 +110,9 @@
     {
         "name": "pay",
         "values": [
-            "**->pay [person] [tomatoes]**",
-            "->pay @person 42 (will transfer 42 tomatoes to a person)"
+            "**->pay [person] [tomatoes] [?-ignore]**",
+            "->pay @person 42 (will transfer 42 tomatoes to a person)",
+            "->pay @person 42 -ignore (will not count transfer to give/get ratio)"
         ]
     },
     {
@@ -202,6 +203,13 @@
         "values": [
             "**->has [user] [card]**",
             "->has @user chiina mirakurun"
+        ]
+    },
+    {
+        "name": "eval",
+        "values": [
+            "**->eval [card name/-collection/level]**",
+            "->eval legendary smirk"
         ]
     },
     {

@@ -9,8 +9,31 @@ module.exports = {
     getHoursDifference,
     getFullTimeDifference,
     isInt,
-    sortByStars
+    sortByStars,
+    containsCard,
+    cardsMatch,
+    canSend,
+    canGet,
+    formatError,
+    formatConfirm,
+    formatInfo,
+    getRequestFromFilters,
+    getRequestFromFiltersNoPrefix,
+    getUserID,
+    getRatio,
+    getCardQuery
 }
+
+const discord = require("discord.js");
+const fs = require('fs');
+
+let collections = [];
+fs.readdir('./cards', (err, items) => {
+    if(err) console.log(err);
+    for (let i = 0; i < items.length; i++) {
+        collections.push(items[i].replace('=', ''));
+    }
+});
 
 function getSourceFormat(str) {
     return str.replace(' ', '');
@@ -98,3 +121,145 @@ function sortByStars(cards) {
     });
     return cards;
 }
+
+function getRequestFromFilters(args) {
+    let query = {};
+    let keywords = [];
+
+    //console.log(args);
+    if(!args) return {};
+    args.forEach(element => {
+        if(isInt(element))
+            query['cards.level'] = parseInt(element);
+
+        else if(element[0] == '-') {
+            let el = element.substr(1);
+            if(el === "craft") query['cards.craft'] = true; 
+            else if(el === "multi") query['cards.amount'] = {$gte: 2};
+            else if(el === "gif") query['cards.animated'] = true;
+            else {
+                col = collections.filter(c => c.includes(el))[0];
+                if(col) query['cards.collection'] = col;
+            }
+
+        } else keywords.push(element.trim());
+    }, this);
+
+    if(keywords) query['cards.name'] = new RegExp("(_|^)" + keywords.join('_'), 'ig');
+
+    return query;
+}
+
+function getRequestFromFiltersNoPrefix(args) {
+    let query = {};
+    let keywords = [];
+
+    //console.log(args);
+    if(!args) return {};
+    args.forEach(element => {
+        if(isInt(element))
+            query.level = parseInt(element);
+
+        else if(element[0] == '-') {
+            let el = element.substr(1);
+            if(el === "craft") query.craft = true; 
+            else if(el === "multi") query.amount = {$gte: 2};
+            else if(el === "gif") query.animated = true;
+            else {
+                col = collections.filter(c => c.includes(el))[0];
+                if(col) query.collection = col;
+            }
+
+        } else keywords.push(element.trim());
+    }, this);
+
+    if(keywords) query.name = new RegExp("(_|^)" + keywords.join('_'), 'ig');
+
+    return query;
+}
+
+function getCardQuery(card) {
+    return {
+        name: card.name,
+        collection: card.collection,
+        level: card.level
+    }
+}
+
+function containsCard(array, card) {
+    return array.filter(c => cardsMatch(c, card))[0];
+}
+
+function cardsMatch(card1, card2) {
+    return (card1.name === card2.name && 
+            card1.collection === card2.collection && 
+            card1.level === card2.level);
+}
+
+function canSend(user) {
+    var snd = user.sends || 1;
+    var get = user.gets || 1;
+    var rel = snd/get;
+    return snd + get < 20 || rel < 2.5;
+}
+
+function canGet(user) {
+    var snd = user.sends || 1;
+    var get = user.gets || 1;
+    var rel = get/snd;
+    return snd + get < 20 || rel < 2.5;
+}
+
+function getRatio(user) {
+    return (user.sends || 1)/(user.gets || 1);
+}
+
+function formatError(user, title, body) {
+    return getEmbed(user, title, body, "#f51d1d");
+}
+
+function formatConfirm(user, title, body) {
+    return getEmbed(user, title, body, "#77B520");
+}
+
+function formatInfo(user, title, body) {
+    return getEmbed(user, title, body, "#15aaec");
+}
+
+function getEmbed(user, title, body, color) {
+    let emb = new discord.RichEmbed();
+    if(title) emb.setTitle(title);
+    if(user) emb.setDescription("**" + user.username + "**, " + body);
+    else emb.setDescription(body);
+    emb.setColor(color);
+    return emb;
+}
+
+function getUserID(inp) {
+    let ret = { };
+    for (var i = 0; i < inp.length; i++) {
+        try {
+            if (/^\d+$/.test(inp[i]) && inp[i] > (1000 * 60 * 60 * 24 * 30 * 2 ** 22)){
+                ret.id = inp[i];
+                inp.splice(i, 1);
+                break;
+            }
+            else {
+                ret.id = inp[i].slice(0, -1).split('@')[1].replace('!', '');
+                inp.splice(i, 1);
+                break;
+            }
+        }
+        catch(err) {continue}
+    }
+    ret.input = inp;
+    return ret;
+}
+
+// db.getCollection('users').aggregate([
+// {"$match":{"discord_id":"218871036962275338"}},
+// {"$unwind":"$cards"},
+// {"$match":{"cards.level":3, "cards.name":/illya/i}},
+// {"$group": {_id: 0, cards: {"$push": "$cards"}}},
+// {"$project": {cards: '$cards', _id: 0}}
+// ])

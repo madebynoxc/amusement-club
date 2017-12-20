@@ -44,12 +44,11 @@ function general(callback) {
                 res += "Overall users: **" + ucc + "**\n"; 
                 res += "Active users: **" + aucc + "**\n";
                 res += "Overall cards: **" + ccc + "**\n"; 
-                res += "Used fandoms/collections: **"; 
-                for(i in collections) res += collections[i] + ', ';
-                res += "**\n";
-                res += "Load average: **" + os.loadavg()[2] + "%**\n";
+                res += "Used fandoms/collections: ["; 
+                for(i in collections) res += collections[i].replace('=', '') + ', ';
+                res += "]\n";
                 res += "OS Uptime: **" + Math.floor(os.uptime()/3600) + "** hours\n"; 
-                res += "Running **" + os.type() + ' : ' + os.platform() + "**";
+                res += "Running **Ubuntu 16.04 | MongoDB 3.4.5 | NodeJS 7.10.0**";
                 callback(res);
             });
         });

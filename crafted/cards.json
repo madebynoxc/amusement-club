@@ -2,8 +2,8 @@
     {
         "name": "blue_free_eyes",
         "level": 20,
-        "effect": "+ 200 🍅 Tomatoes in `->daily` bonus",
-        "cost": 4500,
+        "effect": "+ 200🍅 in `->daily` bonus",
+        "cost": 4000,
         "compressed": false,
         "cards": [
             "blue_eyes", "free_butterfly"
@@ -20,10 +20,11 @@
     }, {
         "name": "delightful_sunset",
         "level": 30,
-        "effect": "Reduces claim cost by __200 🍅 Tomatoes__ when used",
+        "effect": "Reduces claim cost by 200🍅 when used",
         "cost": 2300,
         "compressed": false,
         "cooldown": 24,
+        "usage": "`->inv use sunset` (works only when your claim cost is > 200🍅)",
         "cards": [
             "cherry_sunset", "afterschool_sunset"
         ]
@@ -43,6 +44,7 @@
         "cost": 6200,
         "compressed": false,
         "cooldown": 20,
+        "usage": "`->inv use date`",
         "cards": [
             "date_with_ayano", "kyoko_delight"
         ]
@@ -58,7 +60,7 @@
     }, {
         "name": "skies_of_friendship",
         "level": 40,
-        "effect": "Everyone who sends you a card, will get 100 🍅 Tomatoes",
+        "effect": "Everyone who sends you a card, will get 100 🍅",
         "cost": 10000,
         "compressed": false,
         "cards": [
@@ -67,7 +69,7 @@
     }, {
         "name": "sushi_squad",
         "level": 25,
-        "effect": "Get 20% more 🍅 Tomatoes when you sell a card",
+        "effect": "Get 20% more 🍅 when you sell a card",
         "cost": 3700,
         "compressed": false,
         "cards": [
@@ -89,8 +91,21 @@
         "cost": 6900,
         "compressed": false,
         "cooldown": 20,
+        "usage": "`->inv use space unity, -collection`",
         "cards": [
             "deep_space", "dragon_unity"
+        ]
+    }, {
+        "name": "the_judgment_day",
+        "level": 80,
+        "effect": "Eliminates Humanity. Grants effect of any usable card",
+        "cost": 10000,
+        "compressed": false,
+        "animated": true,
+        "cooldown": 40,
+        "usage": "`->inv use judgment day, usable card name`",
+        "cards": [
+            "triggered_angel", "huge_kaboom", "trumpet_of_doom"
         ]
     }
 ]
