@@ -326,8 +326,10 @@ function reduceClaims(user, fullName, callback) {
             { discord_id: user.discord_id},
             { $inc: {'dailystats.claim': -4} }
         ).then(u => {
+            let claimPrice = 50 * (claims + 1);
+            claimPrice = heroes.getHeroEffect(user, "claim_akari", claimPrice);
             callback("**" + user.username + "**, you used **" + fullName + "** "
-                + "that reduced your claim cost to **" + (50 * claims) + "**");
+                + "that reduced your claim cost to **" + claimPrice + "**");
         }).catch(e => logger.error(e));
         return true;
     }
