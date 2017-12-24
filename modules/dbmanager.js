@@ -694,19 +694,22 @@ function difference(discUser, targetID, args, callback) {
     });
 }
 
-function eval(user, args, callback) {
+// If isPromo is not given, the args will be checked for `-h` and promo cards will be chosen based on that
+function eval(user, args, callback, isPromo) {
     if(!args[0]) return;
     if(args.includes('-multi'))
         return callback(utils.formatError(user, "Request error", "flag `-multi` is not valid for this request"));
 
-    let ccollection = args.filter(a => a.includes('-h')).length > 0? 
-        mongodb.collection('promocards') : mongodb.collection('cards');
+    isPromo = isPromo || args.filter(a => a.includes('-h')).length > 0;
+    let ccollection = isPromo ? mongodb.collection('promocards') : mongodb.collection('cards');
 
     let query = utils.getRequestFromFiltersNoPrefix(args);
     ccollection.find(query).toArray((err, res) => {
         let match = query.name? getBestCardSorted(res, query.name)[0] : res[0];
-        if(!match)
-            return callback(utils.formatError(user, null, "no cards found that match your request"));
+        if(!match) {
+            if (!isPromo) return eval(user, args, callback, true);
+            else          return callback(utils.formatError(user, null, "no cards found that match your request"));
+        }
 
         getCardValue(match, price => {
             let name = utils.toTitleCase(match.name.replace(/_/g, " "));
