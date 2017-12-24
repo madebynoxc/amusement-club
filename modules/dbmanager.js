@@ -408,6 +408,11 @@ function transfer(from, to, args, callback) {
 
         if(!args) return callback("**" + user.username + "**, please specify name/collection/level");
 
+        for(m in args) {
+            if(m.includes("*"))
+                return callback("**" + user.username + "**, you can't transfer crystals");
+        }
+
         if(from.id == to) {
             callback(dbUser.username + ", did you actually think it would work?");
             return;
