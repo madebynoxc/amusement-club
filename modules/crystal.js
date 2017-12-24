@@ -36,7 +36,7 @@ function getRecipe(user, args, callback) {
             return callback("**" + user.username + "**, minimum **3** crystals requirede for recipe");
 
         var hash = utils.toTitleCase(args.join(' ')).replace(/\s/g, ".");
-        ccollection.findOne({"recipe.hash": hash.replace(/\*/g, "")}).then(card => {
+        ccollection.findOne({"recipe.hash": hash.replace(/(\*|,)/g, "")}).then(card => {
             if(card){
                 let stars = "";
                 for(let i=0; i<parseInt(card.level); i++)
