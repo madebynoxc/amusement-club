@@ -787,7 +787,7 @@ function needsCards(user, args, callback) {
     if(args.includes('-multi'))
         return callback(utils.formatError(user, "Request error", "flag `-multi` is not valid for this request"));
 
-    let ccollection = args.filter(a => a.includes('-h')).length > 0? 
+    let ccollection = args.filter(a => (a.includes('-halloween') || a.includes('-christmas'))).length > 0? 
         mongodb.collection('promocards') : mongodb.collection('cards');
 
     let query = utils.getRequestFromFilters(args);
