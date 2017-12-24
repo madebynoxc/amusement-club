@@ -406,11 +406,12 @@ function transfer(from, to, args, callback) {
 
         if(!dbUser.dailystats) dbUser.dailystats = {summon: 0, send: 0, claim: 0};
 
-        if(!args) return callback("**" + user.username + "**, please specify name/collection/level");
+        if(!args || args.length == 0) return callback("**" + dbUser.username + "**, please specify name/collection/level");
 
+        console.log(args);
         for(m in args) {
-            if(m.includes("*"))
-                return callback("**" + user.username + "**, you can't transfer crystals");
+            if(args[m].includes("*"))
+                return callback("**" + dbUser.username + "**, you can't transfer crystals");
         }
 
         if(from.id == to) {
