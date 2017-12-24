@@ -195,7 +195,7 @@ function claimPromotion(user, dbUser, amount, callback) {
     let promo = promotions.list[promotions.current];
     if(!dbUser.promoexp){
         callback("**" + user.username + "**, you have to earn some " + promo.currency + " first.\n"
-            + "To earn them claim cards or complete quests");
+            + "To earn them claim ordinary cards");
         return;
     }
     

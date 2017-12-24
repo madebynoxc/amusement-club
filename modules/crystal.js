@@ -185,6 +185,7 @@ function forgeCrystals(user, list, callback) {
 }
 
 function addToInventory(user, item) {
+    if(!user.inventory) user.inventory = [];
     var match = user.inventory.filter(i => i.name == item.name);
     if(match[0]) {
         match[0].amount++;
