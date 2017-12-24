@@ -12,6 +12,7 @@ const heroes = require('./heroes.js');
 const quest = require('./quest.js');
 const dbManager = require("./dbmanager.js");
 const inv = require("./inventory.js");
+const cryst = require("./crystal.js");
 
 var collections = [];
 fs.readdir('./cards', (err, items) => {
@@ -26,6 +27,7 @@ function connect(db) {
     mongodb = db;
     ucollection = db.collection('users');
     ccollection = db.collection('cards');
+    cryst.connect(db);
 }
 
 function processRequest(userID, args, callback) {
@@ -76,27 +78,40 @@ function getInfo(user, name, callback, image = false) {
 function craftCard(user, args, callback) {
     var cards = args.join('_').split(',');
     if(!cards || cards.length < 2) {
-        callback("Minimum **2** cards required for forge\nDon't forget to put `,` between card names\nInclude only card **name**");
+        callback("Minimum **2** cards or items required for forge\nDon't forget to put `,` between names"
+            + "\nInclude only card/item **name**\nFor crystals always put `*` before name");
         return;
     }
 
     let cardNames = [];
     let cardObjects = [];
+    let iscryst = false;
     for(i in cards) {
         let name = cards[i];
-        if(cards[i][0] == "_") 
-            name = cards[i].substr(1); 
+        if(name.includes("*"))
+            iscryst = true;
+        else {
+            if(iscryst)
+                return callback("**" + user.username 
+                    + "**, you can't combine cards and items in forge request");
 
-        let card = dbManager.getBestCardSorted(user.cards, name)[0];
-        if(!card) {
-            callback("**" + user.username 
-                + "**, card with name **" + name.replace(/_/g, " ")
-                + "** was not found, or you don't have it");
-            return;
+            if(cards[i][0] == "_") 
+                name = cards[i].substr(1); 
+
+            let card = dbManager.getBestCardSorted(user.cards, name)[0];
+            if(!card) {
+                callback("**" + user.username 
+                    + "**, card with name **" + name.replace(/_/g, " ")
+                    + "** was not found, or you don't have it");
+                return;
+            }
+            cardNames.push(card.name.toLowerCase());
+            cardObjects.push(card);
         }
-        cardNames.push(card.name.toLowerCase());
-        cardObjects.push(card);
     }
+
+    if(iscryst)
+        return cryst.forgeCrystals(user, cards, callback)
 
     let isCraft = cardObjects[0].craft;
     if(!isCraft) isCraft = false;
@@ -186,6 +201,10 @@ function craftOrdinary(user, cards, callback) {
     }
 
     let collection = cards[0].collection;
+
+    if(collection == "christmas")
+        return cryst.getCrystals(user, cards, callback);
+
     let passed = [];
     for(i in cards) {
         if(cards[i].level != level) {

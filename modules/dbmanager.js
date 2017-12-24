@@ -81,14 +81,14 @@ function claim(user, guildID, arg, callback) {
             }, this);
         } catch(exc){}
 
+        if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, quests: 0};
+
+        amount = Math.min(Math.max(parseInt(amount), 1), 20);
+
         if(promo) {
-            claimPromotion(user, dbUser, callback);
+            claimPromotion(user, dbUser, amount, callback);
             return;
         }
-
-        amount = Math.min(Math.max(parseInt(amount), 1), 30);
-
-        if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, quests: 0};
 
         let claimCost = getClaimsCost(dbUser, amount);
         let nextClaim = 50 * (dbUser.dailystats.claim + amount + 1);
@@ -99,7 +99,7 @@ function claim(user, guildID, arg, callback) {
             return;
         }
 
-        let blockClaim = dbUser.dailystats && dbUser.dailystats.claim >= 30;
+        let blockClaim = dbUser.dailystats && dbUser.dailystats.claim >= 20;
         if(blockClaim) {
             callback("**" + user.username + "**, you reached a limit of your daily claim. \n"
                 + "It will be reset next time you successfully run `->daily`");
@@ -163,6 +163,7 @@ function claim(user, guildID, arg, callback) {
                     phrase += "\n You got additional **" + addedpromo + "** " + prm.currency;
                 }
 
+                if(!dbUser.cards) dbUser.cards = [];
                 res.map(r => dbUser.cards = addCardToUser(dbUser.cards, r));
 
                 dbUser.dailystats.claim += amount;
@@ -182,14 +183,12 @@ function claim(user, guildID, arg, callback) {
     });
 }
 
-function claimPromotion(user, dbUser, callback) {
-    let claimCost = 100;
+function claimPromotion(user, dbUser, amount, callback) {
     let ucollection = mongodb.collection('users');
 
-    if(dbUser.dailystats) claimCost += 20 * dbUser.dailystats.claim;
-
+    let claimCost = getPromoClaimsCost(dbUser, amount);
     if(promotions.current == -1) {
-        callback("**" + user.username + "**, there are no any promotional cards available now");
+        callback("**" + user.username + "**, there are no promotional cards available now");
         return;
     }
 
@@ -207,29 +206,48 @@ function claimPromotion(user, dbUser, callback) {
     }
     
     let collection = mongodb.collection('promocards');
-    let find = {collection: promo.name};
+    let query = [ 
+            { $match: { collection: promo.name, level: {$lt: 3} } },
+            { $sample: { size: amount } } 
+    ];
 
-    collection.find(find).toArray((err, i) => {
-        let res = _.sample(i);
-        let file = getCardFile(res);
-        let name = utils.toTitleCase(res.name.replace(/_/g, " "));
+    collection.aggregate(query).toArray((err, res) => {
+        let phrase = "**" + user.username + "**, you got";
 
-        let phrase = "**" + user.username + "**, you got **" + name + "** \n";        
-        if(dbUser.cards && dbUser.cards.filter(
-            c => c.name == res.name && c.collection == res.collection).length > 0)
-            phrase += "(*you already have this card*)\n";
+        res.sort(dynamicSort('-level'));
+        if(amount == 1) {
+            phrase += " **" + utils.toTitleCase(res[0].name.replace(/_/g, " ")) + "**\n";
+            if(dbUser.cards && dbUser.cards.filter(
+                c => c.name == res[0].name && c.collection == res[0].collection).length > 0)
+                phrase += "(*you already have this card*)\n";
+            phrase += "Forge this card with other promo cards and get crystals!\n"
+        } else {
+            phrase += " (new cards are bold):\n"
+            for (var i = 0; i < res.length; i++) {
+                if(dbUser.cards 
+                    && dbUser.cards.filter(c => c.name == res[i].name && c.collection == res[i].collection).length > 0)
+                    phrase += (i + 1) + ". " + listing.nameCard(res[i], 1);
+                else phrase += (i + 1) + ". **" + listing.nameCard(res[i], 1) + "**";
+                phrase += "\n";
+            }
+            phrase += "\nUse `->sum [card name]` to summon a card\n";
+            phrase += "Use `->forge [card 1], [card 2], ...` to combine cards into crystals\n";
+        }
         phrase += "You have now **" + (dbUser.promoexp - claimCost) + "** " + promo.currency;
 
-        heroes.addXP(dbUser, .15);
+        res.map(r => dbUser.cards = addCardToUser(dbUser.cards, r));
+
+        dbUser.dailystats.promoclaim += amount;
+        heroes.addXP(dbUser, .2 * amount);
         ucollection.update(
             { discord_id: user.id },
             {
-                $push: {cards: res },
+                $set: {cards: dbUser.cards, dailystats: dbUser.dailystats},
                 $inc: {promoexp: -claimCost}
             }
         ).then(() => {
-            callback(phrase, file);
-        });
+            callback(phrase, ((amount == 1)? getCardFile(res[0]) : null));
+        }).catch(e => console.log(e));
     });
 }
 
@@ -267,10 +285,6 @@ function addXP(user, amount, callback) {
             );
         }
     });
-    
-
-    //cooldownList.push(user.id);
-    //setTimeout(() => removeFromCooldown(user.id), 6000);
 }
 
 function removeFromCooldown(userID) {
@@ -599,7 +613,7 @@ function daily(uID, callback) {
 
         if(promotions.current > -1) {
             let promo = promotions.list[promotions.current];
-            let tgexp = (user.dailystats? user.dailystats.claim * 80 : 0) + 100;
+            let tgexp = (user.dailystats? user.dailystats.claim * 80 : 0) + 500;
             incr.promoexp = tgexp;
             msg += "A special promotion is now going until **" + promo.ends + "**!\n"
                 + "You got **" + tgexp + "** " + promo.currency + "\n"
@@ -858,6 +872,20 @@ function getClaimsCost(dbUser, amount) {
     }
     return total;
 }
+
+function getPromoClaimsCost(dbUser, amount) {
+    if(!dbUser.dailystats.promoclaim) 
+        dbUser.dailystats.promoclaim = 1;
+
+    let total = 0;
+    let claims = dbUser.dailystats.promoclaim;
+    for (var i = 0; i < amount; i++) {
+        claims++;
+        total += claims * 20;
+    }
+    return total;
+}
+
 
 function countCardLevels(cards) {
     let sum = 0;

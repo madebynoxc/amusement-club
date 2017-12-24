@@ -12,6 +12,7 @@ const inventory = require('./modules/inventory.js');
 const changelog = require('./help/updates.json');
 const helpMod = require('./modules/help.js');
 const invite = require('./modules/invite.js');
+const crystal = require('./modules/crystal.js');
 var bot, curgame = 0;
 
 var cooldownList = [];
@@ -308,6 +309,10 @@ function getCommand(m, callback) {
             case 'invite':
                 if(channelType !== 0) m.author.send("You should use this command here in Direct Messages to bot");
                 else invite.processRequest(m, cnt, callback);
+                return;
+            case 'res':
+                if(channelType == 1) callback('This command is available only in bot channel');
+                else crystal.getRecipe(m.author, cnt, callback);
                 return;
             case 'kill': 
                 if(dbManager.isAdmin(m.author.id)) {

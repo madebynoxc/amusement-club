@@ -112,7 +112,7 @@ function removeQuest(user, quest, callback) {
 
     var award = heroes.getHeroEffect(user, 'questReward', quest.award);
     let incr = {exp: award};
-    if(promotions.current > -1) incr = {exp: award, promoexp: Math.floor(award/2)};
+    //if(promotions.current > -1) incr = {exp: award, promoexp: Math.floor(award/2)};
     col.update(
         { discord_id: user.discord_id },
         {   

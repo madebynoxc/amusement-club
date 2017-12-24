@@ -40,12 +40,15 @@ function getInfo(user, name, callback) {
         return;
     }
 
-    let item = user.inventory.filter(c => c.name.includes(name))[0];
+    let item = user.inventory.filter(c => c.name.toLowerCase().includes(name))[0];
     if(item){
         switch(item.type){
             case 'craft':
                 forge.getInfo(user, name, callback, true);
                 break;
+            case 'crystal':
+                callback("**" + user.username + "**, combine crystals to get unique cards.\nTo get card recipe use `->res [card name]`\n"
+                    + "To get name of possible card of combination use `->res [*crystal1, *crystal2] ...` e.g. `->res *blue, *magenta, *green`");
         }
         return;
     }
@@ -70,6 +73,7 @@ function showInventory(user, callback) {
         resp += (i+1).toString() + ". ";
         resp += "[" + user.inventory[i].type + "]  ";
         resp += utils.toTitleCase(user.inventory[i].name.replace(/_/g, " "));
+        if(user.inventory[i].amount > 1) resp += " (x" + user.inventory[i].amount + ")";
         resp += "\n";
     }
     callback(resp);
