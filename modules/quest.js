@@ -134,10 +134,10 @@ function completeMsg(user, q) {
     let title = "**" + user.username + "**, you completed '" + q.description + "'";
     let desc =  "**" + award + "**🍅 Tomatoes were added to your account!";
 
-    if(promotions.current > -1) {
+    /*if(promotions.current > -1) {
         let promo = promotions.list[promotions.current];
         msg += "\nYou also got extra **" + Math.floor(award/2) + "** " + promo.currency;
-    }
+    }*/
     embed.setTitle(title);
     embed.setDescription(desc);
     return embed;
