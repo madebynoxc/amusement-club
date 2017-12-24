@@ -88,12 +88,12 @@ function craftCard(user, args, callback) {
     var mode = "";
     for(i in cards) {
         let name = cards[i];
-        if(name.includes("*"))
+        if(name.includes("*")){ 
             if(mode == "card")
                 return callback("**" + user.username 
                     + "**, you can't combine cards and items in forge request");
             mode = "cryst";
-        else {
+        } else {
             if(mode == "cryst")
                 return callback("**" + user.username 
                     + "**, you can't combine cards and items in forge request");
