@@ -54,6 +54,44 @@
 		]
 	},
 	{
+		"type": ["crystal"],
+		"title": "About crystals",
+		"description": "In **Christmas event** you can get 1-2 star cards using `->claim promo`. However, 3+ star cards can be recieved only by forging **crystals**",
+		"fields": [
+			{
+				"title": "Get crystals",
+				"description": "Forge 2-star cards or 1-star cards and get different crystals. Depending on overall star amount in forge request you will get crystal with higher value. You can find your crystals in **inventory** (`->inv`)"
+			},
+			{
+				"title": "Crystal values",
+				"description": "[red, green, blue] -> [cyan, magenta] -> [gold] -> [platinum]"
+			},
+			{
+				"title": "Forge crystals to get new cards",
+				"description": "Once you have some crystals, forge them like this (example)\n`->forge *red, *green, *blue` and get a higher value card. If you were the first one to forge this card with those crystals, you will assign your own **crystal recipe** to it. Once someone uses your recipe to get this card, you will get extra **snowflakes**. Read more: `->help recipe`"
+			},
+			{
+				"title": "Order and value matters!",
+				"description": "Depending on order of crystals and their value, you get different recipes. Cyan and Magenta crystals will give you 100% 3-star card and some chance to get a 4-star. Gold crystal is 100% 4-star card. To get christmas legendary, you have to forge 3 platinum crystals.\n**NOTE** that legendary becomes available in first couple of days after christmas. It will be announced separately"
+			}
+		]
+	},
+	{
+		"type": ["res", "recipe"],
+		"title": "About recipe",
+		"description": "Recipe allows you to craft card that you want. Following certain crystal pattern you can forge you favourite card",
+		"fields": [
+			{
+				"title": "Getting card recipe",
+				"description": "->res [card name]"
+			},
+			{
+				"title": "Getting possible crystal recipe",
+				"description": "->res *crystal1 *crystal2 ..."
+			}
+		]
+	},
+	{
 		"type": ["inv", "inventory"],
 		"title": "About inventory",
 		"description": "Inventory contains different items that cam be used in game. For example, effect cards (from v1.9.0), claim tickets (from v2.0), etc. Items can be stored unlimited amount of time. Some items provide effect if they are in user’s inventory, some of them should be used.",

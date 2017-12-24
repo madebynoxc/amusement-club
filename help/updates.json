@@ -1,5 +1,13 @@
 [
     {
+        "version": "1.9.8.9",
+        "changes": [
+            "Fixes to eval command",
+            "Added crystal module as part of forge", 
+            "Included christmas promotion"
+        ]
+    },
+    {
         "version": "1.9.8.5",
         "changes": [
             "Improvements and fixes to card searching",
