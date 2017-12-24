@@ -116,7 +116,7 @@ function forgeCrystals(user, list, callback) {
     let arr = [];
     for(i in list) {
         let name = list[i].replace(/(_|\*)/gi, "");
-        let item = user.inventory.filter(c => c.name.toLowerCase().includes(name))[0];
+        let item = user.inventory.filter(c => (c.name.toLowerCase().includes(name) && c.name.type === "crystal"))[0];
         if(!item) return callback("**" + user.username + "**, you don't have crystal named **" + name + "**");
         if(item.amount == 0) return callback("**" + user.username + "**, you don't have enough **" + name + "** crystals");
 
