@@ -2,7 +2,7 @@ module.exports = {
     processRequest, connect, getInfo, useCard, getCardEffect
 }
 
-var mongodb, ucollection, ccollections;
+var mongodb, ucollection, ccollection;
 const fs = require('fs');
 const _ = require("lodash");
 const crafted = require('../crafted/cards.json');
@@ -85,15 +85,19 @@ function craftCard(user, args, callback) {
 
     let cardNames = [];
     let cardObjects = [];
-    let iscryst = false;
+    var mode = "";
     for(i in cards) {
         let name = cards[i];
         if(name.includes("*"))
-            iscryst = true;
-        else {
-            if(iscryst)
+            if(mode == "card")
                 return callback("**" + user.username 
                     + "**, you can't combine cards and items in forge request");
+            mode = "cryst";
+        else {
+            if(mode == "cryst")
+                return callback("**" + user.username 
+                    + "**, you can't combine cards and items in forge request");
+            mode = "card";
 
             if(cards[i][0] == "_") 
                 name = cards[i].substr(1); 
@@ -110,7 +114,7 @@ function craftCard(user, args, callback) {
         }
     }
 
-    if(iscryst)
+    if(mode == "cryst")
         return cryst.forgeCrystals(user, cards, callback)
 
     let isCraft = cardObjects[0].craft;
@@ -202,7 +206,7 @@ function craftOrdinary(user, cards, callback) {
 
     let collection = cards[0].collection;
 
-    if(collection == "christmas")
+    if(collection === "christmas")
         return cryst.getCrystals(user, cards, callback);
 
     let passed = [];
