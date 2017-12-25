@@ -83,8 +83,12 @@ function getCrystals(user, cards, callback) {
     if(user.promoexp < cost)
         return callback("**" + user.username + "**, you need **" + cost + "** Snowflakes to forge those cards. You have only **" + user.promoexp + "**");
 
-    if(levels > 6) levels = 6;
-    var cryst = _.sample(crystcol.filter(x => (x.value <= levels && x.value >= levels - 2)));
+    if(levels > 8) levels = 8;
+    let minLevel = levels - 2;
+
+    var cryst = _.sample(crystcol.filter(x => (x.value <= levels && x.value >= minLevel)));
+    if(levels >= 8) cryst = crystcol.filter(x => (x.value == 8))[0];
+
     for(j in cards) {
         let match = utils.containsCard(user.cards, cards[j]);
         if(match) user.cards = dbManager.removeCardFromUser(user.cards, match);
