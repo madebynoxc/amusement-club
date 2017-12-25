@@ -113,6 +113,7 @@ function forgeCrystals(user, list, callback) {
 
     let value = 0;
     let minlevel = 2;
+    let platCount = 0;
     let arr = [];
     for(i in list) {
         let name = list[i].replace(/(_|\*)/gi, "");
@@ -122,7 +123,11 @@ function forgeCrystals(user, list, callback) {
 
         value += item.value;
         if(item.name == "Cyan" || item.name == "Magenta") minlevel = 3;
-        else if (item.name == "Gold" || item.name == "Platinum") minlevel = 4;
+        else if (item.name == "Gold") minlevel = 4;
+        else if (item.name == "Platinum") {
+            minlevel = 4;
+            platCount++;
+        }
         item.amount--;
         arr.push(item.name);
     }
@@ -130,12 +135,15 @@ function forgeCrystals(user, list, callback) {
     ccollection.findOne({"recipe.hash": arr.join('.')}).then(card => {
         var text = "**" + user.username + "**, ";
         if(!card) {
+            let maxlevel = Math.min(minlevel + 2, 5);
             let query = [ 
-                { $match: { level: {$gte: minlevel, $lt: minlevel + 2}, "recipe.hash": { $exists: false } } },
+                { $match: { level: {$gte: minlevel, $lt: maxlevel}, "recipe.hash": { $exists: false } } },
                 { $sample: { size: 1 } } 
             ];
+
+            if(platCount >= 3) query = [{$match: {level: 5}}, {$sample: {size: 1}}];
+
             ccollection.aggregate(query).toArray((err, cards) => {
-                console.log(cards);
                 card = cards[0];
                 if(!card)
                     return callback("**" + user.username + "**, all recipes were assigned. Use `->res [*crystal1, *crystal2, ...]` to get possible cards from your crystals");
@@ -163,7 +171,7 @@ function forgeCrystals(user, list, callback) {
                 ucollection.update(
                     { discord_id: card.recipe.creator },
                     {
-                        $inc: {promoexp: 50 * card.level}
+                        $inc: {promoexp: 100 * card.level}
                     }
                 );
                 ccollection.update(
