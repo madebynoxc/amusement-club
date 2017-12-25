@@ -122,60 +122,41 @@ function sortByStars(cards) {
     return cards;
 }
 
-function getRequestFromFilters(args) {
+function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
+    prefix = prefix || "";
     let query = {};
     let keywords = [];
 
     //console.log(args);
     if(!args) return {};
     args.forEach(element => {
-        if(isInt(element))
-            query['cards.level'] = parseInt(element);
+        if(isInt(element) && parseInt(element) <= 5 && parseInt(element) > 0)
+            query[prefix + 'level'] = parseInt(element);
 
         else if(element[0] == '-') {
             let el = element.substr(1);
-            if(el === "craft") query['cards.craft'] = true; 
-            else if(el === "multi") query['cards.amount'] = {$gte: 2};
-            else if(el === "gif") query['cards.animated'] = true;
+            if(el === "craft") query[prefix + 'craft'] = true; 
+            else if(el === "multi") query[prefix + 'amount'] = {$gte: 2};
+            else if(el === "gif") query[prefix + 'animated'] = true;
             else {
                 col = collections.filter(c => c.includes(el))[0];
-                if(col) query['cards.collection'] = col;
+                if(col) query[prefix + 'collection'] = col;
             }
 
         } else keywords.push(element.trim());
     }, this);
 
-    if(keywords) query['cards.name'] = new RegExp("(_|^)" + keywords.join('_'), 'ig');
+    if(keywords) query[prefix + 'name'] = new RegExp("(_|^)" + keywords.join('_'), 'ig');
 
     return query;
 }
 
+function getRequestFromFilters(args) {
+    getRequestFromFiltersWithSpecifiedPrefix(args, "cards.");
+}
+
 function getRequestFromFiltersNoPrefix(args) {
-    let query = {};
-    let keywords = [];
-
-    //console.log(args);
-    if(!args) return {};
-    args.forEach(element => {
-        if(isInt(element))
-            query.level = parseInt(element);
-
-        else if(element[0] == '-') {
-            let el = element.substr(1);
-            if(el === "craft") query.craft = true; 
-            else if(el === "multi") query.amount = {$gte: 2};
-            else if(el === "gif") query.animated = true;
-            else {
-                col = collections.filter(c => c.includes(el))[0];
-                if(col) query.collection = col;
-            }
-
-        } else keywords.push(element.trim());
-    }, this);
-
-    if(keywords) query.name = new RegExp("(_|^)" + keywords.join('_'), 'ig');
-
-    return query;
+    return getRequestFromFiltersWithSpecifiedPrefix(args, "");
 }
 
 function getCardQuery(card) {
