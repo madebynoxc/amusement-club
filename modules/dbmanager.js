@@ -798,18 +798,20 @@ function needsCards(user, args, callback) {
 
     let query = utils.getRequestFromFilters(args);
     getUserCards(user.id, query).toArray((err, objs) => {
-        if(!objs[0]) 
-            return callback(utils.formatError(user, null, "no cards found that match your request"));
+        let cards;
+        if(objs[0]) cards = objs[0].cards;
+        else        cards = [];
 
-        let cards = objs[0].cards;
         query = utils.getRequestFromFiltersNoPrefix(args);
         ccollection.find(query).toArray((err, res) => {
             let dif = res.filter(x => cards.filter(y => utils.cardsMatch(x, y)) == 0);
             
             if(dif.length > 0) 
                 callback(listing.addNew(user, dif, '--Database--'));
+            else if (cards.length == 0)
+                callback(utils.formatError(user, null, "No cards were found that match your request"));
             else
-                callback("**--Database--** has no any unique cards that match your request\n");
+                callback(utils.formatError(user, null, "You aren't missing any cards that match your request"));
         });
     });
 }
