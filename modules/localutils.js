@@ -152,7 +152,7 @@ function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
 }
 
 function getRequestFromFilters(args) {
-    getRequestFromFiltersWithSpecifiedPrefix(args, "cards.");
+    return getRequestFromFiltersWithSpecifiedPrefix(args, "cards.");
 }
 
 function getRequestFromFiltersNoPrefix(args) {
