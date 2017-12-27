@@ -861,14 +861,14 @@ function dynamicSort(property) {
 
 function getClaimsAmount(dbUser, claims, exp) {
     let res = 0;
-    let total = claims * 50;
-    let allowed = 30 - claims;
+    let total = 0;
+    let allowed = 20 - claims;
 
-    claims++;
-    while(exp >= total) {
+    while(true) {
         claims++;
-        res++;
         total += heroes.getHeroEffect(dbUser, 'claim_akari', claims * 50);
+        if (total > exp) break;
+        res++;
     }
 
     return Math.min(res, allowed);
