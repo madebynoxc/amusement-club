@@ -1,5 +1,5 @@
 {
-	"id":"christmas2",
-	"title":"Merry Christmas!",
-	"body":"Amusement Club now has Christmas cards! Get them by using `->claim promo`\nGet more information about rules of this promotion: `->help crystal`"
+	"id":"problem1",
+	"title":"IMPORTANT",
+	"body":"Bot can have problems with sending messages in some channels at random times. This issue is going to be fixed in several days, until then keep in mind that **your commands still work** Amusement Club just can't reply to them. \nDon't do `->claim 6` several times, or you will **lose all your tomatoes!**"
 }
