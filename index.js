@@ -54,7 +54,27 @@ function _init() {
 
                     getCommand(message, (res, obj) => {
                         if(!res && !obj) return;
-                        message.channel.send(res, obj? {file: obj} : null);
+                        message.channel.send(res, obj? {file: obj} : null).catch((error) => {
+                            // Failed to send message in the original channel, try DM
+                            let extraText = `I couldn't send this in <#${message.channel.id}>, error: \`${error.code}: ${error.message}\`.  Here's what I was going to send:`;
+                            let options = obj? {file: obj} : {};
+                            let text = res;
+                            if (!text || text === "") {
+                                text = extraText;
+                            }
+                            else if (typeof text === "string") {
+                                text = extraText + "\n" + text;
+                            }
+                            else if (text instanceof Discord.RichEmbed) {
+                                options.embed = text;
+                                text = extraText;
+                            }
+                            else {
+                                console.error("Couldn't figure out how to add text to the following object:");
+                                console.error(text);
+                            }
+                            message.author.send(text, options);
+                        });
                     });
                 }
                 else message.channel.send("", t);
