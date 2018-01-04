@@ -32,23 +32,28 @@ function getRecipe(user, args, callback) {
     }
 
     if(mode == "cryst") {
-        if(args.length < 3)
-            return callback("**" + user.username + "**, minimum **3** crystals requirede for recipe");
+        if(args.length < 1)
+            return;
 
-        var hash = utils.toTitleCase(args.join(' ')).replace(/\s/g, ".");
-        ccollection.findOne({"recipe.hash": hash.replace(/(\*|,)/g, "")}).then(card => {
-            if(card){
-                let stars = "";
-                for(let i=0; i<parseInt(card.level); i++)
-                    stars += "★"; 
-                return callback("**" + user.username + "**, you will get **[" +
-                stars + "] " + utils.toTitleCase(card.name.replace(/_/g, " ")) + "** if you use this recipe");
+        var query = {"$and": []}
+        args.map(arg => { query.$and.push({"recipe.hash": new RegExp(arg.replace(/(\*|\s|,)/g, ""), "i")}) });
+        ccollection.find(query).toArray((err, cards) => {
+            if(cards && cards.length > 0) {
+                let resp = "**" + user.username + "**, you can get:\n";
+                cards.map(card => {
+                    let stars = "[";
+                    for(let i=0; i<parseInt(card.level); i++)
+                        stars += "★"; 
+                    resp += stars + "] **" + utils.toTitleCase(card.name.replace(/_/g, " "));
+                    resp += "** (" + card.recipe.hash.replace(/\./g, " ") + ")\n";
+                })
+                
+                return callback(resp);
             } 
-            return callback("**" + user.username + "**, no card found with that recipe. It will be assigned to a random card when you forge these crystals");
+            return callback("**" + user.username + "**, no cards found with that recipe.");
         });
     } else {
         let query = utils.getRequestFromFiltersNoPrefix(args);
-        console.log(query);
         ccollection.findOne(query).then(card => {
             if(card){
                 if(card.recipe) return callback("**" + user.username + "**, the recipe for this card is `" 
