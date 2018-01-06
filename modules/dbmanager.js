@@ -64,7 +64,7 @@ function connect(bot, callback) {
 }
 
 function claim(user, guildID, arg, callback) {
-    let ucollection = ongodb.collection('users');
+    let ucollection = mongodb.collection('users');
     ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
         if(!dbUser) return;
 
