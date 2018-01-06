@@ -181,14 +181,14 @@ function canSend(user) {
     var snd = user.sends || 1;
     var get = user.gets || 1;
     var rel = snd/get;
-    return snd + get < 20 || rel < 2.5;
+    return rel < 2.5;
 }
 
 function canGet(user) {
     var snd = user.sends || 1;
     var get = user.gets || 1;
-    var rel = get/snd;
-    return snd + get < 20 || rel < 2.5;
+    var rel = snd/get;
+    return rel > 0.4;
 }
 
 function getRatio(user) {

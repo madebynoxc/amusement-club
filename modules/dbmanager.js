@@ -421,7 +421,8 @@ function transfer(from, to, args, callback) {
 
         if(!to) return;
 
-        if(dbUser.dailystats.send < 1 && !utils.canSend(dbUser)) {
+        console.log(utils.canSend(dbUser));
+        if(dbUser.dailystats.send > 1 && !utils.canSend(dbUser)) {
             callback(utils.formatError(dbUser, 
                 "Can't send card!",
                 "you can't send more cards. Please, trade fairly and consider **getting** more cards from users. Details: `->help trade`\n"
