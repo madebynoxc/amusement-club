@@ -15,7 +15,7 @@ const logger = require('./log.js');
   },
 });*/
 
-function updateCards(connection) {
+function updateCards(connection, callback) {
     logger.message("[CardManager 2.3] NOW: Updating cards..."); 
     mongodb = connection;
 
@@ -25,6 +25,7 @@ function updateCards(connection) {
         collection2.find({}).toArray((err2, res2) => {
             let allCards = res.concat(res2);
             fs.readdir('./cards', (err2, items) => {
+                let collected = [];
                 items.forEach(item => {
                     let newCards = [];
                     let path = './cards/' + item;
@@ -46,8 +47,11 @@ function updateCards(connection) {
                     if(item[0] == '=') 
                         insertCrads(newCards, mongodb.collection('promocards'));
                     else insertCrads(newCards, mongodb.collection('cards'));
+
+                    if(newCards.length > 0) collected.push({name: item, count: newCards.length});
                 });
                 logger.message("[CardManager 2.3] Card update finished"); 
+                if(callback) callback(collected);
             });
         });
     });

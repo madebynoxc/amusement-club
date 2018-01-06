@@ -33,6 +33,7 @@ function _init() {
 
     bot.on("ready", (event) => {
         console.log('[Discord.IO] Logged in as %s - %s\n', bot.username, bot.id);
+        bot.getAllUsers();
         bot.setPresence({game: {name: "->help"}});
         if(restartChannelID) {
             bot.sendMessage({to: restartChannelID, message: "Discord.io websocket connection was restarted. Connected to discord"});
@@ -41,7 +42,10 @@ function _init() {
     });
 
     bot.on("disconnect", (errMsg, code) => {
-        if(errMsg || code) console.log("[Discord.IO ERROR#" + code + "] " + errMsg);
+        if(errMsg || code) { 
+            console.log("[Discord.IO ERROR#" + code + "] " + errMsg);
+            setTimeout(() => bot.connect(), 1000);
+        }
         console.log("[Discord.IO] Discord Bot Disconnected");
     });
 

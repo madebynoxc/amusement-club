@@ -55,7 +55,7 @@ function connect(bot, callback) {
         forge.connect(db);
         inv.connect(db);
         stats.connect(db);
-        cardmanager.updateCards(db);
+        //cardmanager.updateCards(db);
         invite.connect(db, client);
         helpMod.connect(db, client);
 
@@ -64,7 +64,7 @@ function connect(bot, callback) {
 }
 
 function claim(user, guildID, arg, callback) {
-    let ucollection = mongodb.collection('users');
+    let ucollection = ongodb.collection('users');
     ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
         if(!dbUser) return;
 
