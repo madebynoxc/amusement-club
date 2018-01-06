@@ -45,7 +45,7 @@ bot.on("ready", (event) => {
         console.log('[Ayano ERROR] ' + err);
     });
 
-    child.on('stderr', function (data) {
+    child.on('stderr', function (err) {
         bot.sendMessage({
             to: settings.reportchannel, 
             embed: formError("AC Unhalded promise rejection", err)
