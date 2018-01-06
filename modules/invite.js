@@ -2,7 +2,7 @@ module.exports = {
     processRequest, connect, getStatus, checkStatus, checkOnJoin
 }
 
-var mongodb, ucollection, icollection;
+var mongodb, ucollection, icollection, bot;
 const Discord = require('discord.js');
 const logger = require('./log.js');
 const utils = require('./localutils.js');
@@ -17,13 +17,14 @@ const col = {
     green: "#0FBA4D"
 }
 
-function connect(db) {
+function connect(db, client) {
     mongodb = db;
+    bot = client;
     ucollection = db.collection('users');
     icollection = db.collection('invites');
 }
 
-function processRequest(message, args, callback) {
+function processRequest(user, message, args, callback) {
     var req = args.shift();
     switch(req) {
         case "status":
@@ -33,11 +34,11 @@ function processRequest(message, args, callback) {
             //list(callback);
             break;
         case "ban":
-            if(dbManager.isAdmin(message.author.id))
+            if(dbManager.isAdmin(user.id))
                 banServer(args[0], callback);
             break;
         default:
-            tryAdd(message.author, req, callback);
+            tryAdd(user, req, callback);
     }
 }
 
@@ -54,91 +55,89 @@ function setInvited(srvID, callback) {
     }).catch(e => logger.error(e));
 }
 
-function getInviteLink() {
-    client.generateInvite(['SEND_MESSAGES', 'MANAGE_GUILD', 'MENTION_EVERYONE'])
-        .then(link => {
-        
-    });
-}
-
-function checkOnJoin(guild, botUser) {
-    let def = dbManager.getDefaultChannel(guild, botUser);
+function checkOnJoin(guild) {
+    let def = dbManager.getDefaultChannel(guild);
     let resp = new Discord.RichEmbed();
     resp.setColor(col.red);
 
-    if(guild.memberCount < 10) {
+    if(guild.member_count < 20) {
         resp.setTitle("Server is invalid");
         resp.setDescription("For technical reasons bot can't function on small servers.\n"
             + "Please, invite **Amusement Club** again when you have 10 or more members");
-        def.send(resp).then(() => guild.leave());
+        send(def, resp, () => bot.leaveServer(guild.id));
         return;
     }
 
     setInvited(guild.id, t => {
         if(t == 'pending') {
-            def.send(
-                "**Amusement Club here!**\n"
+            var msg = "**Amusement Club here!**\n"
                 + "I am a card game bot that allows *you* to obtain some nice cards in your collection.\n"
                 + "Get chance to win one of those below!\n"
-                + "Type `->help` and get started",
-                './invite.png')
-            .then(() => {
-                if(guild.channels.array().filter(c => c.name.includes('bot')).length == 0) {
-                    resp.setColor(col.yellow);
-                    resp.setTitle("Notice");
-                    resp.setDescription("This server has no any **bot** channel.\n"
-                        + "In order to **Amusement Club** function properly, you need to have special channel "
-                        + "that has 'bot' in the name.\n`(e.g. 'bot-commands', 'bot', 'bot_stuff', etc)`");
-                    def.send(resp);
+                + "Type `->help` and get started";
+
+            bot.uploadFile({to: def.id, message: msg, file: './invite.png'}, () => {
+                for (var key in guild.channels) {
+                    if(guild.channels[key].name.includes('bot')) return;
                 }
+
+                resp.setColor(col.yellow);
+                resp.setTitle("Notice");
+                resp.setDescription("This server has no any **bot** channel.\n"
+                    + "In order to **Amusement Club** function properly, you need to have special channel "
+                    + "that has 'bot' in the name.\n`(e.g. 'bot-commands', 'bot', 'bot_stuff', etc)`");
+                send(def, resp);
             });
         }
         else if(t == 'banned') {
             resp.setTitle("Bot can't function on this server");
             resp.setDescription("This bot was banned from this server. **Amusement Club** will leave after this message");
-            def.send(resp).then(() => m.guild.leave());
+            send(def, resp, () => bot.leaveServer(guild.id));
         }
         else if(t == null) {
             resp.setTitle("Bot is not registered!");
             resp.setDescription("Server administrator has to run `->invite [server_id]` in bot DMs\n"
                 + "Run `->help invite` for more information");
-            def.send(resp);
+            send(def, resp);
         }
     });
 }
 
-function checkStatus(m, callback) {
-    if(!m.guild) {
+function send(channel, emb, clb) {
+    bot.sendMessage({to: channel.id, embed: emb}, clb);
+}
+
+function checkStatus(message, guild, callback) {
+    if(!guild) {
         callback(null);
         return;
     }
 
-    icollection.findOne({server_id: m.guild.id}).then(s => {
+    icollection.findOne({server_id: guild.id}).then(s => {
         let resp = new Discord.RichEmbed();
         resp.setColor(col.red);
         resp.setTitle("Bot can't function on this server");
 
         if(s && s.status == "banned") {
             resp.setDescription("This bot was banned from this server. **Amusement Club** will leave after this message");
-            m.guild.leave();
+            bot.leaveServer(guild.id)
             return callback(resp);
         }
 
-        if(!m.content.startsWith(settings.botprefix)
-            || m.content.startsWith(settings.botprefix + 'invite')) {
+        if(!message.startsWith(settings.botprefix)
+            || message.startsWith(settings.botprefix + 'invite')) {
             callback(null);
             return;
         }
 
         if(s) {
             if(s.status == "pending") {
-                setInvited(m.guild.id);
+                setInvited(guild.id);
                 callback(null);
                 return;
             } else {callback(null); return;}
         }
         else resp.setDescription("This bot is not registered on this server.\n"
-            + "Please, ask server administrator to run `->invite [server_id]` to add this server to bot's list");
+            + "Please, ask server administrator to run `->invite [server_id]` in bot DM to add this server to bot's list");
 
         callback(resp);
     });
@@ -186,7 +185,7 @@ function tryAdd(author, srvID, callback) {
         } else if(s && s.status == "active")  {
             resp.setColor(col.red);
             resp.setTitle("Can't add this server");
-            resp.setDescription("Bot is already on this server");
+            resp.setDescription("Bot is already on this server. Click [here](" + link +") if you need to invite it again");
             callback(resp);
             return;
         } else if(s && s.status == "banned")  {

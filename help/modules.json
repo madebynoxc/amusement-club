@@ -9,16 +9,20 @@
 	            "description": "use `->?[command]` OR `->?[module]` to get a quick help\ne.g. `->?give`" 
 	        },
 	        {
-	            "title": "Commands. Use `->help [command]` (e.g. `->help claim`)",
-	            "description": "->claim\n->summon\n->daily\n->balance\n->give\n->pay\n->cards\n->sell\n->difference\n->quests\n->has\n->whatsnew"
+	            "title": "Commands. Use `->help [command]`",
+	            "description": "->help claim\n->help summon\n->help daily\n->help balance\n->help give\n->help pay\n->help cards\n->help sell\n->help difference\n->help quests\n->help has\n->help whatsnew"
 	        },
 	        {
-	            "title": "Modules. Use `->help [module]` (e.g. `->help hero`)",
-	            "description": "->leaderboards\n->hero\n->forge\n->inventory\n->stats\n->invite"
+	            "title": "Modules. Use `->help [module]`",
+	            "description": "->help leaderboards\n->help hero\n->help crystal\n->help forge\n->help ratio\n->help inventory\n->help stats\n->help invite"
 	        },
 	        {
 	            "title": "Contacts",
 	            "description": "[Bot Discord](https://discord.gg/kqgAvdX) | [Source Code](https://github.com/NoxCaos/amusement-club/) | [Developer](https://github.com/NoxCaos/)"
+	        },
+	        {
+	            "title": "Running",
+	            "description": "[Discord.io](https://github.com/izy521/discord.io) | [NodeJS](https://nodejs.org/) | [MongoDB](https://www.mongodb.com/)"
 	        },
 	        {
 	            "title": "Invite bot",
@@ -29,7 +33,7 @@
 	{
 		"type": ["craft", "forge"],
 		"title": "About card craft/forge",
-		"description": "This command allows you to get new cards using cards that you have. There are two types of forge, however: *Ordinary cards forge* and *Craft cards forge*",
+		"description": "This command allows you to get new cards using cards that you have. Forge will consume old cards. There are two types of forge, however: *Ordinary cards forge* and *Craft cards forge*",
 		"fields": [
 			{
 				"title": "Ordinary cards forge",

@@ -1,21 +1,26 @@
 module.exports = {
-    setupPagination, addNew, nameCard
+    setupPagination, addNew, nameCard, setBot, onCollectReaction
 }
 
 var paginations = [];
+var collections = [];
+var bot;
 const fs = require('fs');
 const dbManager = require("./dbmanager.js");
 const utils = require('./localutils.js');
 const logger = require('./log.js');
 const discord = require("discord.js");
 
-var collections = [];
 fs.readdir('./cards', (err, items) => {
     if(err) console.log(err);
     for (var i = 0; i < items.length; i++) {
         collections.push(items[i].replace('=', ''));
     }
 });
+
+function setBot(b) {
+    bot = b;
+}
 
 function addNew(user, data, dif = "") {
     removeExisting(user.id);
@@ -39,51 +44,66 @@ function setupPagination(message, author) {
 
     pgn.id = message.id;
     pgn.message = message;
-    var collector = message.createReactionCollector(
+    /*var collector = message.createReactionCollector(
         (reaction, user) => user.id === pgn.user.id,
         { time: 100000 }
     );
     collector.on('collect', r => {
-        processEmoji(r.emoji.name.trim(), message);
+        processEmoji(r.emoji.name, message);
         r.remove(pgn.user.id).catch();
-    });
-    setTimeout(()=> removeExisting(pgn.user.id), 100000);
+    });*/
+    setTimeout(()=> removeExisting(pgn.user.id), 90000);
 }
 
-function processEmoji(e, message) {
-    var pgn = paginations.filter((o)=> o.id == message.id)[0];
-    if(!pgn) return;
-    switch(e) {
+function onCollectReaction(userID, channelID, messageID, emoji) {
+    if(processEmoji(userID, channelID, messageID, emoji)) {
+        var opts = {
+            channelID: channelID, 
+            messageID: messageID, 
+            userID: userID, 
+            reaction: emoji.name
+        };
+        console.log(opts);
+        bot.removeReaction(opts);
+    }
+}
+
+function processEmoji(userID, channelID, messageID, emoji) {
+    var pgn = paginations.filter((o)=> (o.id == messageID && o.user.id == userID))[0];
+    if(!pgn) return false;
+    switch(emoji.name) {
         case '⬅':
             if(pgn.page > 1 ) {
                 pgn.page--;
-                message.edit(buildCardList(pgn));
+                bot.editMessage({channelID: channelID, messageID: messageID, embed: buildCardList(pgn)});
             }
             break;
         case '➡':
             pgn.page++;
-            message.edit(buildCardList(pgn));
+            bot.editMessage({channelID: channelID, messageID: messageID, embed: buildCardList(pgn)});
             break;
     }
+    return true;
 }
 
 function react(message) {
     //message.clearReactions();
-    setTimeout(()=> message.react("⬅")
-    .catch(e => { 
-        message.channel.send("This function requires 'Add reactions' permission. "
-        + "Please, ask server admin to give bot this permission. "
-        + "You can call this command in Direct Messages for now"); 
-        return;
-    }), 50);
-    setTimeout(()=> message.react("➡").catch(), 500)
+    var opts1 = { channelID: message.channel_id, messageID: message.id, reaction: "⬅" };
+    var opts2 = { channelID: message.channel_id, messageID: message.id, reaction: "➡" };
+
+    setTimeout(()=> bot.addReaction(opts1), 200);
+    setTimeout(()=> bot.addReaction(opts2), 800);
 }
 
 function removeExisting(userID) {
     var pgn = paginations.filter((o)=> o.user.id == userID)[0];
     if(pgn){
-        try { if(pgn.message) pgn.message.clearReactions(); }
-        catch(e) {}
+        if(pgn.message) {
+            bot.removeAllReactions({
+                messageID: pgn.message.id,
+                channelID: pgn.message.channel_id
+            });
+        }
 
         var index = paginations.indexOf(pgn);
         paginations.splice(index, 1);

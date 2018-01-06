@@ -1,5 +1,13 @@
 [
     {
+        "version": "1.9.9",
+        "changes": [
+            "Various bugfixes",
+            "Improvements to `->res` command", 
+            "Replaced discord API wrapper from Discord.js to Discord.io"
+        ]
+    },
+    {
         "version": "1.9.8.9",
         "changes": [
             "Fixes to eval command",

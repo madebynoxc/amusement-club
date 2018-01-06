@@ -1,4 +1,4 @@
-const Discord = require("discord.js");
+const Discord = require("discord.io");
 const dbManager = require("./modules/dbmanager.js");
 const utils = require("./modules/localutils.js");
 const logger = require('./modules/log.js');
@@ -16,76 +16,79 @@ const crystal = require('./modules/crystal.js');
 var bot, curgame = 0;
 
 var cooldownList = [];
+var restartChannelID;
 
 //https://discordapp.com/oauth2/authorize?client_id=340988108222758934&scope=bot&permissions=125952
 
-dbManager.connect();
+bot = new Discord.Client({
+    token: settings.token
+});
+
+dbManager.connect(bot);
 _init();
 
 function _init() {
-    bot = new Discord.Client();
+    
+    react.setBot(bot);
 
-    bot.on("ready", () => {
-        console.log("Discord Bot Connected");
-        console.log("Discord Bot Ready");
-        bot.user.setGame("->help | ->?cards", "https://www.twitch.tv/");
+    bot.on("ready", (event) => {
+        console.log('[Discord.IO] Logged in as %s - %s\n', bot.username, bot.id);
+        bot.setPresence({game: {name: "->help"}});
+        if(restartChannelID) {
+            bot.sendMessage({to: restartChannelID, message: "Discord.io websocket connection was restarted. Connected to discord"});
+            restartChannelID = null;
+        }
     });
 
-    bot.on("disconnected", () => {
-        console.log("Discord Bot Disconnected");
+    bot.on("disconnect", (errMsg, code) => {
+        if(errMsg || code) console.log("[Discord.IO ERROR#" + code + "] " + errMsg);
+        console.log("[Discord.IO] Discord Bot Disconnected");
     });
 
     bot.on("guildCreate", g => {
-        invite.checkOnJoin(g, bot.user);
+        console.log("Registered guild: " + g.name);
+        invite.checkOnJoin(g);
     });
 
-    bot.on("message", (message) => {
-        if(message.author.bot) {
-            if(message.author.id === bot.user.id)
-                selfMessage(message);
+    bot.on("message", (username, userID, channelID, message, event) => {
+        var channel = bot.channels[channelID];
+        var guild = channel? bot.servers[channel.guild_id] : null;
+        var user = bot.users[userID];
+        user.username = username;
 
-        } else {
-            log(message);
-            invite.checkStatus(message, t => {
+        if(user.bot && userID === bot.id)
+            selfMessage(event.d);
+        else if(!user.bot) {
+            log(username, channel, guild, message);
+            invite.checkStatus(message, guild, t => {
                 if(!t){
-                    if(cooldownList.includes(message.author.id)) return;
-                    cooldownList.push(message.author.id);
-                    setTimeout(() => removeFromCooldown(message.author.id), 2000);
+                    if(cooldownList.includes(userID)) return;
+                    cooldownList.push(userID);
+                    setTimeout(() => removeFromCooldown(userID), 2000);
 
-                    getCommand(message, (res, obj) => {
-                        if(!res && !obj) return;
-                        message.channel.send(res, obj? {file: obj} : null).catch((error) => {
-                            // Failed to send message in the original channel, try DM
-                            let extraText = `I couldn't send this in <#${message.channel.id}>, error: \`${error.code}: ${error.message}\`.  Here's what I was going to send:`;
-                            let options = obj? {file: obj} : {};
-                            let text = res;
-                            if (!text || text === "") {
-                                text = extraText;
-                            }
-                            else if (typeof text === "string") {
-                                text = extraText + "\n" + text;
-                            }
-                            else if (text instanceof Discord.RichEmbed) {
-                                options.embed = text;
-                                text = extraText;
-                            }
-                            else {
-                                console.error("Couldn't figure out how to add text to the following object:");
-                                console.error(text);
-                            }
-                            message.author.send(text, options);
-                        });
+                    getCommand(user, channel, guild, message, event, (res, obj) => {
+                        if(obj) bot.uploadFile({to: channelID, file: obj, message: res});
+                        else if(res) {
+                            if(typeof res === "string") bot.sendMessage({to: channelID, message: res});
+                            else bot.sendMessage({to: channelID, embed: res});
+                        } 
                     });
                 }
-                else message.channel.send("", t);
+                else bot.sendMessage({to: channelID, embed: t});
             });
         }
     });
 
-    console.log("Trying to log in ");
-    bot.login(settings.token).catch((reason) => {
-        console.log(reason);
+    bot.on("any", (message) => {
+        let _data = message.d;
+        switch (message.t) {
+            case "MESSAGE_REACTION_ADD":
+                react.onCollectReaction(_data.user_id, _data.channel_id, _data.message_id, _data.emoji);
+                break;
+        }
     });
+
+    bot.connect();
 }
 
 function removeFromCooldown(userID) {
@@ -95,42 +98,41 @@ function removeFromCooldown(userID) {
 
 function _stop() {
     logger.message("Discord Bot Shutting down");
-    return bot.destroy();
+    return bot.disconnect();
 }
 
-function log(m) {
+function log(username, channel, guild, message) {
     var msg = '';
     try {
-		msg = "[" + m.guild.name + "'" + m.guild.id + "'] #" + m.channel.name + " @" + m.author.username + ": " + m.content;
+		msg = "[" + guild.id + "] #" + channel.name + " @" + username + ": " + message;
 	} catch(e) {
-		msg = "DM @" + m.author.username + ": " + m.content;
+		msg = "DM @" + username + ": " + message;
 	}
     logger.message(msg);
 }
 
-function selfMessage(m) {
-    try {
-        let e = m.embeds[0];
+function selfMessage(msg) {
+    //try {
+        let e = msg.embeds[0];
         if(!e || !e.footer) return;
         if(e.footer.text.includes('> Page')) {
-            react.setupPagination(m, e.title.split("**")[1]);
+            react.setupPagination(msg, e.title.split("**")[1]);
         }
-    } finally {};
+    //} finally {};
 }
 
-function getCommand(m, callback) {
-    var channelType = m.channel.name? 1 : 0; //0 - DM, 1 - channel, 2 - bot channel
+function getCommand(user, channel, guild, message, event, callback) {
+    var channelType = channel? 1 : 0; //0 - DM, 1 - channel, 2 - bot channel
     if(channelType == 1) {
-        if(m.channel.name.includes('bot')) channelType = 2;
-        dbManager.addXP(m.author, m.content.length / 15, 
+        if(channel.name.includes('bot')) channelType = 2;
+        dbManager.addXP(user, message.length / 20, 
             (mes) => callback(mes));
     }
 
-    if(m.content.startsWith(settings.botprefix)) {
-        let cnt = m.content.toLowerCase().substring(2).split(' ');
+    if(message.startsWith(settings.botprefix)) {
+        let cnt = message.toLowerCase().substring(2).split(' ');
         let sb = cnt.shift();
-        cnt = cnt.filter(function(n){ return n != undefined && n != '' }); 
-        let cd = cnt.join(' ');
+        cnt = cnt.filter(n => { return n != undefined && n != '' }); 
 
         if(sb[0] === '?') {
             if(channelType == 1) callback('Help can be called only in bot channel');
@@ -140,15 +142,14 @@ function getCommand(m, callback) {
 
         switch(sb) {
             case 'help': 
-                //callback(showHelp(m));
-                helpMod.processRequest(m, cnt, callback);
+                helpMod.processRequest(user, channel, cnt, callback);
                 return;
             case 'cl': 
             case 'claim': 
                 if(channelType == 0) callback('Claiming is available only on servers');
                 else if(channelType == 1) callback('Claiming is possible only in bot channel');
                 else {
-                    dbManager.claim(m.author, m.guild.id, cnt, (text, img) => {
+                    dbManager.claim(user, guild.id, cnt, (text, img) => {
                         callback(text, img);
                     });
                 }
@@ -160,23 +161,26 @@ function getCommand(m, callback) {
                 else if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
                     let inp = utils.getUserID(cnt);
-                    dbManager.difference(m.author, inp.id, inp.input, (text) => {
+                    dbManager.difference(user, inp.id, inp.input, (text) => {
                         callback(text);
                     });
                 }
                 return;
             case 'sum': 
             case 'summon':
-                dbManager.summon(m.author, cnt, callback);
+                dbManager.summon(user, cnt, callback);
                 return;
             case 'eval':
-                dbManager.eval(m.author, cnt, callback);
+                dbManager.eval(user, cnt, callback);
                 return;
             case 'bal': 
             case 'balance': 
-                dbManager.getXP(m.author, (bal) =>{
-                    callback(bal);
-                });
+                if(channelType == 1) callback('This operation is possible in bot channel only');
+                else {
+                    dbManager.getXP(user, (bal) =>{
+                        callback(bal);
+                    });
+                }
                 return;
             case 'give':
             case 'send':
@@ -184,7 +188,7 @@ function getCommand(m, callback) {
                 else if(channelType == 1) callback('Card transfer is possible only in bot channel');
                 else {
                     let inp = utils.getUserID(cnt);
-                    dbManager.transfer(m.author, inp.id, inp.input, (text) =>{
+                    dbManager.transfer(user, inp.id, inp.input, (text) =>{
                         callback(text);
                     });
                 }
@@ -192,7 +196,7 @@ function getCommand(m, callback) {
             case 'ratio':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
-                    dbManager.transfer(m.author, null, '-ratio', (text) =>{
+                    dbManager.transfer(user, null, '-ratio', (text) =>{
                         callback(text);
                     });
                 }
@@ -202,63 +206,67 @@ function getCommand(m, callback) {
                 else if(channelType == 1) callback('Tomato transfer is possible only in bot channel');
                 else {
                     let inp = utils.getUserID(cnt);
-                    dbManager.pay(m.author.id, inp.id, inp.input, (text) =>{
+                    dbManager.pay(user.id, inp.id, inp.input, (text) =>{
                         callback(text);
                     });
                 }
                 return;
             case 'list':
             case 'cards':
-                if(channelType == 1) callback('Card listing is possible only in bot channel');
+                if(channelType == 1) return callback('This operation is possible in bot channel only');
                 else {
-                  dbManager.getCards(m.author, cnt, (data, found) => {
+                  dbManager.getCards(user, cnt, (data, found) => {
                       if(!found) callback(data);
-                      else callback(react.addNew(m.author, data));
+                      else callback(react.addNew(user, data));
                   });
                 }
                 return;
             case 'sell':
-                dbManager.sell(m.author, cnt, (text) =>{
-                    callback(text);
-                });
+                if(channelType == 1) return callback('This operation is possible in bot channel only');
+                else {
+                    dbManager.sell(user, cnt, (text) => {
+                        callback(text);
+                    });
+                }
                 return;
             case 'daily':
                 if(channelType == 0) callback('Daily claim is available only on servers');
                 else if(channelType == 1) callback('Daily claim is available only in bot channel');
                 else {
-                    dbManager.daily(m.author.id, (text) => {
+                    dbManager.daily(user.id, (text) => {
                         callback(text);
                     });
                 }
                 return;
             case 'baka': 
                 var u = getUserID(cnt[0]);
+                var time = new Date(event.d.timestamp) - Date.now();
                 if(u) dbManager.getUserName(u, name => 
                     callback("**" + name + "** is now baka! ( ` ω ´ )"));
-                else callback(m.author.username + ", **you** baka! (￣^￣ﾒ)");
+                else callback(user.username + ", **you** baka! (￣^￣ﾒ) in **" + time + "ms**");
                 return;
             case 'quest':
             case 'quests':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
-                    dbManager.getQuests(m.author, (text) =>{
+                    dbManager.getQuests(user, (text) => {
                         callback(text);
                     });
                 }
                 return;
             case 'award': 
-                if(dbManager.isAdmin(m.author.id)) {
+                if(dbManager.isAdmin(user.id)) {
                     let tusr = getUserID(cnt.shift());
                     let tom = parseInt(cnt);
                     if(tusr && tom){
-                        dbManager.award(tusr, tom, (text) =>{
+                        dbManager.award(tusr, tom, (text) => {
                             callback(text);
                         });
                     } else {
                         callback("Wrong arguments");
                     }
                 } else {
-                    callback(m.author.username + ", 'award' is admin-only command");
+                    callback(user.username + ", 'award' is admin-only command");
                 }
                 return;
             case 'lead':
@@ -266,16 +274,17 @@ function getCommand(m, callback) {
             case 'leaderboards':
                 if(channelType == 0) callback("You can't check leaderboards in DMs");
                 else {
-                    dbManager.leaderboard_new(cnt, m.guild, (text) =>{
+                    dbManager.leaderboard_new(cnt, guild, (text) =>{
                         callback(text);
                     });
                 }
                 break;
             case 'has':
                 if(channelType == 0) callback("You can't ask that in DMs");
+                else if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
                     let inp = utils.getUserID(cnt);
-                    dbManager.doesUserHave(m.author, inp.id, inp.input, (text) =>{
+                    dbManager.doesUserHave(user, inp.id, inp.input, (text) =>{
                         callback(text);
                     });
                 }
@@ -284,7 +293,7 @@ function getCommand(m, callback) {
                 if(channelType == 0) callback("Hero commands are possible on server only");
                 else if(channelType == 1) callback('Hero commands available only in bot channel');
                 else {
-                    heroDB.processRequest(m.author.id, cnt, (text, file) => {
+                    heroDB.processRequest(user.id, cnt, (text, file) => {
                         callback(text, file);
                     });
                 }
@@ -294,7 +303,7 @@ function getCommand(m, callback) {
                 if(channelType == 0) callback("You forge cards in DM");
                 else if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
-                    forge.processRequest(m.author.id, cnt, (text, file) => {
+                    forge.processRequest(user.id, cnt, (text, file) => {
                         callback(text, file);
                     });
                 }
@@ -303,7 +312,7 @@ function getCommand(m, callback) {
             case 'inventory':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
-                    inventory.processRequest(m.author.id, cnt, (text, file) => {
+                    inventory.processRequest(user.id, cnt, (text, file) => {
                         callback(text, file);
                     });
                 }
@@ -311,7 +320,7 @@ function getCommand(m, callback) {
             case 'miss':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
-                    dbManager.needsCards(m.author, cnt, (text) => {
+                    dbManager.needsCards(user, cnt, (text) => {
                         callback(text);
                     });
                 }
@@ -327,17 +336,29 @@ function getCommand(m, callback) {
                 }
                 return;
             case 'invite':
-                if(channelType !== 0) m.author.send("You should use this command here in Direct Messages to bot");
-                else invite.processRequest(m, cnt, callback);
+                if(channelType !== 0) {
+                    bot.createDMChannel(user.id, (err, res) => {
+                        bot.sendMessage({to: res.id, message: "You should use this command here in Direct Messages to bot"});
+                    });
+                }
+                else invite.processRequest(user, message, cnt, callback);
                 return;
             case 'res':
                 if(channelType == 1) callback('This command is available only in bot channel');
-                else crystal.getRecipe(m.author, cnt, callback);
+                else crystal.getRecipe(user, cnt, callback);
                 return;
             case 'kill': 
-                if(dbManager.isAdmin(m.author.id)) {
+                if(dbManager.isAdmin(user.id)) {
                     callback("Shutting down now");
                     setTimeout(() => { _stop(); }, 2000); 
+                }
+                return;
+            case 'restart': 
+                if(dbManager.isAdmin(user.id)) {
+                    restartChannelID = channel.id;
+                    callback("Restarting websocket connection in 2 seconds...");
+                    _stop();
+                    setTimeout(() => bot.connect(), 2000);
                 }
                 return;
             case 'version':
@@ -346,8 +367,8 @@ function getCommand(m, callback) {
                 if(channelType == 1) callback('This command is available only in bot channel');
                 else {
                     let mes = "";
-                    if(cd == "all") {
-                        for(let i=0; i<Math.min(7, changelog.length); i++)
+                    if(cnt.includes("all")) {
+                        for(let i=0; i < Math.min(7, changelog.length); i++)
                             mes += getUpdateLog(i) + "\n\n";
                     } else mes = getUpdateLog(0);
                     callback(mes);
@@ -355,7 +376,7 @@ function getCommand(m, callback) {
                 return;
         } 
     } else if(channelType == 2) {
-        helpMod.processUserInput(m.content.toLowerCase(), m.author, callback);
+        helpMod.processUserInput(message.toLowerCase(), user, callback);
     }
 }
 

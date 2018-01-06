@@ -12,29 +12,32 @@ const settings = require('../settings/general.json');
 const changelog = require('../help/updates.json');
 const ai = require('../help/ai.json');
 
-var mongodb;
+var mongodb, bot;
 
-function connect(db) {
+function connect(db, client) {
     mongodb = db;
+    bot = client;
 }
 
-function processRequest(message, args, callback) {
+function processRequest(user, channel, args, callback) {
     var help;
     var req = args.shift();
 
     if(!req) help = helpAll[0];
     else help = helpAll.filter(h => h.type.includes(req))[0];
 
-    if(help) {
-        message.author.send("", { embed: getEmbed(help) }).then(m =>{
-            if(message.channel.name) 
-                callback("**" + message.author.username + "**, help was sent to you");
-        }).catch(e => {
-            if(message.channel.name) 
-                callback("**" + message.author.username 
-                    + "**, can't send you a message. Please, allow direct messages from server members in privacy settings");
-        });
-    } else callback("Can't find module/command **" + req  + "**. Run `->help` to see the list");
+    bot.createDMChannel(user.id, (err, res) => {
+        if(err && channel) {
+            callback("**" + user.username 
+                + "**, can't send you a message. Please, allow direct messages from server members in privacy settings");
+        }
+        else if(!err) {
+            if(help) bot.sendMessage({to: res.id, embed: getEmbed(help)});
+            else bot.sendMessage({to: res.id, message: "Can't find module/command **" + req  + "**. Run `->help` to see the list" });
+
+            if(channel) callback("**" + user.username + "**, help was sent to you"); 
+        }
+    });
 }
 
 function getEmbed(o) {

@@ -9,7 +9,7 @@
   "author": "NoxCaos",
   "license": "MIT",
   "dependencies": {
-    "discord.io": "^2.5.3",
+    "discord.io": "github:woor/discord.io#gateway_v6",
     "discord.js": "^11.2.1",
     "js-levenshtein": "^1.1.2",
     "lodash": "^4.17.4",

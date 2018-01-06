@@ -16,8 +16,7 @@ const logger = require('./log.js');
 });*/
 
 function updateCards(connection) {
-    logger.message("Launched module [CardManager 2.2]"); 
-    logger.message("NOW: Updating cards..."); 
+    logger.message("[CardManager 2.3] NOW: Updating cards..."); 
     mongodb = connection;
 
     let collection = mongodb.collection('cards');
@@ -48,6 +47,7 @@ function updateCards(connection) {
                         insertCrads(newCards, mongodb.collection('promocards'));
                     else insertCrads(newCards, mongodb.collection('cards'));
                 });
+                logger.message("[CardManager 2.3] Card update finished"); 
             });
         });
     });

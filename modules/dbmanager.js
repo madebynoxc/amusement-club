@@ -8,7 +8,7 @@ module.exports = {
 }
 
 var MongoClient = require('mongodb').MongoClient;
-var mongodb;
+var mongodb, client;
 var cooldownList = [];
 
 const fs = require('fs');
@@ -17,7 +17,6 @@ const logger = require('./log.js');
 const quest = require('./quest.js');
 const heroes = require('./heroes.js');
 const _ = require("lodash");
-const randomColor = require('randomcolor');
 const settings = require('../settings/general.json');
 const guilds = require('../settings/servers.json');
 const promotions = require('../settings/promotions.json');
@@ -44,10 +43,11 @@ function disconnect() {
     mongodb.close();
 }
 
-function connect(callback) {
+function connect(bot, callback) {
+    client = bot;
     MongoClient.connect(settings.database, function(err, db) {
         assert.equal(null, err);
-        logger.message("Connected correctly to database");
+        logger.message("[DB Manager] Connected correctly to database");
 
         mongodb = db;
         quest.connect(db);
@@ -56,8 +56,8 @@ function connect(callback) {
         inv.connect(db);
         stats.connect(db);
         cardmanager.updateCards(db);
-        invite.connect(db);
-        helpMod.connect(db);
+        invite.connect(db, client);
+        helpMod.connect(db, client);
 
         if(callback) callback();   
     });
@@ -253,7 +253,7 @@ function claimPromotion(user, dbUser, amount, callback) {
 
 function addXP(user, amount, callback) {
     if(cooldownList.includes(user.id)) return;
-    if(amount > 5) amount = 5;
+    if(amount > 3) amount = 3;
 
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: user.id}).then((res) => {
@@ -295,32 +295,32 @@ function removeFromCooldown(userID) {
 
 function getXP(user, callback) {
     let collection = mongodb.collection('users');
-    collection.findOne({ discord_id: user.id }).then((u) => {
-        if(u) {
-            if(!u.dailystats) u.dailystats = {summon:0, send: 0, claim: 0, quests: 0};
+    collection.findOne({ discord_id: user.id }).then((dbUser) => {
+        if(dbUser) {
+            if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, quests: 0};
 
-            let bal = u.exp;
-            let stars = countCardLevels(u.cards);
-            let claimCost = (u.dailystats.claim + 1) * 50;
-            claimCost = heroes.getHeroEffect(u, 'claim_akari', claimCost);
+            let bal = dbUser.exp;
+            let stars = countCardLevels(dbUser.cards);
+            let claimCost = (dbUser.dailystats.claim + 1) * 50;
+            claimCost = heroes.getHeroEffect(dbUser, 'claim_akari', claimCost);
             let msg = [];
             msg.push("**" + user.username + "**, you have **" + Math.floor(bal) + "** 🍅 Tomatoes "
                 + "and " + stars + " \u2B50 stars!");
 
-            var blockClaim = heroes.getHeroEffect(u, 'claim', u.dailystats.claim >= 30);
+            var blockClaim = heroes.getHeroEffect(dbUser, 'claim', dbUser.dailystats.claim >= 30);
             if(blockClaim) {
                 msg.push("You can't claim more cards, as you reached your daily claim limit.")
             } else {
                 if(bal > claimCost) 
-                    msg.push("You can claim " + getClaimsAmount(u, u.dailystats.claim, bal) + " cards today! Use `->claim [amount]`");
+                    msg.push("You can claim " + getClaimsAmount(dbUser, dbUser.dailystats.claim, bal) + " cards today! Use `->claim [amount]`");
                 msg.push("Your claim now costs " + claimCost + " 🍅 Tomatoes");
             }
-            if(!u.hero && stars >= 50) msg.push("You have enough \u2B50 stars to get a hero! use `->hero list`");
+            if(!dbUser.hero && stars >= 50) msg.push("You have enough \u2B50 stars to get a hero! use `->hero list`");
 
-            if(promotions.current > -1 && u.promoexp) {
+            if(promotions.current > -1 && dbUser.promoexp) {
                 let promo = promotions.list[promotions.current];
                 msg.push("A special promotion is now going until **" + promo.ends + "**!");
-                msg.push("You have **" + u.promoexp + "** " + promo.currency);
+                msg.push("You have **" + dbUser.promoexp + "** " + promo.currency);
                 msg.push("Use `->claim promo` to get special limited time cards");
             }
    
@@ -475,9 +475,9 @@ function transfer(from, to, args, callback) {
                     let newSends = objs[0]._id.sends + ratioIncrease;
                     let newGets = objs[0]._id.gets;
 
-                    if(newGets + newSends > 200) {
-                        newGets /= 2;
-                        newSends /= 2;
+                    if(newGets + newSends > 500) {
+                        newGets *= .6;
+                        newSends *= .6;
                     }
 
                     collection.update(
@@ -545,7 +545,7 @@ function pay(from, to, args, callback) {
 }
 
 function sell(user, args, callback) {
-    if(!args) return callback("**" + user.username + "**, please specify name/collection/level");
+    if(!args || args.length == 0) return callback("**" + user.username + "**, please specify name/collection/level");
     let query = utils.getRequestFromFilters(args);
     getUserCards(user.id, query).toArray((err, objs) => {
         if(!objs[0]) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
@@ -647,8 +647,10 @@ function leaderboard_new(arg, guild, callback) {
     let collection = mongodb.collection('users');
     collection.aggregate([
         { $unwind : '$cards' },
-        { $group : { _id : '$username', 
+        { $group : { _id : '$discord_id', 
+            'username' : { $first : '$username'},
             'levels' : { $sum : '$cards.level' }}},
+        //{ $limit : 10 },
         { $sort : { 'levels': -1 } }
     ]).toArray((err, users) => {
         if(err) return;
@@ -658,14 +660,11 @@ function leaderboard_new(arg, guild, callback) {
         } else if(guild) {
             let includedUsers = [];
             try {
-                users.forEach((elem) => {
-                    guild.members.forEach((mem) => {
-                        if(mem.user.username == elem._id) {
-                            includedUsers.push(elem);
-                        }
-                        if(includedUsers.length >= 10) throw BreakException;
-                    }, this);
-                }, this);
+                users.map((elem) => {
+                    var mem = guild.members[elem._id];
+                    if(mem) includedUsers.push(elem);
+                    if(includedUsers.length >= 10) throw BreakException;
+                });
             } catch(e) {}
 
             if(includedUsers.length > 0) {
@@ -840,7 +839,7 @@ function nameOwners(col) {
     let res = '';
     for(let i=0; i<col.length; i++) {
         res += (i+1).toString() + ". ";
-        res += "**" + col[i]._id + "**";
+        res += "**" + col[i].username + "**";
         res += " (" + col[i].levels + " ★)\n";
         if(i >= 9) break;
     }
@@ -956,10 +955,16 @@ function getCardURL(card) {
         + '/' + prefix + "_" + card.name + ext;
 }
 
-function getDefaultChannel(guild, clientUser) {
-    return guild.channels
-        .filter(c => c.permissionsFor(clientUser).has('SEND_MESSAGES'))
-        .array().find(c => c.type == 'text');
+function getDefaultChannel(g) {
+    for (var key in g.channels) {
+        if(g.channels[key].name.includes('general'))
+            return g.channels[key];
+    }
+
+    for (var key in g.channels) {
+        if(g.channels[key].permissions.user == {})
+            return g.channels[key];
+    }
 }
 
 function isAdmin(sender) {
