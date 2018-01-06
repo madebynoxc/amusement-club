@@ -60,11 +60,11 @@ function checkOnJoin(guild) {
     let resp = new Discord.RichEmbed();
     resp.setColor(col.red);
 
-    if(guild.member_count < 20) {
+    if(guild.member_count < 10) {
         resp.setTitle("Server is invalid");
         resp.setDescription("For technical reasons bot can't function on small servers.\n"
             + "Please, invite **Amusement Club** again when you have 10 or more members");
-        send(def, resp, () => bot.leaveServer(guild.id));
+        if(def) send(def, resp, () => bot.leaveServer(guild.id));
         return;
     }
 
