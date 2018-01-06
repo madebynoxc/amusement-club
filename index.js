@@ -54,6 +54,8 @@ function _init() {
         var channel = bot.channels[channelID];
         var guild = channel? bot.servers[channel.guild_id] : null;
         var user = bot.users[userID];
+        if(!user && guild) user = guild.members[userID];
+        if(!user) return;
         user.username = username;
 
         if(user.bot && userID === bot.id)
@@ -240,7 +242,7 @@ function getCommand(user, channel, guild, message, event, callback) {
                 return;
             case 'baka': 
                 var u = getUserID(cnt[0]);
-                var time = new Date(event.d.timestamp) - Date.now();
+                var time = Date.now() - new Date(event.d.timestamp);
                 if(u) dbManager.getUserName(u, name => 
                     callback("**" + name + "** is now baka! ( ` ω ´ )"));
                 else callback(user.username + ", **you** baka! (￣^￣ﾒ) in **" + time + "ms**");
