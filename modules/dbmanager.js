@@ -394,6 +394,9 @@ function transfer(from, to, args, callback) {
     collection.findOne({ discord_id: from.id }).then(dbUser => {
         if(!dbUser) return;
 
+        if(!dbUser.gets) dbUser.gets = 200;
+        if(!dbUser.sends) dbUser.sends = 200;
+
         if(args.includes("-ratio")) {
             let ratio = utils.getRatio(dbUser).toFixed(2);
             callback(utils.formatInfo(dbUser, 
@@ -917,6 +920,8 @@ function countCardLevels(cards) {
 }
 
 function getBestCardSorted(cards, n) {
+    if(cards.length == 0) return [];
+    
     let name = n;
     if(n instanceof RegExp) 
         name = n.toString().split('/')[1].replace('(_|^)', '').replace(/\?/g, '');
@@ -931,11 +936,13 @@ function getBestCardSorted(cards, n) {
         else return 0;
     });
 
-    var re = new RegExp('^' + name);
-    let supermatch = filtered.filter(c => re.exec(c.name.toLowerCase()));
-    if(supermatch.length > 0) { 
-        let left = filtered.filter(c => !supermatch.includes(c));
-        return supermatch.concat(left);
+    if(filtered.length > 0) {
+        var re = new RegExp('^' + name);
+        let supermatch = filtered.filter(c => re.exec(c.name.toLowerCase()));
+        if(supermatch.length > 0) { 
+            let left = filtered.filter(c => !supermatch.includes(c));
+            return supermatch.concat(left);
+        }
     }
     return filtered;
 }
