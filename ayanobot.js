@@ -8,7 +8,7 @@ const dbmanager = require('./modules/dbmanager.js');
 var MongoClient = require('mongodb').MongoClient;
 
 var restarts = 0;
-var mongodb, stdout, isrestart = false;
+var mongodb, stdout, child, isrestart = false;
 
 var bot = new Discord.Client({
     token: settings.token,
@@ -17,8 +17,9 @@ var bot = new Discord.Client({
 
 bot.on("ready", (event) => {
     console.log('[Ayano.bot] Logged in as %s - %s\n', bot.username, bot.id);
+    if(child) return;
 
-    var child = new (forever.Monitor)(settings.startpoint, {
+    child = new (forever.Monitor)(settings.startpoint, {
         max: 5,
         silent: false,
         killTree: true,
@@ -87,6 +88,14 @@ bot.on("ready", (event) => {
 
     //child.start();
     //console.log(child);
+
+    bot.on("disconnect", (errMsg, code) => {
+        if(errMsg || code) { 
+            console.log("[Ayano ERROR#" + code + "] " + errMsg);
+            setTimeout(() => bot.connect(), 1000);
+        }
+        console.log("[Ayano] Discord Bot Disconnected");
+    });
 
     bot.on("message", (username, userID, channelID, message, event) => {
         if(!message.startsWith("ayy")) return;
