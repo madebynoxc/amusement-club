@@ -4,7 +4,7 @@ module.exports = {
     pay, daily, getQuests, getBestCardSorted,
     leaderboard_new, difference, dynamicSort, countCardLevels, 
     getCardFile, getDefaultChannel, isAdmin, needsCards,
-    removeCardFromUser, addCardToUser, eval
+    removeCardFromUser, addCardToUser, eval, whohas
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -817,6 +817,43 @@ function needsCards(user, args, callback) {
                 callback(utils.formatError(user, null, "You aren't missing any cards that match your request"));
         });
     });
+}
+
+function whohas(user, guild, args, callback) {
+    let ucollection = mongodb.collection('users');
+    let query = utils.getRequestFromFiltersNoPrefix(args);
+    ucollection.find(
+        {"cards":{"$elemMatch":query}}
+    ).sort({"exp": 1}).toArray((err, arr) => {
+        if(!arr || arr.length == 0) return callback(utils.formatError(user, null, "nobody has this card or it doesn't exist"));
+        
+        let msg = "\n";
+        let local = [], glob = [], count = 1;
+        for (var i = 0; i < arr.length; i++) {
+            var mem = guild.members[arr[i].discord_id];
+            if(mem) local.push(arr[i].username);
+            else glob.push(arr[i].username);
+        }
+
+        for (var i = 0; i < local.length; i++) {
+            msg += count + ". **" + local[i] + "**\n"; count++;
+            if(count == 11) {
+                msg += "And **" + (arr.length - 10) + "** more";
+                break;
+            };
+        }
+
+        if(count < 11) {
+            for (var i = 0; i < glob.length; i++) {
+                msg += count + ". " + glob[i] + "\n"; count++;
+                if(count == 11) {
+                    msg += "And **" + (arr.length - 10) + "** more";
+                    break;
+                };
+            }
+        }
+        callback(utils.formatConfirm(null, "List of users, who have matching cards:", msg));
+    });  
 }
 
 function getUserCards(userID, query) {

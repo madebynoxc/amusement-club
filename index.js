@@ -331,6 +331,16 @@ function getCommand(user, channel, guild, message, event, callback) {
                     });
                 }
                 return;
+            case 'whohas':
+                if(dbManager.isAdmin(user.id)) {
+                    if(channelType == 1) callback('This operation is possible in bot channel only');
+                    else {
+                        dbManager.whohas(user, guild, cnt, (text) => {
+                            callback(text);
+                        });
+                    }
+                }
+                return;
             case 'stat':
             case 'stats':
             case 'statistics':
