@@ -49,6 +49,31 @@ function connect(bot, callback) {
         assert.equal(null, err);
         logger.message("[DB Manager] Connected correctly to database");
 
+        // Logging to figure out when nulls are sent to the database
+        let oldCollectionFunction = db.collection;
+        db.collection = function() {
+            let result = oldCollectionFunction.apply(db, arguments);
+            let oldUpdateFunction = result.update;
+            result.update = function() {
+                if (arguments[1] && arguments[1].$set) {
+                    let bad = false;
+                    if ("gets" in arguments[1].$set && typeof arguments[1].$set.gets !== "number") {
+                        bad = true;
+                    }
+                    if ("sends" in arguments[1].$set && typeof arguments[1].$set.sends !== "number") {
+                        bad = true;
+                    }
+                    if (bad) {
+                        console.error("Attempted to set a non-number into gets or sets!");
+                        console.error(arguments);
+                        console.trace();
+                    }
+                }
+                return oldUpdateFunction.apply(result, arguments);
+            };
+            return result;
+        };
+
         mongodb = db;
         quest.connect(db);
         heroes.connect(db);
