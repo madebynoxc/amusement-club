@@ -107,8 +107,8 @@ bot.on("ready", (event) => {
             return;
         }
 
-        if(userID == settings.adminID) {
-            console.log(message.substring(4));
+        if(channelID == settings.reportchannel) {
+            //console.log(message.substring(4));
             switch(message.substring(4)) {
                 case 'help':
                     showCommands(); break;
@@ -119,15 +119,18 @@ bot.on("ready", (event) => {
                     console.log('[Ayano] Starting Amusement Club process...'); 
                     child.start(); break;
                 case 'stop': 
-                    console.log('[Ayano] Stopping Amusement Club process...'); 
-                    child.stop(); break;
+                    if(userID == settings.adminID) {
+                        console.log('[Ayano] Stopping Amusement Club process...'); 
+                        child.stop(); 
+                    } break;
                 case 'restart': 
                     console.log('[Ayano] Restarting Amusement Club process...'); 
                     restarts = 0; 
                     isrestart = true;
                     child.restart(); break;
                 default:
-                    other(message.substring(4));    
+                    if(userID == settings.adminID)
+                        other(message.substring(4));
             }
         }
     });
