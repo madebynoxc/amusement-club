@@ -1,5 +1,5 @@
 {
-	"current": 1,
+	"current": 2,
 	"list": [
 		{
 			"name": "halloween",
@@ -10,6 +10,11 @@
 			"name": "christmas",
 			"currency": "❄ Snowflakes",
 			"ends": "15th Jan 2018"
+		},
+		{
+			"name": "valentine",
+			"currency": "🍫 Chocolates",
+			"ends": "24th Feb 2018"
 		}
 	]
 }

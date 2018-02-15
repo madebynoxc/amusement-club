@@ -412,7 +412,14 @@ function getClaimedCard(user, fullName, args, callback) {
 
 function requestCard(user, findObj, callback) {
     if(!findObj) findObj = {};
-    ccollection.find(findObj).toArray((err, i) => {
+    let col = mongodb.collection('cards');
+
+    if(findObj.collection == "valentine" || findObj.collection == "halloween") {
+        col = mongodb.collection('promocards');
+        findObj.level = 1;
+    }
+
+    col.find(findObj).toArray((err, i) => {
         if(err){ return logger.error(err) }
 
         let res = _.sample(i);
