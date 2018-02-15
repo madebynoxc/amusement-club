@@ -245,7 +245,7 @@ function claimPromotion(user, dbUser, amount, callback) {
             if(dbUser.cards && dbUser.cards.filter(
                 c => c.name == res[0].name && c.collection == res[0].collection).length > 0)
                 phrase += "(*you already have this card*)\n";
-            phrase += "Forge this card with other promo cards and get crystals!\n"
+            //phrase += "Forge this card with other promo cards and get crystals!\n"
         } else {
             phrase += " (new cards are bold):\n"
             for (var i = 0; i < res.length; i++) {
@@ -256,7 +256,7 @@ function claimPromotion(user, dbUser, amount, callback) {
                 phrase += "\n";
             }
             phrase += "\nUse `->sum [card name]` to summon a card\n";
-            phrase += "Use `->forge [card 1], [card 2], ...` to combine cards into crystals\n";
+            //phrase += "Use `->forge [card 1], [card 2], ...` to combine cards into crystals\n";
         }
         phrase += "You have now **" + (dbUser.promoexp - claimCost) + "** " + promo.currency;
 
@@ -821,7 +821,7 @@ function needsCards(user, args, callback) {
     if(args.includes('-multi'))
         return callback(utils.formatError(user, "Request error", "flag `-multi` is not valid for this request"));
 
-    let ccollection = args.filter(a => (a.includes('-halloween') || a.includes('-christmas'))).length > 0? 
+    let ccollection = args.filter(a => (a.includes('-halloween') || a.includes('-christmas') || a.includes('-valentine'))).length > 0? 
         mongodb.collection('promocards') : mongodb.collection('cards');
 
     let query = utils.getRequestFromFilters(args);
