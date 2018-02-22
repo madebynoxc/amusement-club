@@ -37,7 +37,7 @@
 		"fields": [
 			{
 				"title": "Ordinary cards forge",
-				"description": "Can be used to forge simple non-craft cards. You can convert two 1-star cards into 2-star card, four 1-star cards (or two 2-star cards) into 3-star card. New card is completely random, except that if cards that you use for forging are from the same collection (fandom). In this case new card will be also from same collection. Ordinary forge costs 120 Tomatoes for 1-star cards and 240 Timatoes for 2-star."
+				"description": "Can be used to forge simple non-craft cards. You can convert two 1-star cards into 2-star card, four 1-star cards (or two 2-star cards) into 3-star card. New card is completely random, except that if cards that you use for forging are from the same collection (fandom). In this case new card will be also from same collection. Ordinary forge costs 120 Tomatoes for 1-star cards and 240 Tomatoes for 2-star."
 			},
 			{
 				"title": "Craft cards forge",
