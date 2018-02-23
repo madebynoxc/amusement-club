@@ -142,6 +142,18 @@ function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
                 col = collections.filter(c => c.includes(el))[0];
                 if(col) query[prefix + 'collection'] = col;
             }
+        }
+        else if(element[0] == '!') {
+            let el = element.substr(1);
+            if(isInt(el) && parseInt(el) <= 5 && parseInt(el) > 0)
+                query[prefix + 'level'] = {$ne : parseInt(el)};
+            if(el === "craft") query[prefix + 'craft'] = false; 
+            else if(el === "multi") query[prefix + 'amount'] = {$eq: 1};
+            else if(el === "gif") query[prefix + 'animated'] = false;
+            else {
+                col = collections.filter(c => !c.includes(el));
+                if(col) query[prefix + 'collection'] = {$in : col};
+            }
 
         } else keywords.push(element.trim());
     }, this);
