@@ -7,6 +7,7 @@
             "->list -multi (cards x2 and more)",
             "->list 2 (only 2-star cards)",
             "->list -yuruyuri (only Yuru Yuri cards)",
+            "->list !yuruyuri (all except Yuru Yuri cards)",
             "->list -multi 2 -yuruyuri",
             "Filter parameters can be combined"
         ]
@@ -19,6 +20,7 @@
             "->cards -multi (cards x2 and more)",
             "->cards 2 (only 2-star cards)",
             "->cards -yuruyuri (only Yuru Yuri cards)",
+            "->cards !yuruyuri (all except Yuru Yuri cards)",
             "->cards -multi 2 -yuruyuri",
             "Filter parameters can be combined"
         ]
@@ -31,6 +33,7 @@
             "->dif @user (shows unique user cards for you)",
             "->dif @user 2 (only 2-star cards)",
             "->dif @user -yuruyuri (only Yuru Yuri cards)",
+            "->dif !yuruyuri (all except Yuru Yuri cards)",
             "->dif @user -multi 2 -yuruyuri",
             "Filter parameters can be combined"
         ]
@@ -43,6 +46,7 @@
             "->dif @user (shows unique user cards for you)",
             "->dif @user 2 (only 2-star cards)",
             "->dif @user -yuruyuri (only Yuru Yuri cards)",
+            "->difference !yuruyuri (all except Yuru Yuri cards)",
             "->dif @user -multi 2 -yuruyuri",
             "Filter parameters can be combined"
         ]

@@ -217,7 +217,7 @@
 		"fields": [
 			{
 				"title": "Summon a card",
-				"description": "->sum [card name] [-collection] [#level]"
+				"description": "->sum [card name] [-collection] [level] [!collection]"
 			}
 		]
 	},
@@ -247,7 +247,7 @@
 			},
 			{
 				"title": "Get evaluated card price",
-				"description": "->eval [card name] [-collection]"
+				"description": "->eval [card name] [-collection] [!collection]"
 			}
 		]
 	},
@@ -399,7 +399,7 @@
 				"description": "->diff @someuser [stars]\n(e.g. `->diff @John 3`)"
 			},
 			{
-				"title": "Show only cards with tag (from 1.9.7)",
+				"title": "Show only cards with tag (from 1.9.10)",
 				"description": "->diff #[tag]\n(e.g. `->diff #saber`)"
 			},
 			{
