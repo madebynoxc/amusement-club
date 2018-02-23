@@ -145,8 +145,8 @@ function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
 
         else if(element[0] == '!') {
             let el = element.substr(1);
-            if(isInt(element) && parseInt(element) <= 5 && parseInt(element) > 0)
-                query[prefix + 'level'] = {$ne : parseInt(element)};
+            if(isInt(el) && parseInt(el) <= 5 && parseInt(el) > 0)
+                query[prefix + 'level'] = {$ne : parseInt(el)};
             if(el === "craft") query[prefix + 'craft'] = false; 
             else if(el === "multi") query[prefix + 'amount'] = {$eq: 1};
             else if(el === "gif") query[prefix + 'animated'] = false;
