@@ -126,12 +126,16 @@ function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
     prefix = prefix || "";
     let query = {};
     let keywords = [];
+    let levelInclude = [];
+    let levelExclude = [];
+    let collectionInclude = [];
+    let collectionExclude = [];
 
     //console.log(args);
     if(!args) return {};
     args.forEach(element => {
         if(isInt(element) && parseInt(element) <= 5 && parseInt(element) > 0)
-            query[prefix + 'level'] = parseInt(element);
+            levelInclude.push(parseInt(element));
 
         else if(element[0] == '-') {
             let el = element.substr(1);
@@ -140,23 +144,42 @@ function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
             else if(el === "gif") query[prefix + 'animated'] = true;
             else {
                 col = collections.filter(c => c.includes(el))[0];
-                if(col) query[prefix + 'collection'] = col;
+                if(col) collectionInclude.push(col);
             }
         }
         else if(element[0] == '!') {
             let el = element.substr(1);
             if(isInt(el) && parseInt(el) <= 5 && parseInt(el) > 0)
-                query[prefix + 'level'] = {$ne : parseInt(el)};
+                levelExclude.push(parseInt(el));
             if(el === "craft") query[prefix + 'craft'] = false; 
             else if(el === "multi") query[prefix + 'amount'] = {$eq: 1};
             else if(el === "gif") query[prefix + 'animated'] = false;
             else {
-                col = collections.filter(c => !c.includes(el));
-                if(col) query[prefix + 'collection'] = {$in : col};
+                col = collections.filter(c => c.includes(el))[0];
+                if(col) collectionExclude.push(col);
             }
 
         } else keywords.push(element.trim());
     }, this);
+    if(levelExclude.length > 0 || levelInclude.length > 0) {
+        query[prefix + 'level'] = {};
+        if(levelExclude.length > 0) {
+            query[prefix + 'level'].$nin = levelExclude;
+        }
+        if(levelInclude.length > 0) {
+            query[prefix + 'level'].$in = levelInclude;
+        }
+    }
+    
+    if(collectionExclude.length > 0 || collectionInclude.length > 0) {
+        query[prefix + 'collection'] = {};
+        if(collectionExclude.length > 0) {
+            query[prefix + 'collection'].$nin = collectionExclude;
+        }
+        if(collectionInclude.length > 0) {
+            query[prefix + 'collection'].$in = collectionInclude;
+        }
+    }
 
     if(keywords) query[prefix + 'name'] = new RegExp("(_|^)" + keywords.join('_'), 'ig');
 
