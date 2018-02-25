@@ -199,6 +199,16 @@ function getCommand(user, channel, guild, message, event, callback) {
                     });
                 }
                 return;
+            case 'block':
+                if(channelType == 0) callback('This operation is possible in bot channel only');
+                else if(channelType == 1) callback('This operation is possible in bot channel only');
+                else {
+                    let inp = utils.getUserID(cnt);
+                    dbManager.block(user, inp.id, inp.input, (text) =>{
+                        callback(text);
+                    });
+                }
+                return;
             case 'ratio':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {

@@ -1,6 +1,6 @@
 module.exports = {
     checkClaim, connect, getRandomQuests, completeNext,
-    checkXP, checkSend, checkSummon, addBonusQuest, checkForge
+    checkXP, checkSend, checkSummon, addBonusQuest, checkForge, preCheckSend
 }
 
 var mongodb, col;
@@ -53,6 +53,17 @@ function checkSend(user, sentlvl, callback) {
         callback(completeMsg(user, q));
         removeQuest(user, q, callback);
     }
+}
+
+function preCheckSend(user, sentlvl) {
+    let q = getQuest(user, 'send');
+    if(!q) return;
+
+    if((q.name == 'send2' && sentlvl == 2) || 
+    (q.name == 'send3' && sentlvl == 3)) {
+        return true;
+    }
+    return false;
 }
 
 function checkSummon(user, callback) {

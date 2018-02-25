@@ -17,6 +17,7 @@ module.exports = {
     formatError,
     formatConfirm,
     formatInfo,
+    formatWarning,
     getRequestFromFilters,
     getRequestFromFiltersNoPrefix,
     getUserID,
@@ -217,6 +218,10 @@ function formatConfirm(user, title, body) {
 
 function formatInfo(user, title, body) {
     return getEmbed(user, title, body, "#15aaec");
+}
+
+function formatWarning(user, title, body) {
+    return getEmbed(user, title, body, "#ffc711");
 }
 
 function getEmbed(user, title, body, color) {

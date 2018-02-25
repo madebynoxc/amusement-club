@@ -4,7 +4,7 @@ module.exports = {
     pay, daily, getQuests, getBestCardSorted,
     leaderboard_new, difference, dynamicSort, countCardLevels, 
     getCardFile, getDefaultChannel, isAdmin, needsCards,
-    removeCardFromUser, addCardToUser, eval, whohas
+    removeCardFromUser, addCardToUser, eval, whohas, block
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -419,8 +419,10 @@ function transfer(from, to, args, callback) {
     collection.findOne({ discord_id: from.id }).then(dbUser => {
         if(!dbUser) return;
 
-        if(!dbUser.gets) dbUser.gets = 200;
-        if(!dbUser.sends) dbUser.sends = 200;
+        if(!dbUser.gets) dbUser.gets = 500;
+        if(!dbUser.sends) dbUser.sends = 500;
+
+        if(!dbUser.dailystats) dbUser.dailystats = {summon: 0, send: 0, claim: 0, get: 0};
 
         if(args.includes("-ratio")) {
             let ratio = utils.getRatio(dbUser).toFixed(2);
@@ -428,11 +430,11 @@ function transfer(from, to, args, callback) {
                 null, "Your give/get ratio is **" + ratio + "**\n"
                 + (ratio < 2.5? "You **can** send cards\n" : "You **can not** send cards\n")
                 + (ratio > 0.4? "You **can** receive cards\n" : "You **can not** receive cards\n")
-                + "Max ratio: **2.5**\nMin ratio: **0.4**"));
+                + "Max ratio: **2.5**\nMin ratio: **0.4**\n"
+                + "You sent today: **" + dbUser.dailystats.send + "**/15\n"
+                + "You got today: **" + dbUser.dailystats.get + "**/15"));
             return;
         }
-
-        if(!dbUser.dailystats) dbUser.dailystats = {summon: 0, send: 0, claim: 0, get: 0};
 
         if(!args || args.length == 0) return callback("**" + dbUser.username + "**, please specify name/collection/level");
 
@@ -465,9 +467,6 @@ function transfer(from, to, args, callback) {
             let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
             if(!match) return callback(utils.formatError(dbUser, "Can't find card", "can't find card matching that request"));
 
-            if(objs[0].blocklist && objs[0].blocklist.includes(from.id))
-                return callback(utils.formatError(dbUser, "Can't send card", "this user blocked trading with you"));
-
             let name = utils.toTitleCase(match.name.replace(/_/g, " "));
             let hours = 20 - utils.getHoursDifference(match.frozen);
             if(match.amount <= 1 && hours && hours > 0) {
@@ -480,6 +479,9 @@ function transfer(from, to, args, callback) {
 
             collection.findOne({ discord_id: to }).then(u2 => {
                 if(!u2) return;
+
+                if(u2.blocklist && u2.blocklist.includes(from.id))
+                    return callback(utils.formatError(dbUser, "Can't send card", "this user blocked trading with you"));
 
                 if(!utils.canGet(u2)) {
                     callback(utils.formatError(dbUser, 
@@ -507,21 +509,23 @@ function transfer(from, to, args, callback) {
                         + "**🍅 to **" + dbUser.username 
                         + "** for sending a card!");
 
-                if(dbUser.dailystats.send > 15) {
+                if(dbUser.dailystats.send === 15)
+                    callback(utils.formatWarning(from, null, "your **next** transfer will cost **100** Tomatoes"));
+                else if(dbUser.dailystats.send > 15) {
                     let fee = (dbUser.dailystats.send - 15) * 100;
 
                     if(fee > dbUser.exp) return callback(utils.formatError(dbUser, 
                         "Can't send card!",
                         "you don't have enough **Tomatoes** to pay your trading fee!"));
 
-                    callback(utils.formatWarn(from, null, "you paid **" + fee + "** Tomatoes fee, because you are over your daily trade limit"));
+                    callback(utils.formatWarning(from, null, "you paid **" + fee + "** Tomatoes fee, because you are over your daily trade limit"));
                     fromExp -= fee;
                 } 
 
                 heroes.addXP(dbUser, .2);
                 getCardValue(match, price => {
                     let ratioIncrease = (price === Infinity? 0 : price/100);
-                    if(dbUser.dailystats.send < 2) ratioIncrease = 0;
+                    if(preCheckSend(dbUser, match.level)) ratioIncrease = 0;
                     let newSends = objs[0]._id.sends + ratioIncrease;
                     let newGets = objs[0]._id.gets;
 
@@ -547,7 +551,7 @@ function transfer(from, to, args, callback) {
                     collection.update(
                         { discord_id: to },
                         { 
-                            $set: { cards: u2.cards },
+                            $set: { cards: u2.cards, dailystats: u2.dailystats },
                             $inc: { gets: ratioIncrease }
                         }
                     ).then(() => {
@@ -907,18 +911,40 @@ function block(user, targetID, args, callback) {
     ucollection.findOne({discord_id: user.id}).then((dbUser) => {
         if(!dbUser) return;
 
+        if(user.id == targetID)
+            return callback("Ono you can't do that :c");
+
         ucollection.findOne({ discord_id: targetID }).then(u2 => { 
             if(!u2) return;
 
+            if(args.includes("list")) {
+                if(!dbUser.blocklist || dbUser.blocklist.length == 0)
+                    return callback(utils.formatInfo(user, null, "no users in your block list"));
+
+                return ucollection.find({discord_id: {'$in': dbUser.blocklist}}).toArray((err, res) => {
+                    let phrase = "";
+                    let count = 1;
+                    res.map(foundUser => {
+                        phrase += count + ". " + foundUser.username + "\n";
+                    });
+                    callback(utils.formatInfo(null, "List of users you blocked", phrase));
+                });
+            }
+
             if(args.includes("remove")) {
                 if(dbUser.blocklist && dbUser.blocklist.includes(targetID)) {
-                    return callback(utils.formatConfirm(user, null, "you have removed **" + u2.username + "** from your blocked user list"));
+                    return ucollection.update({discord_id: user.id}, {$pull: {blocklist: targetID}}).then(() => {
+                        callback(utils.formatConfirm(user, null, "you have removed **" + u2.username + "** from your blocked user list"));
+                    });
                 } 
                 return callback(utils.formatError(user, null, "can't find **" + u2.username + "** in your blocked user list"));
             }
 
             if(dbUser.blocklist && dbUser.blocklist.includes(targetID))
                 return callback(utils.formatError(user, null, "you already blocked this user. To remove use `->block remove @user`"));
+
+            if(dbUser.blocklist && dbUser.blocklist.length >= 20)
+                return callback(utils.formatError(user, null, "you can't have more than **20** users blocked"));
 
             ucollection.update({discord_id: user.id}, {$push: {blocklist: targetID}}).then(() => {
                 callback(utils.formatConfirm(user, "Success", "you have blocked **" + u2.username + "** from trading with you"));
