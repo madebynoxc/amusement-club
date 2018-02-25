@@ -168,7 +168,7 @@ function getHeroEffect(user, action, value, ...params) {
 
 
 function getRating(user, callback) {
-    ucollection.find({ }).sort({'hero.exp': -1}).toArray((err, users) => {
+    ucollection.aggregate([{$project: {_id: '$username', hero: '$hero'}}, { $sort : {'hero.exp': -1}}, {$limit: 10}]).toArray((err, users) => {
         callback("**Global** hero rating:\n" + nameOwners(users));
     });
 }
@@ -178,7 +178,7 @@ function nameOwners(col) {
     for(let i=0; i<col.length; i++) {
         if(!col[i].hero || !col[i].hero.name) continue;
         res += (i+1).toString() + ". ";
-        res += "**" + col[i].username + "** -- [";
+        res += "**" + col[i]._id + "** -- [";
         res += col[i].hero.name + "] -- **";
         res += getHeroLevel(col[i].hero.exp) + "**\n";
         if(i >= 9) break;

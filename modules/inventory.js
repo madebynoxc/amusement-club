@@ -69,13 +69,15 @@ function showInventory(user, callback) {
     }
 
     let resp = "**" + user.username + "**, your inventory:\n";
+    let cnt = 1;
     for(let i=0; i<user.inventory.length; i++) {
         if(user.inventory[i].type == "crystal" && user.inventory[i].amount == 0) continue;
-        resp += (i+1).toString() + ". ";
+        resp += cnt.toString() + ". ";
         resp += "[" + user.inventory[i].type + "]  ";
         resp += utils.toTitleCase(user.inventory[i].name.replace(/_/g, " "));
         if(user.inventory[i].amount > 1) resp += " (x" + user.inventory[i].amount + ")";
         resp += "\n";
+        cnt++;
     }
     callback(resp);
 }

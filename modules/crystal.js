@@ -104,7 +104,7 @@ function getCrystals(user, cards, callback) {
         { discord_id: user.discord_id},
         { 
             $set: {cards: user.cards, inventory: user.inventory },
-            $inc: {promoexp: -cost}
+            $inc: {exp: -cost}
         }
     ).catch(e => {logger.error(e)});
 

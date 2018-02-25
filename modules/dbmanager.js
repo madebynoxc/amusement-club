@@ -106,7 +106,7 @@ function claim(user, guildID, arg, callback) {
             }, this);
         } catch(exc){}
 
-        if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, quests: 0};
+        if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, get: 0, quests: 0};
 
         amount = Math.min(Math.max(parseInt(amount), 1), 20);
 
@@ -322,7 +322,7 @@ function getXP(user, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: user.id }).then((dbUser) => {
         if(dbUser) {
-            if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, quests: 0};
+            if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, get: 0, quests: 0};
 
             let bal = dbUser.exp;
             let stars = countCardLevels(dbUser.cards);
@@ -384,7 +384,7 @@ function getQuests(user, callback) {
 function getCards(user, args, callback) {
     let query = utils.getRequestFromFilters(args);
     getUserCards(user.id, query).toArray((err, objs) => {
-        if(!objs[0]) 
+        if(!objs || !objs[0]) 
             return callback(utils.formatError(user, null, "no cards found that match your request"), false);
 
         let cards = objs[0].cards;
@@ -405,7 +405,7 @@ function summon(user, args, callback) {
 
         callback("**" + user.username + "** summons **" + utils.toTitleCase(match.name.replace(/_/g, " ")) + "!**", getCardFile(match));
 
-        if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, quests: 0};
+        if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, get: 0, quests: 0};
         dbUser.dailystats.summon++;
 
         mongodb.collection('users').update(
@@ -432,11 +432,10 @@ function transfer(from, to, args, callback) {
             return;
         }
 
-        if(!dbUser.dailystats) dbUser.dailystats = {summon: 0, send: 0, claim: 0};
+        if(!dbUser.dailystats) dbUser.dailystats = {summon: 0, send: 0, claim: 0, get: 0};
 
         if(!args || args.length == 0) return callback("**" + dbUser.username + "**, please specify name/collection/level");
 
-        console.log(args);
         for(m in args) {
             if(args[m].includes("*"))
                 return callback("**" + dbUser.username + "**, you can't transfer crystals");
@@ -449,7 +448,7 @@ function transfer(from, to, args, callback) {
 
         if(!to) return;
 
-        console.log(utils.canSend(dbUser));
+        //console.log(utils.canSend(dbUser));
         if(dbUser.dailystats.send > 1 && !utils.canSend(dbUser)) {
             callback(utils.formatError(dbUser, 
                 "Can't send card!",
@@ -465,6 +464,9 @@ function transfer(from, to, args, callback) {
             let cards = objs[0].cards;
             let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
             if(!match) return callback(utils.formatError(dbUser, "Can't find card", "can't find card matching that request"));
+
+            if(objs[0].blocklist && objs[0].blocklist.includes(from.id))
+                return callback(utils.formatError(dbUser, "Can't send card", "this user blocked trading with you"));
 
             let name = utils.toTitleCase(match.name.replace(/_/g, " "));
             let hours = 20 - utils.getHoursDifference(match.frozen);
@@ -486,9 +488,17 @@ function transfer(from, to, args, callback) {
                     return;
                 }
 
+                if(!u2.dailystats) u2.dailystats = {summon: 0, send: 0, claim: 0, get: 0};
+                else if(!u2.dailystats.get) u2.dailystats.get = 0;
+
+                if(u2.dailystats.get > 15) return callback(utils.formatError(dbUser, 
+                        "Can't send card!",
+                        "user **" + u2.username + "** is out of daily trading limit. This user can't get more cards today"));
+
                 dbUser.cards = removeCardFromUser(dbUser.cards, match);
                 u2.cards = addCardToUser(u2.cards, match);
                 dbUser.dailystats.send++;
+                u2.dailystats.get++;
 
                 var fromExp = dbUser.exp;
                 fromExp = heroes.getHeroEffect(dbUser, 'send', fromExp, match.level);
@@ -497,6 +507,17 @@ function transfer(from, to, args, callback) {
                         + "**🍅 to **" + dbUser.username 
                         + "** for sending a card!");
 
+                if(dbUser.dailystats.send > 15) {
+                    let fee = (dbUser.dailystats.send - 15) * 100;
+
+                    if(fee > dbUser.exp) return callback(utils.formatError(dbUser, 
+                        "Can't send card!",
+                        "you don't have enough **Tomatoes** to pay your trading fee!"));
+
+                    callback(utils.formatWarn(from, null, "you paid **" + fee + "** Tomatoes fee, because you are over your daily trade limit"));
+                    fromExp -= fee;
+                } 
+
                 heroes.addXP(dbUser, .2);
                 getCardValue(match, price => {
                     let ratioIncrease = (price === Infinity? 0 : price/100);
@@ -504,9 +525,9 @@ function transfer(from, to, args, callback) {
                     let newSends = objs[0]._id.sends + ratioIncrease;
                     let newGets = objs[0]._id.gets;
 
-                    if(newGets + newSends > 500) {
-                        newGets *= .6;
-                        newSends *= .6;
+                    if(newGets + newSends > 1500) {
+                        newGets *= .5;
+                        newSends *= .5;
                     }
 
                     collection.update(
@@ -879,6 +900,31 @@ function whohas(user, guild, args, callback) {
         }
         callback(utils.formatConfirm(null, "List of users, who have matching cards:", msg));
     });  
+}
+
+function block(user, targetID, args, callback) {
+    let ucollection = mongodb.collection('users');
+    ucollection.findOne({discord_id: user.id}).then((dbUser) => {
+        if(!dbUser) return;
+
+        ucollection.findOne({ discord_id: targetID }).then(u2 => { 
+            if(!u2) return;
+
+            if(args.includes("remove")) {
+                if(dbUser.blocklist && dbUser.blocklist.includes(targetID)) {
+                    return callback(utils.formatConfirm(user, null, "you have removed **" + u2.username + "** from your blocked user list"));
+                } 
+                return callback(utils.formatError(user, null, "can't find **" + u2.username + "** in your blocked user list"));
+            }
+
+            if(dbUser.blocklist && dbUser.blocklist.includes(targetID))
+                return callback(utils.formatError(user, null, "you already blocked this user. To remove use `->block remove @user`"));
+
+            ucollection.update({discord_id: user.id}, {$push: {blocklist: targetID}}).then(() => {
+                callback(utils.formatConfirm(user, "Success", "you have blocked **" + u2.username + "** from trading with you"));
+            });
+        });
+    });
 }
 
 function getUserCards(userID, query) {
