@@ -131,6 +131,7 @@ function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
     //console.log(args);
     if(!args) return {};
     args.forEach(element => {
+        element = element.trim();
         if(isInt(element) && parseInt(element) <= 5 && parseInt(element) > 0)
             query[prefix + 'level'] = parseInt(element);
 

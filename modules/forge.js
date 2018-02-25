@@ -65,7 +65,7 @@ function getInfo(user, name, callback, image = false) {
             res += ((i == card.cards.length - 1)? " " : ", ");
         }
         res += "\nEffect: **" + card.effect + "**";
-        if(card.cooldown) res += "\nCooldown: **" + card.cooldown + "**";
+        if(card.cooldown) res += "\nCooldown: **" + card.cooldown + "** hrs (no hero effect)";
         if(card.usage) res += "\nUsage: " + card.usage;
         if(!image) res += "\nUse `->forge [card1], [card2], ...`";
         callback(res, image? 
@@ -284,11 +284,12 @@ function getCardEffect(user, action, ...params) {
             break;
         case 'send':
             if(params[0].inventory && inv.has(params[0], 'skies_of_friendship')) {
+                let tom = 160 - params[0].dailystats.send * 10;
                 ucollection.update( 
                     { discord_id: user.discord_id},
-                    { $inc: {exp: 100} }
+                    { $inc: {exp: tom} }
                 ).then(u => {
-                    params[1]("**" + user.username + "**, you got **100 Tomatoes** for sending card to this user");
+                    params[1]("**" + user.username + "**, you got **" + tom + " Tomatoes** for sending card to this user");
                 });
             }
             break;
@@ -314,9 +315,39 @@ function useCard(user, name, args, callback) {
         case 'the_judgment_day':
             isComplete = useAny(user, fullName, args, callback);
             break;
+        case 'hazardous_duo':
+            isComplete = whohas(user, fullName, args, callback);
+            break;
     }
 
     return isComplete;
+}
+
+function whohas(user, fullName, args, callback) {
+    if(args) {
+        let query = utils.getRequestFromFiltersNoPrefix(args.substr(1).split('_'));
+            ucollection.aggregate([{$match: {"cards":{"$elemMatch":query}}}, {$sort: {"exp": 1}}, {$limit: 100}]
+        ).toArray((err, arr) => {
+            if(!arr || arr.length == 0) return callback(utils.formatError(user, null, "nobody has this card or it doesn't exist"));
+            
+            let msg = "";
+            let count = 1;
+            for (var i = 0; i < arr.length; i++) {
+                msg += count + ". **" + arr[i].username + "**\n"; count++;
+                if(count == 11) {
+                    msg += "And **" + (arr.length - 10) + "** more";
+                    break;
+                };
+            }
+
+            callback(utils.formatConfirm(null, "List of users, who have matching cards:", msg));
+        });
+        return true;
+    }
+
+    let resp = "**" + user.username + "**, this card requires card name to be passed.\n" 
+    resp += "Use `->inv use " + fullName.toLowerCase() + ", card name/collection/level`";
+    callback(resp);
 }
 
 function useAny(user, fullName, args, callback) {
@@ -330,14 +361,14 @@ function useAny(user, fullName, args, callback) {
 
         let resp = "**" + user.username + "**, failed to use **" 
             + (card? utils.toTitleCase(card.name.replace(/_/g, " ")) : tgName) + "**\n";
-        resp +=  "You can use cards: 'Delightful Sunset', 'The Space Unity', 'Long-awaited Date'";
+        resp +=  "You can use cards: 'Delightful Sunset', 'The Space Unity', 'Long-awaited Date', 'Hazardous Duo'";
         callback(resp);
         return false;
     }
 
     let resp = "**" + user.username + "**, this card requires card name to be passed.\n" 
     resp += "Use `->inv use " + fullName.toLowerCase() + ", other usable craft`\n";
-    resp +=  "You can use cards: 'Delightful Sunset', 'The Space Unity', 'Long-awaited Date'";
+    resp +=  "You can use cards: 'Delightful Sunset', 'The Space Unity', 'Long-awaited Date', 'Hazardous Duo'";
     callback(resp);
     return false;
 }

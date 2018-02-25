@@ -79,7 +79,7 @@
         "name": "the_ruler_jeanne",
         "level": 62,
         "effect": "Get `->daily` in 15 hours instead of 20",
-        "cost": 15000,
+        "cost": 18000,
         "compressed": false,
         "cards": [
             "dark_jeanne", "light_jeanne"
@@ -88,7 +88,7 @@
         "name": "the_space_unity",
         "level": 40,
         "effect": "Gives a random card from __specified collection__ when used",
-        "cost": 6900,
+        "cost": 8900,
         "compressed": false,
         "cooldown": 20,
         "usage": "`->inv use space unity, -collection`",
@@ -99,13 +99,25 @@
         "name": "the_judgment_day",
         "level": 80,
         "effect": "Eliminates Humanity. Grants effect of any usable card",
-        "cost": 10000,
+        "cost": 20000,
         "compressed": false,
         "animated": true,
         "cooldown": 40,
         "usage": "`->inv use judgment day, usable card name`",
         "cards": [
             "triggered_angel", "huge_kaboom", "trumpet_of_doom"
+        ]
+    }, {
+        "name": "hazardous_duo",
+        "level": 55,
+        "effect": "Shows list of users that have specified card",
+        "cost": 16000,
+        "compressed": false,
+        "animated": false,
+        "cooldown": 2,
+        "usage": "`->inv use hazardous duo, card name -collection`",
+        "cards": [
+            "diffident_snake", "sneaky_phoenix"
         ]
     }
 ]
