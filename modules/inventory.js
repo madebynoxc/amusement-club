@@ -71,7 +71,7 @@ function showInventory(user, callback) {
     let resp = "**" + user.username + "**, your inventory:\n";
     let cnt = 1;
     for(let i=0; i<user.inventory.length; i++) {
-        if(user.inventory[i].type == "crystal" && user.inventory[i].amount == 0) continue;
+        if(user.inventory[i].type == "crystal") continue;
         resp += cnt.toString() + ". ";
         resp += "[" + user.inventory[i].type + "]  ";
         resp += utils.toTitleCase(user.inventory[i].name.replace(/_/g, " "));

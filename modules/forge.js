@@ -79,7 +79,7 @@ function craftCard(user, args, callback) {
     var cards = args.join('_').split(',');
     if(!cards || cards.length < 2) {
         callback("Minimum **2** cards or items required for forge\nDon't forget to put `,` between names"
-            + "\nInclude only card/item **name**\nFor crystals always put `*` before name");
+            + "\nInclude only card/item **name**");
         return;
     }
 
@@ -115,7 +115,8 @@ function craftCard(user, args, callback) {
     }
 
     if(mode == "cryst")
-        return cryst.forgeCrystals(user, cards, callback)
+        return callback("**" + user.username 
+                    + "**, crystal forging was removed in v1.9.10");
 
     let isCraft = cardObjects[0].craft;
     if(!isCraft) isCraft = false;
@@ -206,8 +207,8 @@ function craftOrdinary(user, cards, callback) {
 
     let collection = cards[0].collection;
 
-    if(collection === "christmas")
-        return cryst.getCrystals(user, cards, callback);
+    //if(collection === "christmas")
+    //    return cryst.getCrystals(user, cards, callback);
 
     let passed = [];
     for(i in cards) {
@@ -284,7 +285,8 @@ function getCardEffect(user, action, ...params) {
             break;
         case 'send':
             if(params[0].inventory && inv.has(params[0], 'skies_of_friendship')) {
-                let tom = 160 - params[0].dailystats.send * 10;
+                let tom = 160 - user.dailystats.send * 10;
+                if(tom <= 0) break;
                 ucollection.update( 
                     { discord_id: user.discord_id},
                     { $inc: {exp: tom} }
@@ -445,9 +447,10 @@ function requestCard(user, findObj, callback) {
     if(!findObj) findObj = {};
     let col = mongodb.collection('cards');
 
-    if(findObj.collection == "valentine" || findObj.collection == "halloween") {
+    if(findObj.collection == "valentine" || findObj.collection == "halloween" || findObj.collection == "christmas") {
         col = mongodb.collection('promocards');
-        findObj.level = 1;
+        findObj.level = findObj.level - 1;
+        if(findObj.level == 3) findObj.level = 3;
     }
 
     col.find(findObj).toArray((err, i) => {

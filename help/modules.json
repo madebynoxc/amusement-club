@@ -10,7 +10,7 @@
 	        },
 	        {
 	            "title": "Commands. Use `->help [command]`",
-	            "description": "->help claim\n->help summon\n->help daily\n->help balance\n->help give\n->help pay\n->help cards\n->help sell\n->help difference\n->help quests\n->help has\n->help whatsnew"
+	            "description": "->help claim\n->help summon\n->help daily\n->help balance\n->help give\n->help pay\n->help cards\n->help sell\n->help fav\n->help difference\n->help quests\n->help has\n->help whatsnew"
 	        },
 	        {
 	            "title": "Modules. Use `->help [module]`",
@@ -87,7 +87,7 @@
 		"fields": [
 			{
 				"title": "Getting card recipe",
-				"description": "->res [card name]"
+				"description": "->res [card query]"
 			},
 			{
 				"title": "Getting possible crystal recipe",
@@ -217,7 +217,7 @@
 		"fields": [
 			{
 				"title": "Summon a card",
-				"description": "->sum [card name] [-collection] [level] [!collection]"
+				"description": "->sum [card query] [-collection] [level] [!collection]"
 			}
 		]
 	},
@@ -247,7 +247,7 @@
 			},
 			{
 				"title": "Get evaluated card price",
-				"description": "->eval [card name] [-collection] [!collection]"
+				"description": "->eval [card query]"
 			}
 		]
 	},
@@ -284,7 +284,7 @@
 	{
 		"type": ["trading", "trade", "ratio"],
 		"title": "About trading rules",
-		"description": "Since v1.9.8 Amusement Club has limits to user trading. In order to keep card balance between users the **give/get ratio system** was implemented. When you send or get cards, Amusement Club will count your send/receive (officially give/get or g/g) ratio. If you send or receive too many cards, trading will be blocked. The g/g ratio is calculated from card value. You can get card value by running `->eval [card name]`",
+		"description": "**Since v1.9.10** limit to daily trading was added. After sending 15 cards, user will have to pay an increasing **100 tomatoes fee**. User who got 15 cards can't recieve more. You can get amount of cards send with `->ratio`, this statistics resets after you run `->daily`\n**Since v1.9.8** Amusement Club has limits to user trading. In order to keep card balance between users the **give/get ratio system** was implemented. When you send or get cards, Amusement Club will count your send/receive (officially give/get or g/g) ratio. If you send or receive too many cards, trading will be blocked. The g/g ratio is calculated from card value. You can get card value by running `->eval [card query]`",
 		"fields": [
 			{
 				"title": "Ratio is higher than 2.5",
@@ -300,7 +300,7 @@
 			},
 			{
 				"title": "Send Tomatoes",
-				"description":"Get the cost of the card by running `->eval [card name]`"
+				"description":"Get the cost of the card by running `->eval [card query]`"
 			},
 			{
 				"title": "Daily won't reset your ratio",
@@ -365,7 +365,57 @@
 		"fields": [
 			{
 				"title": "Sell a card",
-				"description": "->sell [card name]"
+				"description": "->sell [card query]"
+			}
+		]
+	},
+	{
+		"type": ["fav", "favorite"],
+		"title": "Adding cards to favorites",
+		"description": "You can add any card to favorites. That kind of card can't be sent and it won't show up for other users in `->has` or `->diff` commands, unless you have 2 or more of those cards",
+		"fields": [
+			{
+				"title": "Favorite card",
+				"description": "->fav [card query]"
+			},
+			{
+				"title": "Remove from favorites",
+				"description": "->fav remove [card query]"
+			},
+			{
+				"title": "List favorite cards",
+				"description": "->cards -fav"
+			}
+		]
+	},
+	{
+		"type": ["query"],
+		"title": "Card query",
+		"description": "In the help messages you will often see `[card query]`. But what does it mean?\n In Amusement Club you can get cards in any request type (except `forge`) by using different card parameters. Those parameters can be also combined",
+		"fields": [
+			{
+				"title": "Name",
+				"description": "->cards [some name]"
+			},
+			{
+				"title": "Collection",
+				"description": "->cards -[collection]"
+			},
+			{
+				"title": "Craft",
+				"description": "->cards -craft"
+			},
+			{
+				"title": "Animated",
+				"description": "->cards -gif"
+			},
+			{
+				"title": "Favorite",
+				"description": "->cards -fav"
+			},
+			{
+				"title": "Make NEGATIVE request",
+				"description": "->cards ![collection] !fav !gif !craft"
 			}
 		]
 	},

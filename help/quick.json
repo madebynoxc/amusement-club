@@ -224,5 +224,13 @@
             "->stats hero (shows general hero statistics)",
             "->stats cards (shows general card statistics)"
         ]
+    },
+    {
+        "name": "fav",
+        "values": [
+            "**->fav [?remove] [card]**",
+            "->fav [card query] (adds card to favorites)",
+            "->fav remove (removes card from favorites)"
+        ]
     }
 ]

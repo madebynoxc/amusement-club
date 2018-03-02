@@ -140,6 +140,7 @@ function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
             if(el === "craft") query[prefix + 'craft'] = true; 
             else if(el === "multi") query[prefix + 'amount'] = {$gte: 2};
             else if(el === "gif") query[prefix + 'animated'] = true;
+            else if(el === "fav") query[prefix + 'fav'] = true;
             else {
                 col = collections.filter(c => c.includes(el))[0];
                 if(col) query[prefix + 'collection'] = col;
@@ -152,6 +153,7 @@ function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
             if(el === "craft") query[prefix + 'craft'] = false; 
             else if(el === "multi") query[prefix + 'amount'] = {$eq: 1};
             else if(el === "gif") query[prefix + 'animated'] = false;
+            else if(el === "fav") query[prefix + 'fav'] = false;
             else {
                 col = collections.filter(c => !c.includes(el));
                 if(col) query[prefix + 'collection'] = {$in : col};

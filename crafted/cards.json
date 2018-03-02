@@ -60,7 +60,7 @@
     }, {
         "name": "skies_of_friendship",
         "level": 40,
-        "effect": "Everyone who sends you a card, will get 100 🍅",
+        "effect": "Everyone who sends you a card, will get tomatoes",
         "cost": 10000,
         "compressed": false,
         "cards": [

@@ -4,7 +4,7 @@ module.exports = {
     pay, daily, getQuests, getBestCardSorted,
     leaderboard_new, difference, dynamicSort, countCardLevels, 
     getCardFile, getDefaultChannel, isAdmin, needsCards,
-    removeCardFromUser, addCardToUser, eval, whohas, block
+    removeCardFromUser, addCardToUser, eval, whohas, block, fav
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -467,6 +467,9 @@ function transfer(from, to, args, callback) {
             let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
             if(!match) return callback(utils.formatError(dbUser, "Can't find card", "can't find card matching that request"));
 
+            if(match.fav && match.amount == 1) return callback(utils.formatError(dbUser, null, "you can't send favorite card." 
+                + " To remove from favorites use `->fav remove [card query]`"));
+
             let name = utils.toTitleCase(match.name.replace(/_/g, " "));
             let hours = 20 - utils.getHoursDifference(match.frozen);
             if(match.amount <= 1 && hours && hours > 0) {
@@ -497,6 +500,7 @@ function transfer(from, to, args, callback) {
                         "Can't send card!",
                         "user **" + u2.username + "** is out of daily trading limit. This user can't get more cards today"));
 
+                match.fav = false;
                 dbUser.cards = removeCardFromUser(dbUser.cards, match);
                 u2.cards = addCardToUser(u2.cards, match);
                 dbUser.dailystats.send++;
@@ -525,7 +529,7 @@ function transfer(from, to, args, callback) {
                 heroes.addXP(dbUser, .2);
                 getCardValue(match, price => {
                     let ratioIncrease = (price === Infinity? 0 : price/100);
-                    if(preCheckSend(dbUser, match.level)) ratioIncrease = 0;
+                    if(quest.preCheckSend(dbUser, match.level)) ratioIncrease = 0;
                     let newSends = objs[0]._id.sends + ratioIncrease;
                     let newGets = objs[0]._id.gets;
 
@@ -740,6 +744,8 @@ function award(uID, amout, callback) {
     
 }
 
+//{'cards.name':/Holy_Qua/},{$set:{'cards.$.name':'holy_quaternity'}}
+
 function difference(discUser, targetID, args, callback) {
     if(discUser.id == targetID) 
         return callback("Eh? That won't work");
@@ -758,7 +764,7 @@ function difference(discUser, targetID, args, callback) {
 
             let cardsU2 = objs2[0].cards;
             let dbUser2 = objs2[0]._id;
-            let dif = cardsU2.filter(x => cardsU1.filter(y => utils.cardsMatch(x, y)) == 0);
+            let dif = cardsU2.filter(x => !(x.fav && x.amount == 1) && cardsU1.filter(y => utils.cardsMatch(x, y)) == 0);
             if(dif.length > 0) 
                 callback(listing.addNew(discUser, dif, dbUser2.username));
             else
@@ -833,7 +839,7 @@ function doesUserHave(user, tgID, args, callback) {
         if(!objs[0]) 
             return callback(utils.formatError(user, null, "no cards found that match your request"));
 
-        let cards = objs[0].cards;
+        let cards = objs[0].cards.filter(c => !(c.amount == 1 && c.fav == true));
         let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
@@ -906,6 +912,35 @@ function whohas(user, guild, args, callback) {
     });  
 }
 
+function fav(user, args, callback) {
+    if(!args || args.length == 0) return callback("**" + user.username + "**, please specify card query");
+
+    let remove = args[0] == 'remove';
+    if(remove) args.shift();
+    let query = utils.getRequestFromFilters(args);
+    getUserCards(user.id, query).toArray((err, objs) => {
+        if(!objs[0]) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
+
+        let cards = objs[0].cards;
+        let dbUser = objs[0]._id;
+        let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
+        if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
+
+        query.discord_id = user.id;
+        console.log(query);
+        mongodb.collection('users').update(
+            query,
+            {
+                $set: {"cards.$.fav": !remove }
+            }
+        ).then(e => {
+            let name = utils.toTitleCase(match.name.replace(/_/g, " "));
+            if(remove) callback(utils.formatConfirm(user, "Removed from favorites", "you removed **" + name + " [" + match.collection + "]** from favorites"));
+            else callback(utils.formatConfirm(user, "Added to favorites", "you added **" + name + "** from **" + match.collection + "** to favorites"));
+        });
+    });
+}
+
 function block(user, targetID, args, callback) {
     let ucollection = mongodb.collection('users');
     ucollection.findOne({discord_id: user.id}).then((dbUser) => {
@@ -913,6 +948,10 @@ function block(user, targetID, args, callback) {
 
         if(user.id == targetID)
             return callback("Ono you can't do that :c");
+
+        //console.log(args);
+        if(args.length == 0 && !targetID)
+            return callback(utils.formatError(user, null, "use `->block @user/id`"));
 
         ucollection.findOne({ discord_id: targetID }).then(u2 => { 
             if(!u2) return;
@@ -926,6 +965,7 @@ function block(user, targetID, args, callback) {
                     let count = 1;
                     res.map(foundUser => {
                         phrase += count + ". " + foundUser.username + "\n";
+                        count++;
                     });
                     callback(utils.formatInfo(null, "List of users you blocked", phrase));
                 });
