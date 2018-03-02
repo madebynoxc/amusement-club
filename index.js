@@ -212,7 +212,7 @@ function getCommand(user, channel, guild, message, event, callback) {
             case 'ratio':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
-                    dbManager.transfer(user, null, '-ratio', (text) =>{
+                    dbManager.transfer(user, null, '-ratio', guild, (text) =>{
                         callback(text);
                     });
                 }
