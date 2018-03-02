@@ -222,6 +222,10 @@ function craftOrdinary(user, cards, callback) {
             return;
         }
 
+        if(cards[i].fav && cards[i].amount == 1) return callback(utils.formatError(dbUser, null, "you can't forge favorite card **" 
+            + utils.toTitleCase(cards[i].name.replace(/_/g, " ")) 
+            + "**. To remove from favorites use `->fav remove [card query]`"));
+
         if(cards[i].collection != collection) collection = null;
         passed.push(cards[i].name);
     }
@@ -348,7 +352,7 @@ function whohas(user, fullName, args, callback) {
     }
 
     let resp = "**" + user.username + "**, this card requires card name to be passed.\n" 
-    resp += "Use `->inv use " + fullName.toLowerCase() + ", card name/collection/level`";
+    resp += "Use `->inv use " + fullName.toLowerCase() + ", card query`";
     callback(resp);
 }
 
