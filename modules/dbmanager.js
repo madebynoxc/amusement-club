@@ -400,7 +400,7 @@ function summon(user, args, callback) {
 
         let cards = objs[0].cards;
         let dbUser = objs[0]._id;
-        let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
+        let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : getRandomCard(cards);
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
         callback("**" + user.username + "** summons **" + utils.toTitleCase(match.name.replace(/_/g, " ")) + "!**", getCardFile(match));
@@ -1171,4 +1171,8 @@ function removeCardFromUser(usercards, card) {
         usercards.splice(i, 1);
     } 
     return usercards;
+}
+
+function getRandomCard(cards) {
+    return cards[Math.floor(Math.random()*cards.length)];
 }
