@@ -17,6 +17,7 @@ module.exports = {
     formatError,
     formatConfirm,
     formatInfo,
+    formatWarning,
     getRequestFromFilters,
     getRequestFromFiltersNoPrefix,
     getUserID,
@@ -134,6 +135,7 @@ function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
     //console.log(args);
     if(!args) return {};
     args.forEach(element => {
+        element = element.trim();
         if(isInt(element) && parseInt(element) <= 5 && parseInt(element) > 0)
             levelInclude.push(parseInt(element));
 
@@ -142,6 +144,7 @@ function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
             if(el === "craft") query[prefix + 'craft'] = true; 
             else if(el === "multi") query[prefix + 'amount'] = {$gte: 2};
             else if(el === "gif") query[prefix + 'animated'] = true;
+            else if(el === "fav") query[prefix + 'fav'] = true;
             else {
                 col = collections.filter(c => c.includes(el))[0];
                 if(col) collectionInclude.push(col);
@@ -154,6 +157,7 @@ function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
             if(el === "craft") query[prefix + 'craft'] = false; 
             else if(el === "multi") query[prefix + 'amount'] = {$eq: 1};
             else if(el === "gif") query[prefix + 'animated'] = false;
+            else if(el === "fav") query[prefix + 'fav'] = false;
             else {
                 col = collections.filter(c => c.includes(el))[0];
                 if(col) collectionExclude.push(col);
@@ -240,6 +244,10 @@ function formatConfirm(user, title, body) {
 
 function formatInfo(user, title, body) {
     return getEmbed(user, title, body, "#15aaec");
+}
+
+function formatWarning(user, title, body) {
+    return getEmbed(user, title, body, "#ffc711");
 }
 
 function getEmbed(user, title, body, color) {

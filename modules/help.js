@@ -57,7 +57,7 @@ function processUserInput(inp, author, callback) {
     if(inp.startsWith('how') || inp.endsWith('?')) {
         let collection = mongodb.collection('users');
         collection.findOne({ discord_id: author.id }).then(dbUser => {
-            if(!dbUser.cards || dbUser.cards.length < 30) {
+            if(!dbUser || !dbUser.cards || dbUser.cards.length < 30) {
                 ai.modules.forEach((e) => {
                     if(inp.includes(e.key)) {
                         res = _.sample(ai.answers);

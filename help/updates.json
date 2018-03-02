@@ -1,5 +1,16 @@
 [
     {
+        "version": "1.9.10",
+        "changes": [
+            "Improvements to trading system",
+            "Improvements to Skies of Friendship effect card", 
+            "Added ability to block users",
+            "Added ability to add cards to favorites",
+            "New 'Hazardous Duo' craft",
+            "Send won't effect g/g ratio only for quest"
+        ]
+    },
+    {
         "version": "1.9.9",
         "changes": [
             "Various bugfixes",
