@@ -1,7 +1,7 @@
 module.exports = {
     connect, disconnect, claim, addXP, getXP, doesUserHave,
     getCards, summon, transfer, sell, award, getUserName,
-    pay, daily, getQuests, getBestCardSorted,
+    pay, daily, getQuests, getBestCardSorted, transactions,
     leaderboard_new, difference, dynamicSort, countCardLevels, 
     getCardFile, getDefaultChannel, isAdmin, needsCards,
     removeCardFromUser, addCardToUser, eval, whohas, block, fav
@@ -83,6 +83,10 @@ function connect(bot, callback) {
         //cardmanager.updateCards(db);
         invite.connect(db, client);
         helpMod.connect(db, client);
+
+        db.collection('transactions').remove({time: {$lt: new Date(new Date() - 60480000)}}).then(res => {
+            console.log(res.result);
+        });
 
         if(callback) callback();   
     });
@@ -414,7 +418,7 @@ function summon(user, args, callback) {
     });
 }
 
-function transfer(from, to, args, callback) {
+function transfer(from, to, args, guild, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: from.id }).then(dbUser => {
         if(!dbUser) return;
@@ -538,6 +542,19 @@ function transfer(from, to, args, callback) {
                         newSends *= .5;
                     }
 
+                    let transaction = {
+                        from: from.username,
+                        from_id: from.id,
+                        to: u2.username,
+                        to_id: to,
+                        card: match,
+                        guild: guild.name,
+                        guild_id: guild.id,
+                        time: new Date()
+                    }
+
+                    mongodb.collection('transactions').insert(transaction);
+
                     collection.update(
                         { discord_id: from.id }, { 
                             $set: { 
@@ -570,7 +587,33 @@ function transfer(from, to, args, callback) {
     });
 }
 
-function pay(from, to, args, callback) {
+function transactions(user, callback) {
+    let collection = mongodb.collection('transactions');
+    collection.find({ to_id: user.id }).sort({ time: 1 }).toArray((err, res) => {
+        if(!res || res.length == 0)
+            return callback(utils.formatWarning(user, null, "can't find recent transactions to you"));
+
+        let count = 0;
+        let resp = "";
+        try {
+            res.map(t => {
+                if(count > 20) throw BreakException;
+                let mins = utils.getMinutesDifference(t.time);
+                let hrs = utils.getHoursDifference(t.time);
+                let timediff = (hrs < 1)? (mins + "m") : (hrs + "h");
+                if(hrs < 1 && mins < 1) timediff = "just now";
+                resp += "[" + timediff + "] ";
+                resp += "**" + (t.exp? (t.exp + "🍅") : utils.toTitleCase(t.card.name.replace(/_/g, " "))) + "** ";
+                resp += "from **" + t.from + "** in **" + t.guild + "**\n";
+                count++;
+            });
+        } catch(e) {}
+
+        callback(utils.formatInfo(null, "Recent transactions", resp));
+    });
+}
+
+function pay(from, to, args, guild, callback) {
     let collection = mongodb.collection('users');
     let amount = args.filter(a => utils.isInt(a))[0];
     let ignore = args.includes('-ignore');
@@ -592,6 +635,18 @@ function pay(from, to, args, callback) {
 
                 let ratio = amount/100;
                 if(ignore) ratio = 0;
+                let transaction = {
+                    from: dbUser.username,
+                    from_id: dbUser.discord_id,
+                    to: user2.username,
+                    to_id: to,
+                    exp: amount,
+                    guild: guild.name,
+                    guild_id: guild.id,
+                    time: new Date()
+                };
+
+                mongodb.collection('transactions').insert(transaction);
                 collection.update({ discord_id: from }, {$inc: {exp: -amount, sends: ratio }});
                 collection.update({ discord_id: to }, {$inc: {exp: amount, gets: ratio }});
                 callback(utils.formatConfirm(dbUser, "Tomatoes sent", "you sent **" + amount + "**🍅 to **" + user2.username + "**"));
@@ -930,7 +985,10 @@ function fav(user, args, callback) {
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
         query.discord_id = user.id;
-        console.log(query);
+        query["cards.name"] = match.name;
+        query["cards.collection"] = match.collection;
+        query["cards.level"] = match.level;
+        //console.log(query);
         mongodb.collection('users').update(
             query,
             {
@@ -939,7 +997,7 @@ function fav(user, args, callback) {
         ).then(e => {
             let name = utils.toTitleCase(match.name.replace(/_/g, " "));
             if(remove) callback(utils.formatConfirm(user, "Removed from favorites", "you removed **" + name + " [" + match.collection + "]** from favorites"));
-            else callback(utils.formatConfirm(user, "Added to favorites", "you added **" + name + "** from **" + match.collection + "** to favorites"));
+            else callback(utils.formatConfirm(user, "Added to favorites", "you added **" + name + " [" + match.collection + "]** to favorites"));
         });
     });
 }
@@ -952,27 +1010,26 @@ function block(user, targetID, args, callback) {
         if(user.id == targetID)
             return callback("Ono you can't do that :c");
 
-        //console.log(args);
         if(args.length == 0 && !targetID)
             return callback(utils.formatError(user, null, "use `->block @user/id`"));
 
+        if(args.includes("list")) {
+            if(!dbUser.blocklist || dbUser.blocklist.length == 0)
+                return callback(utils.formatInfo(user, null, "no users in your block list"));
+
+            return ucollection.find({discord_id: {'$in': dbUser.blocklist}}).toArray((err, res) => {
+                let phrase = "";
+                let count = 1;
+                res.map(foundUser => {
+                    phrase += count + ". " + foundUser.username + "\n";
+                    count++;
+                });
+                callback(utils.formatInfo(null, "List of users you blocked", phrase));
+            });
+        }
+
         ucollection.findOne({ discord_id: targetID }).then(u2 => { 
             if(!u2) return;
-
-            if(args.includes("list")) {
-                if(!dbUser.blocklist || dbUser.blocklist.length == 0)
-                    return callback(utils.formatInfo(user, null, "no users in your block list"));
-
-                return ucollection.find({discord_id: {'$in': dbUser.blocklist}}).toArray((err, res) => {
-                    let phrase = "";
-                    let count = 1;
-                    res.map(foundUser => {
-                        phrase += count + ". " + foundUser.username + "\n";
-                        count++;
-                    });
-                    callback(utils.formatInfo(null, "List of users you blocked", phrase));
-                });
-            }
 
             if(args.includes("remove")) {
                 if(dbUser.blocklist && dbUser.blocklist.includes(targetID)) {
