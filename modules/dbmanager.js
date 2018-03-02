@@ -612,6 +612,9 @@ function sell(user, args, callback) {
         let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
+        if(match.fav && match.amount == 1) return callback(utils.formatError(user, null, "you can't sell favorite card." 
+                + " To remove from favorites use `->fav remove [card query]`"));
+
         mongodb.collection('users').findOne({ discord_id: user.id }).then(dbUser => {
 
             heroes.addXP(dbUser, .3);
