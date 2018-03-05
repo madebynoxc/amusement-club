@@ -1,5 +1,5 @@
 {
-	"id":"u1910",
-	"title":"Update 1.9.10",
-	"body":"Amusement club got some important trading updates. Please, read them here: `->help trade`. For all updates use `->whatsnew`"
+	"id":"vote",
+	"title":"Vote for new cards!",
+	"body":"It's time to vote for 4-star submissions! It will take you no more than 2 minutes! Please, run `->vote` to get started"
 }

@@ -29,6 +29,7 @@ const inv = require('./inventory.js');
 const stats = require('./stats.js');
 const invite = require('./invite.js');
 const helpMod = require('./help.js');
+const vote = require('./vote.js');
 const ratioInc = require('./ratioincrease.json');
 const lev = require('js-levenshtein');
 
@@ -83,6 +84,7 @@ function connect(bot, callback) {
         //cardmanager.updateCards(db);
         invite.connect(db, client);
         helpMod.connect(db, client);
+        vote.connect(db, client);
 
         db.collection('transactions').remove({time: {$lt: new Date(new Date() - 60480000)}}).then(res => {
             console.log(res.result);
@@ -589,7 +591,7 @@ function transfer(from, to, args, guild, callback) {
 
 function transactions(user, callback) {
     let collection = mongodb.collection('transactions');
-    collection.find({ to_id: user.id }).sort({ time: 1 }).toArray((err, res) => {
+    collection.find({ to_id: user.id }).sort({ time: -1 }).toArray((err, res) => {
         if(!res || res.length == 0)
             return callback(utils.formatWarning(user, null, "can't find recent transactions to you"));
 
