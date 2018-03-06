@@ -1,5 +1,5 @@
 {
-	"id":"vote",
-	"title":"Vote for new cards!",
-	"body":"It's time to vote for 4-star submissions! It will take you no more than 2 minutes! Please, run `->vote` to get started"
+	"id":"vote2",
+	"title":"Round 2!",
+	"body":"The final voting stage has started! Use our [special website](http://nonrg1.com/contest.html) to generate command and then `->vote`"
 }

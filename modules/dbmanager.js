@@ -86,7 +86,9 @@ function connect(bot, callback) {
         helpMod.connect(db, client);
         vote.connect(db, client);
 
-        db.collection('transactions').remove({time: {$lt: new Date(new Date() - 60480000)}}).then(res => {
+        let date = new Date();
+        let deletDate = new Date(date.setDate(date.getDate() - 7));
+        db.collection('transactions').remove({time: {$lt: deletDate}}).then(res => {
             console.log(res.result);
         });
 
@@ -437,8 +439,8 @@ function transfer(from, to, args, guild, callback) {
                 + (ratio < 2.5? "You **can** send cards\n" : "You **can not** send cards\n")
                 + (ratio > 0.4? "You **can** receive cards\n" : "You **can not** receive cards\n")
                 + "Max ratio: **2.5**\nMin ratio: **0.4**\n"
-                + "You sent today: **" + dbUser.dailystats.send + "**/15\n"
-                + "You got today: **" + dbUser.dailystats.get + "**/15"));
+                + "You sent today: **" + dbUser.dailystats.send + "**/25\n"
+                + "You got today: **" + dbUser.dailystats.get + "**/25"));
             return;
         }
 
@@ -502,7 +504,7 @@ function transfer(from, to, args, guild, callback) {
                 if(!u2.dailystats) u2.dailystats = {summon: 0, send: 0, claim: 0, get: 0};
                 else if(!u2.dailystats.get) u2.dailystats.get = 0;
 
-                if(u2.dailystats.get > 15) return callback(utils.formatError(dbUser, 
+                if(u2.dailystats.get > 25) return callback(utils.formatError(dbUser, 
                         "Can't send card!",
                         "user **" + u2.username + "** is out of daily trading limit. This user can't get more cards today"));
 
@@ -519,10 +521,10 @@ function transfer(from, to, args, guild, callback) {
                         + "**🍅 to **" + dbUser.username 
                         + "** for sending a card!");
 
-                if(dbUser.dailystats.send === 15)
+                if(dbUser.dailystats.send === 25)
                     callback(utils.formatWarning(from, null, "your **next** transfer will cost **100** Tomatoes"));
-                else if(dbUser.dailystats.send > 15) {
-                    let fee = (dbUser.dailystats.send - 15) * 100;
+                else if(dbUser.dailystats.send > 25) {
+                    let fee = (dbUser.dailystats.send - 25) * 100;
 
                     if(fee > dbUser.exp) return callback(utils.formatError(dbUser, 
                         "Can't send card!",
