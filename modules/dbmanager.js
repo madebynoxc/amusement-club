@@ -4,7 +4,8 @@ module.exports = {
     pay, daily, getQuests, getBestCardSorted, transactions,
     leaderboard_new, difference, dynamicSort, countCardLevels, 
     getCardFile, getDefaultChannel, isAdmin, needsCards,
-    removeCardFromUser, addCardToUser, eval, whohas, block, fav
+    removeCardFromUser, addCardToUser, eval, whohas, block, fav, getUserCards,
+    getAuctionsCards
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -31,6 +32,7 @@ const invite = require('./invite.js');
 const helpMod = require('./help.js');
 const ratioInc = require('./ratioincrease.json');
 const lev = require('js-levenshtein');
+const auctions = require('./auctions.js');
 
 var collections = [];
 fs.readdir('./cards', (err, items) => {
@@ -81,6 +83,7 @@ function connect(bot, callback) {
         inv.connect(db);
         stats.connect(db);
         //cardmanager.updateCards(db);
+        auctions.connect(db);
         invite.connect(db, client);
         helpMod.connect(db, client);
 
@@ -1070,6 +1073,13 @@ function getUserCards(userID, query) {
             }, 
             cards: {"$push": "$cards"}}
         }
+    ]);
+}
+
+function getAuctionsCards(query) {
+    return mongodb.collection('auctions').aggregate([
+        {"$match": {date: {$gte : new Date(new Date().getTime() - (settings.auctionduration))}}},
+        {"$match":query}
     ]);
 }
 

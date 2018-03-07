@@ -10,7 +10,7 @@
 	        },
 	        {
 	            "title": "Commands. Use `->help [command]`",
-	            "description": "->help claim\n->help summon\n->help daily\n->help balance\n->help give\n->help pay\n->help cards\n->help sell\n->help fav\n->help difference\n->help quests\n->help has\n->help whatsnew"
+	            "description": "->help claim\n->help summon\n->help daily\n->help balance\n->help give\n->help pay\n->help cards\n->help sell\n->help fav\n->help difference\n->help quests\n->help has\n->help whatsnew\n->help auctions"
 	        },
 	        {
 	            "title": "Modules. Use `->help [module]`",
@@ -521,12 +521,6 @@
 		"fields": [ ]
 	},
 	{
-		"type": ["auc", "auction"],
-		"title": "About auction",
-		"description": "Command is not available.\nThis function will be available after v1.9.x",
-		"fields": [ ]
-	},
-	{
 		"type": ["tag"],
 		"title": "About tagging",
 		"description": "Command is not available.\nThis function will be available after v1.9.x",
@@ -560,6 +554,37 @@
 			{
 				"title": "To check invite status",
 				"description": "->invite status [server id]"
+			}
+		]
+	},
+	{
+		"type": ["auc", "auctions", "auction"],
+		"title": "About auctions",
+		"description": "You can add cards to the auctions market or bid for an auction.",
+		"fields": [
+			{
+				"title": "Useful to know",
+				"description": "You can combine any filters in any order. If no auction found, bot will tell you that.\nAuction IDs can be found using the `->auctions` command."
+			},
+			{
+				"title": "Get all auctions",
+				"description": "->auctions [filter]"
+			},
+			{
+				"title": "Create an auction for you card",
+				"description": "->auctions sell [card name] [price]"
+			},
+			{
+				"title": "Bidding for an auction",
+				"description": "->auctions bid [auction id] [bidding]"
+			},
+			{
+				"title": "Getting info about auction",
+				"description": "->auctions info [auction id]"
+			},
+			{
+				"title": "Getting history of an auction",
+				"description": "->auctions history [auction id]"
 			}
 		]
 	}
