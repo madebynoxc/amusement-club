@@ -11,6 +11,7 @@ const stats = require('./modules/stats.js');
 const inventory = require('./modules/inventory.js');
 const changelog = require('./help/updates.json');
 const helpMod = require('./modules/help.js');
+const vote = require('./modules/vote.js');
 const invite = require('./modules/invite.js');
 const crystal = require('./modules/crystal.js');
 const auctions = require('./modules/auctions.js');
@@ -151,6 +152,9 @@ function getCommand(user, channel, guild, message, event, callback) {
         switch(sb) {
             case 'help': 
                 helpMod.processRequest(user, channel, cnt, callback);
+                return;
+            case 'vote': 
+                vote.processRequest(user, channel, cnt, callback);
                 return;
             case 'cl': 
             case 'claim': 
