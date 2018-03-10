@@ -249,7 +249,7 @@ function getCommand(user, channel, guild, message, event, callback) {
                 else {
                   dbManager.getCards(user, cnt, (data, found) => {
                       if(!found) callback(data);
-                      else callback(react.addNew(user, data));
+                      else callback(react.addNew(user, data, null, "cards"));
                   });
                 }
                 return;

@@ -22,17 +22,21 @@ function setBot(b) {
     bot = b;
 }
 
-function addNew(user, data, dif = "") {
+function addNew(user, data, dif = "", type) {
     removeExisting(user.id);
     //var flt = setFiltering(filter);
     var pgn = {
         "page": 1, 
-        "user": user, 
-        "data": nameCardList(data),
+        "user": user,
+        "type": type,
+        "data": data,
         "dif": dif
     };
     paginations.push(pgn);
-    return buildCardList(pgn);
+    switch(type) {
+        case "cards": return buildCardList(pgn);
+        case "auctions": return buildAuctionList(pgn);
+    }
 }
 
 function setupPagination(message, author) {
@@ -75,12 +79,12 @@ function processEmoji(userID, channelID, messageID, emoji) {
         case '⬅':
             if(pgn.page > 1 ) {
                 pgn.page--;
-                bot.editMessage({channelID: channelID, messageID: messageID, embed: buildCardList(pgn)});
+                bot.editMessage({channelID: channelID, messageID: messageID, embed: buildList(pgn)});
             }
             break;
         case '➡':
             pgn.page++;
-            bot.editMessage({channelID: channelID, messageID: messageID, embed: buildCardList(pgn)});
+            bot.editMessage({channelID: channelID, messageID: messageID, embed: buildList(pgn)});
             break;
     }
     return true;
@@ -111,23 +115,82 @@ function removeExisting(userID) {
 }
 
 function buildCardList(pgn) {
-    if(!pgn.data, pgn.data.length == 0)
+    var data = nameCardList(pgn.data);
+    if(!data, data.length == 0)
         return "**" + pgn.user.username + "**, no cards found matching request \n";
 
-    let pages = Math.floor(pgn.data.length / 15) + 1;
+    let pages = Math.ceil(data.length / 15);
     if(pgn.page > pages) pgn.page = pages;
 
-    var max = Math.min((pgn.page * 15), pgn.data.length);
+    var max = Math.min((pgn.page * 15), data.length);
     let resp = "";
     let emb = new discord.RichEmbed();
 
-    if(pgn.dif) emb.setTitle("**" + pgn.user.username + "**, **" + pgn.dif + "** has following unique cards (**" + pgn.data.length + "** results):");
-    else emb.setTitle("**" + pgn.user.username + "**, you have (**" + pgn.data.length + "** results):");
+    if(pgn.dif) emb.setTitle("**" + pgn.user.username + "**, **" + pgn.dif + "** has following unique cards (**" + data.length + "** results):");
+    else emb.setTitle("**" + pgn.user.username + "**, you have (**" + data.length + "** results):");
 
-    emb.setDescription(pgn.data.slice(((pgn.page - 1) * 15), max).join('\n'));
+    emb.setDescription(data.slice(((pgn.page - 1) * 15), max).join('\n'));
     if(pages > 1) emb.setFooter("> Page "+ pgn.page +" of " + pages);
     emb.setColor("#77B520");
     return emb;
+}
+
+function buildAuctionList(pgn) {
+    var data = nameAuctionList(pgn.data);
+    if(!data, data.length == 0)
+        return "**" + pgn.user.username + "**, there is currently no auctions \n";
+
+    let pages = Math.ceil(data.length / 15);
+    if(pgn.page > pages) pgn.page = pages;
+
+    var max = Math.min((pgn.page * 15), data.length);
+    let resp = "";
+    let emb = new discord.RichEmbed();
+
+    emb.setTitle("**" + pgn.user.username + "**, here are all the current auctions (**" + data.length + "** results):");
+    
+    emb.setDescription(data.slice(((pgn.page - 1) * 15), max).join('\n'));
+    if(pages > 1) emb.setFooter("> Page "+ pgn.page +" of " + pages);
+    emb.setColor("#77B520");
+    return emb;
+}
+
+function nameAuctionList(arr) {
+    let res = [];
+    arr.map(auction => {
+        let name = auctionNameCard(auction);
+        res.push(name);
+    });
+    
+    return res;
+}
+
+function buildList(pgn) {
+    switch(pgn.type) {
+        case "cards": return buildCardList(pgn);
+        case "auctions": return buildAuctionList(pgn);
+    }
+}
+
+function auctionNameCard(auction) {
+    try {
+        let res = "[";
+
+        if(auction.card.collection == "halloween") res += "H";
+        else if(auction.card.collection == "valentine") res += "V";
+        else {
+            for(let i=0; i<parseInt(auction.card.level); i++)
+                res += "★"; 
+        }
+        res += "]  ";
+        if(auction.card.craft) res += "[craft]  ";
+        if(auction.card.collection == "christmas") res += "[xmas]  ";
+        res += utils.toTitleCase(auction.card.name.replace(/_/g, " "));
+        res += ' - **' + auction.bid + '** 🍅 <' + auction.auctionid + '>';
+        
+        return res;
+    } catch (e) {logger.error(e);}
+    return null;
 }
 
 function nameCardList(arr) {

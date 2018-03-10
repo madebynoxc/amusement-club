@@ -831,7 +831,7 @@ function difference(discUser, targetID, args, callback) {
             let dbUser2 = objs2[0]._id;
             let dif = cardsU2.filter(x => !(x.fav && x.amount == 1) && cardsU1.filter(y => utils.cardsMatch(x, y)) == 0);
             if(dif.length > 0) 
-                callback(listing.addNew(discUser, dif, dbUser2.username));
+                callback(listing.addNew(discUser, dif, dbUser2.username, "cards"));
             else
                 callback("**" + dbUser2.username + "** has no any unique cards for you\n");
         });
@@ -931,7 +931,7 @@ function needsCards(user, args, callback) {
             let dif = res.filter(x => cards.filter(y => utils.cardsMatch(x, y)) == 0);
             
             if(dif.length > 0) 
-                callback(listing.addNew(user, dif, '--Database--'));
+                callback(listing.addNew(user, dif, '--Database--', "cards"));
             else if (cards.length == 0)
                 callback(utils.formatError(user, null, "No cards were found that match your request"));
             else
@@ -1082,7 +1082,10 @@ function getUserCards(userID, query) {
 
 function getAuctionsCards(query) {
     return mongodb.collection('auctions').aggregate([
-        {"$match": {date: {$gte : new Date(new Date().getTime() - (settings.auctionduration))}}},
+        {"$match": {
+            date: {$gte : new Date(new Date().getTime() - (settings.auctionduration))},
+            finished: 0,
+        }},
         {"$match":query}
     ]);
 }
