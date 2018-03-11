@@ -7,5 +7,6 @@
     "botcolor": "f426d5",
     "logpath": "C:/log/amusement-club/",
 
+    "auctionduration": 12000000,
     "cardprice": [ 50, 75, 100, 150, 300]
 }

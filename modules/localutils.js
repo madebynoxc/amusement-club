@@ -20,9 +20,11 @@ module.exports = {
     formatWarning,
     getRequestFromFilters,
     getRequestFromFiltersNoPrefix,
+    getRequestFromFiltersWithPrefix,
     getUserID,
     getRatio,
-    getCardQuery
+    getCardQuery,
+    formatCardName
 }
 
 const discord = require("discord.js");
@@ -194,6 +196,10 @@ function getRequestFromFilters(args) {
     return getRequestFromFiltersWithSpecifiedPrefix(args, "cards.");
 }
 
+function getRequestFromFiltersWithPrefix(prefix, args) {
+    return getRequestFromFiltersWithSpecifiedPrefix(args, prefix);
+}
+
 function getRequestFromFiltersNoPrefix(args) {
     return getRequestFromFiltersWithSpecifiedPrefix(args, "");
 }
@@ -234,27 +240,28 @@ function getRatio(user) {
     return (user.sends || 1)/(user.gets || 1);
 }
 
-function formatError(user, title, body) {
-    return getEmbed(user, title, body, "#f51d1d");
+function formatError(user, title, body, footer) {
+    return getEmbed(user, title, body, "#f51d1d", footer);
 }
 
-function formatConfirm(user, title, body) {
-    return getEmbed(user, title, body, "#77B520");
+function formatConfirm(user, title, body, footer) {
+    return getEmbed(user, title, body, "#77B520", footer);
 }
 
-function formatInfo(user, title, body) {
-    return getEmbed(user, title, body, "#15aaec");
+function formatInfo(user, title, body, footer) {
+    return getEmbed(user, title, body, "#15aaec", footer);
 }
 
-function formatWarning(user, title, body) {
-    return getEmbed(user, title, body, "#ffc711");
+function formatWarning(user, title, body, footer) {
+    return getEmbed(user, title, body, "#ffc711", footer);
 }
 
-function getEmbed(user, title, body, color) {
+function getEmbed(user, title, body, color, footer) {
     let emb = new discord.RichEmbed();
     if(title) emb.setTitle(title);
     if(user) emb.setDescription("**" + user.username + "**, " + body);
     else emb.setDescription(body);
+    if(footer) emb.setFooter(footer);
     emb.setColor(color);
     return emb;
 }
@@ -278,6 +285,10 @@ function getUserID(inp) {
     }
     ret.input = inp;
     return ret;
+}
+
+function formatCardName(cardName) {
+    return toTitleCase(cardName.replace(/_/g, " "));
 }
 
 // db.getCollection('users').aggregate([

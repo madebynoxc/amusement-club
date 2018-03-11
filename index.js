@@ -14,6 +14,7 @@ const helpMod = require('./modules/help.js');
 const vote = require('./modules/vote.js');
 const invite = require('./modules/invite.js');
 const crystal = require('./modules/crystal.js');
+const auctions = require('./modules/auctions.js');
 var bot, curgame = 0;
 
 var cooldownList = [];
@@ -31,6 +32,7 @@ _init();
 function _init() {
     
     react.setBot(bot);
+    auctions.setBot(bot);
 
     bot.on("ready", (event) => {
         console.log('[Discord.IO] Logged in as %s - %s\n', bot.username, bot.id);
@@ -247,7 +249,7 @@ function getCommand(user, channel, guild, message, event, callback) {
                 else {
                   dbManager.getCards(user, cnt, (data, found) => {
                       if(!found) callback(data);
-                      else callback(react.addNew(user, data));
+                      else callback(react.addNew(user, data, null, "cards"));
                   });
                 }
                 return;
@@ -420,6 +422,14 @@ function getCommand(user, channel, guild, message, event, callback) {
                             mes += getUpdateLog(i) + "\n\n";
                     } else mes = getUpdateLog(0);
                     callback(mes);
+                }
+                return;
+            case 'auction':
+            case 'auctions':
+            case 'auc':
+                if(channelType == 1) callback('This command is available only in bot channel');
+                else {
+                    auctions.processRequest(user, cnt, callback);
                 }
                 return;
         } 

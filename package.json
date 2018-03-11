@@ -16,7 +16,8 @@
     "lodash": "^4.17.4",
     "mkdirp": "^0.5.1",
     "mongodb": "^2.2.30",
-    "s3": "^4.4.0"
+    "s3": "^4.4.0",
+    "timeago.js": "^3.0.2"
   },
   "repository": "https://github.com/NoxCaos/amusement-club.git"
 }
