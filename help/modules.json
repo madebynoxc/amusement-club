@@ -564,7 +564,7 @@
 		"fields": [
 			{
 				"title": "Useful to know",
-				"description": "You can combine any filters in any order. If no auction found, bot will tell you that.\nAuction IDs can be found using the `->auctions` command."
+				"description": "You can combine any filters in any order. If no auction found, bot will tell you that.\nAuction IDs can be found using the `->auctions` command (ie. `xxxxxx`)."
 			},
 			{
 				"title": "Get all auctions",
