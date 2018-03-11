@@ -54,6 +54,33 @@ async function checkAuctions() {
                 await ucollection.findOne({ discord_id: element.lastbidder }).then(async (res) => {
                     if(res.exp >= element.bid) {
                         let cards = dbManager.addCardToUser(res.cards, element.card);
+
+                        let t1 = {
+                            from: '**Auction**',
+                            from_id: element.seller,
+                            to: null,
+                            to_id: element.lastbidder,
+                            card: element.card,
+                            guild: '**Auction**',
+                            guild_id: -1,
+                            time: new Date(),
+                            auction: 1
+                        }
+                        
+                        let t2 = {
+                            from: '**Auction**',
+                            from_id: element.lastbidder,
+                            to: null,
+                            to_id: element.seller,
+                            exp: element.bid,
+                            guild: '**Auction**',
+                            guild_id: -1,
+                            time: new Date(),
+                            auction: 1
+                        }
+    
+                        mongodb.collection('transactions').insert([t1,t2]);
+
                         await ucollection.update( 
                             { discord_id: element.lastbidder},
                             {
@@ -80,6 +107,94 @@ async function checkAuctions() {
                                 }
                             });
                         });
+                    } else {
+                        var finished = false;
+                        await bcollection.aggregate([
+                            {"$match": {auctionid: element.auctionid}},
+                            {"$lookup": {
+                                from: "users",
+                                localField: "bidder",
+                                foreignField: "discord_id",
+                                as: "user",
+                            }}
+                        ]).toArray(async (err, objs) => {
+                            await objs.forEach(async (history) => {
+                                if(finished) return;
+                                
+                                if (history.user[0].exp >= history.bid) {
+                                    finished = true;
+                                    let cards = dbManager.addCardToUser(history.user[0].cards, element.card);
+
+                                    let t1 = {
+                                        from: 'Auction',
+                                        from_id: element.seller,
+                                        to: null,
+                                        to_id: history.bidder,
+                                        card: element.card,
+                                        guild: '**Auction**',
+                                        guild_id: -1,
+                                        time: new Date(),
+                                        auction: 1
+                                    }
+                                    let t2 = {
+                                        from: 'Auction',
+                                        from_id: history.bidder,
+                                        to: null,
+                                        to_id: element.seller,
+                                        exp: history.bid,
+                                        guild: 'Auction',
+                                        guild_id: -1,
+                                        time: new Date(),
+                                        auction: 1
+                                    }
+                
+                                    mongodb.collection('transactions').insert([t1,t2]);
+
+                                    await ucollection.update(
+                                        { discord_id: history.bidder },
+                                        {
+                                            $set: { cards: cards },
+                                            $inc: { exp: -history.bid }
+                                        },
+                                    ).then(async (u) => {
+                                        await ucollection.update(
+                                            { discord_id: element.seller },
+                                            {
+                                                $inc: { exp: history.bid }
+                                            },
+                                        );
+                                        bot.createDMChannel(history.bidder, (err, res) => {
+                                            if (!err) {
+                                                bot.sendMessage({ to: res.id, message: "You won auction for **" + utils.formatCardName(element.card.name) + "** for **" + history.bid + "** 🍅" });
+                                            }
+                                        });
+                                        bot.createDMChannel(element.seller, (err, res) => {
+                                            if (!err) {
+                                                bot.sendMessage({ to: res.id, message: "You won **" + history.bid + "** 🍅 for **" + utils.formatCardName(element.card.name) + "**" });
+                                            }
+                                        });
+                                    });
+                                }
+                            });
+
+                            if(!finished) {
+                                await ucollection.findOne({ discord_id: element.seller }).then(async (res) => {
+                                    let cards = dbManager.addCardToUser(res.cards, element.card);
+                                    await ucollection.update( 
+                                        { discord_id: element.seller},
+                                        {
+                                            $set: {cards: cards},
+                                        },
+                                    ).then(async (u)=>{
+                                        bot.createDMChannel(element.seller, (err, res) => {
+                                            if(!err) {
+                                                bot.sendMessage({to: res.id, message: "Nobody bid your auction for **" + utils.formatCardName(element.card.name) + "**. You got it back."});
+                                            }
+                                        });
+                                    });
+                                });
+                            }
+                        });
                     }
                 });
             } else {
@@ -93,7 +208,7 @@ async function checkAuctions() {
                     ).then(async (u)=>{
                         bot.createDMChannel(element.seller, (err, res) => {
                             if(!err) {
-                                bot.sendMessage({to: res.id, message: "Nobody bidded your auction for **" + utils.formatCardName(element.card.name) + "**. You got it back."});
+                                bot.sendMessage({to: res.id, message: "Nobody bid your auction for **" + utils.formatCardName(element.card.name) + "**. You got it back."});
                             }
                         });
                     });
@@ -136,7 +251,7 @@ function processRequest(user, args, callback) {
                     let auction = objs[0];
                     let bidder = users[0];
                     if(bid > bidder.exp) return callback(utils.formatError(user, "You don't have enough 🍅 to bid", "you're not enough rich to bid **" + bid + "** 🍅"));
-                    if(auction.seller == user.id) return callback(utils.formatError(user, "You can bid to this auction", "why would you buy your card?"));
+                    if(auction.seller == user.id) return callback(utils.formatError(user, "You can bid this auction", "why would you buy your card?"));
                     if(bid > auction.bid) {
                         auction.bid = bid;
                         auction.lastbidder = user.id;
@@ -150,8 +265,8 @@ function processRequest(user, args, callback) {
                             bidder: user.id,
                             date: new Date()
                         })
-                        let remainingTime = (new Date(auction.date.getTime() + settings.auctionduration).getTime() - new Date().getTime())/1000;
-                        return callback(utils.formatConfirm(user, null, "you bidded " + bid + " 🍅 for " + utils.toTitleCase(auction.card.name.replace(/_/g, " ")) + "!", "Remaining time for the auction : " + utils.secondsToString(remainingTime)));
+                        let auctionEnd = new Date(auction.date.getTime() + settings.auctionduration).getTime();
+                        return callback(utils.formatConfirm(user, null, "you bid " + bid + " 🍅 for " + utils.toTitleCase(auction.card.name.replace(/_/g, " ")) + "!", "Auction ends " + timeago().format(auctionEnd), dbManager.getCardFile(auction.card)));
                     } else {
                         return callback(utils.formatError(user, null, "you have to bid higher than the bidding"))
                     }
@@ -177,28 +292,36 @@ function processRequest(user, args, callback) {
                     if(!objs[0]) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
                     let card = dbManager.getBestCardSorted(cards, name)[0];
-                    cards = dbManager.removeCardFromUser(cards, card);
-                    ucollection.update(
-                        { discord_id: user.id },
-                        {
-                            $set: {cards: cards },
+                    ucollection.findOne({ discord_id: user.id }).then(async (res) => {
+                        if(res.exp >= card.level * 25) {
+                            cards = dbManager.removeCardFromUser(cards, card);
+                            ucollection.update(
+                                { discord_id: user.id },
+                                {
+                                    $set: {cards: cards },
+                                    $inc: {exp: -card.level * 25}
+                                }
+                            ).then(e => {
+                                acollection.insert({
+                                    seller: user.id,
+                                    bid: price,
+                                    date: new Date(),
+                                    card: card,
+                                    lastbidder: -1,
+                                    auctionid: generateRandomAuctionId(),
+                                    finished: 0
+                                });
+                                let name = utils.formatCardName(card.name);
+                                callback(utils.formatConfirm(user, "Card put in the auctions market", "you added **" + name + "** to market for **" + price + "** 🍅\nYou have been debited of **" + card.level * 25 + "** 🍅"));
+                                startTimer();
+                            });
+                        } else {
+                            return callback(utils.formatError(user, null, "you don't have enough 🍅 to create an auction. It costs **" + card.level * 25 + "** to create an auction for **" + utils.formatCardName(card.name) + "**"))
                         }
-                    ).then(e => {
-                        acollection.insert({
-                            seller: user.id,
-                            bid: price,
-                            date: new Date(),
-                            card: card,
-                            lastbidder: -1,
-                            auctionid: generateRandomAuctionId(),
-                            finished: 0
-                        });
-                        let name = utils.formatCardName(card.name);
-                        callback(utils.formatConfirm(user, "Card put in the auctions market", "you added **" + name + "** to market for **" + price + "** 🍅"));
-                        startTimer();
                     });
                 });
             });
+            
             break;
         case 'info':
             var auctionId = "";
@@ -210,8 +333,8 @@ function processRequest(user, args, callback) {
             ]).toArray((err, objs) => {
                 if(!objs[0]) return callback(utils.formatError(user, "Can't find auction", "can't find auction matching that id"));
                 let auction = objs[0];
-                let remainingTime = (new Date(auction.date.getTime() + settings.auctionduration).getTime() - new Date().getTime())/1000; 
-                callback(utils.formatInfo(null, "Auction for " + utils.formatCardName(auction.card.name), "Card **" + utils.formatCardName(auction.card.name) + "** is bidded for **" + auction.bid + "** 🍅\nAuction ends in " + utils.secondsToString(remainingTime)));
+                let auctionEnd = new Date(auction.date.getTime() + settings.auctionduration).getTime();
+                callback(utils.formatInfo(null, "Auction for " + utils.formatCardName(auction.card.name), "Card **" + utils.formatCardName(auction.card.name) + "** is bid for **" + auction.bid + "** 🍅\nAuction ends " + timeago().format(auctionEnd)));
             });
             break;
         case 'history':

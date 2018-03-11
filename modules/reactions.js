@@ -10,6 +10,8 @@ const dbManager = require("./dbmanager.js");
 const utils = require('./localutils.js');
 const logger = require('./log.js');
 const discord = require("discord.js");
+const timeago = require("timeago.js");
+const settings = require('../settings/general.json');
 
 fs.readdir('./cards', (err, items) => {
     if(err) console.log(err);
@@ -175,6 +177,13 @@ function buildList(pgn) {
 function auctionNameCard(auction) {
     try {
         let res = "[";
+        let h = Math.abs(utils.getHoursDifference(new Date(auction.date.getTime() + settings.auctionduration)));
+        let m = Math.abs(utils.getMinutesDifference(new Date(auction.date.getTime() + settings.auctionduration)));
+        if(m >= 60) {
+            res += h + 'h] ['
+        } else {
+            res += m + 'm] ['
+        }
 
         if(auction.card.collection == "halloween") res += "H";
         else if(auction.card.collection == "valentine") res += "V";
@@ -186,7 +195,8 @@ function auctionNameCard(auction) {
         if(auction.card.craft) res += "[craft]  ";
         if(auction.card.collection == "christmas") res += "[xmas]  ";
         res += utils.toTitleCase(auction.card.name.replace(/_/g, " "));
-        res += ' - **' + auction.bid + '** 🍅 <' + auction.auctionid + '>';
+        let auctionEnd = new Date(auction.date.getTime() + settings.auctionduration).getTime() - new Date().getTime();
+        res += ' 🔹 ' + auction.bid + ' 🍅 `' + auction.auctionid + '`';
         
         return res;
     } catch (e) {logger.error(e);}
