@@ -365,12 +365,17 @@ function getCommand(user, channel, guild, message, event, callback) {
                 return;
             case 'whohas':
                 if(dbManager.isAdmin(user.id)) {
-                    if(channelType == 1) callback('This operation is possible in bot channel only');
-                    else {
-                        dbManager.whohas(user, guild, cnt, (text) => {
-                            callback(text);
-                        });
-                    }
+                    dbManager.whohas(user, guild, cnt, (text) => {
+                        callback(text);
+                    });
+                }
+                return;
+            case 'track':
+                if(dbManager.isAdmin(user.id)) {
+                    let tusr = getUserID(cnt.shift());
+                    dbManager.track(user, tusr, channel, (text) => {
+                        callback(text);
+                    });
                 }
                 return;
             case 'stat':

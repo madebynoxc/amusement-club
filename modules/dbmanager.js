@@ -4,7 +4,7 @@ module.exports = {
     pay, daily, getQuests, getBestCardSorted, transactions,
     leaderboard_new, difference, dynamicSort, countCardLevels, 
     getCardFile, getDefaultChannel, isAdmin, needsCards,
-    removeCardFromUser, addCardToUser, eval, whohas, block, fav
+    removeCardFromUser, addCardToUser, eval, whohas, block, fav, track
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -558,6 +558,8 @@ function transfer(from, to, args, guild, callback) {
                     }
 
                     mongodb.collection('transactions').insert(transaction);
+                    report(dbUser, transaction);
+                    report(u2, transaction);
 
                     collection.update(
                         { discord_id: from.id }, { 
@@ -649,6 +651,11 @@ function pay(from, to, args, guild, callback) {
                     guild_id: guild.id,
                     time: new Date()
                 };
+
+                dbUser.exp -= amount;
+                user2.exp += amount;
+                report(dbUser, transaction);
+                report(user2, transaction);
 
                 mongodb.collection('transactions').insert(transaction);
                 collection.update({ discord_id: from }, {$inc: {exp: -amount, sends: ratio }});
@@ -1055,6 +1062,31 @@ function block(user, targetID, args, callback) {
             });
         });
     });
+}
+
+function track(user, targetID, channel, callback) {
+    let ucollection = mongodb.collection('users');
+    ucollection.findOne({discord_id: user.id}).then((dbUser) => {
+        var remove = dbUser.tracked != null;
+        var ch = remove? null : channel.id;
+        ucollection.update({discord_id: user.id}, {$set: {tracked: ch}}).then(() => {
+            if(remove) callback(utils.formatConfirm(null, "Success", "Transactions of **" + user.username + "** are NOT reported now"));
+            else callback(utils.formatConfirm(null, "Success", "Transactions of **" + user.username + "** are now reported in this channel"));
+        });
+    });
+}
+
+function report(dbUser, transaction) {
+    if(dbUser.tracked) {
+        var tr = "**From:** " + transaction.from + " (" + transaction.from_id + ")\n";
+        tr += "**To:** " + transaction.to + " (" + transaction.to_id + ")\n";
+        tr += transaction.card? ("**Card:** " + transaction.card.name + " [" + transaction.card.collection + "]\n"): "";
+        tr += transaction.exp? ("**Tomatoes:** " + transaction.exp + "\n"): "";
+        tr += "**Guild:** " + transaction.guild + "\n";
+        tr += "**" + dbUser.username + "'s balance:** " + Math.round(dbUser.exp);
+        var res = utils.formatInfo(null, "Tracking report", tr);
+        client.sendMessage({to: dbUser.tracked, embed: res});
+    }
 }
 
 function getUserCards(userID, query) {
