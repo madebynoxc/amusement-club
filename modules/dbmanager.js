@@ -1066,12 +1066,12 @@ function block(user, targetID, args, callback) {
 
 function track(user, targetID, channel, callback) {
     let ucollection = mongodb.collection('users');
-    ucollection.findOne({discord_id: user.id}).then((dbUser) => {
+    ucollection.findOne({discord_id: targetID}).then((dbUser) => {
         var remove = dbUser.tracked != null;
         var ch = remove? null : channel.id;
-        ucollection.update({discord_id: user.id}, {$set: {tracked: ch}}).then(() => {
-            if(remove) callback(utils.formatConfirm(null, "Success", "Transactions of **" + user.username + "** are NOT reported now"));
-            else callback(utils.formatConfirm(null, "Success", "Transactions of **" + user.username + "** are now reported in this channel"));
+        ucollection.update({discord_id: targetID}, {$set: {tracked: ch}}).then(() => {
+            if(remove) callback(utils.formatConfirm(null, "Success", "Transactions of **" + dbUser.username + "** are NOT reported now"));
+            else callback(utils.formatConfirm(null, "Success", "Transactions of **" + dbUser.username + "** are now reported in this channel"));
         });
     });
 }
