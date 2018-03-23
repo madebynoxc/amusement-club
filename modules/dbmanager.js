@@ -696,6 +696,8 @@ function sell(user, args, callback) {
                 let name = utils.toTitleCase(match.name.replace(/_/g, " "));
                 callback(utils.formatConfirm(user, "Card sold to bot", "you sold **" + name + "** for **" + exp + "** 🍅"));
 
+                report(dbUser, null, match);
+
                 mongodb.collection('users').update(
                     { discord_id: user.id }, {$set: {dailystats: dbUser.dailystats}}
                 );
@@ -1076,16 +1078,22 @@ function track(user, targetID, channel, callback) {
     });
 }
 
-function report(dbUser, transaction) {
+function report(dbUser, transaction, soldcard) {
     if(dbUser.tracked) {
-        var tr = "**From:** " + transaction.from + " (" + transaction.from_id + ")\n";
-        tr += "**To:** " + transaction.to + " (" + transaction.to_id + ")\n";
-        tr += transaction.card? ("**Card:** " + transaction.card.name + " [" + transaction.card.collection + "]\n"): "";
-        tr += transaction.exp? ("**Tomatoes:** " + transaction.exp + "\n"): "";
-        tr += "**Guild:** " + transaction.guild + "\n";
-        tr += "**" + dbUser.username + "'s balance:** " + Math.round(dbUser.exp);
-        var res = utils.formatInfo(null, "Tracking report", tr);
-        client.sendMessage({to: dbUser.tracked, embed: res});
+        if(transaction) {
+            var tr = "**From:** " + transaction.from + " (" + transaction.from_id + ")\n";
+            tr += "**To:** " + transaction.to + " (" + transaction.to_id + ")\n";
+            tr += transaction.card? ("**Card:** " + transaction.card.name + " [" + transaction.card.collection + "]\n"): "";
+            tr += transaction.exp? ("**Tomatoes:** " + transaction.exp + "\n"): "";
+            tr += "**Guild:** " + transaction.guild + " (" + transaction.guild_id + ")\n";
+            tr += "**" + dbUser.username + "'s balance:** " + Math.round(dbUser.exp);
+            let res = utils.formatInfo(null, "Tracking report", tr);
+            client.sendMessage({to: dbUser.tracked, embed: res});
+        } else {
+            let res = utils.formatInfo(null, "Tracking report", "**" + dbUser.username 
+                + "** just sold card **" + soldcard.name + "[" + soldcard.collection +"]**");
+            client.sendMessage({to: dbUser.tracked, embed: res});
+        }
     }
 }
 
