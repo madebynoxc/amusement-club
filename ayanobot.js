@@ -249,5 +249,5 @@ setInterval(() => {
 }, 310000);
 
 function setPic(index, callback) {
-    bot.editServer( {"serverID":"430048738254258177", "icon":images[index]}, callback);
+    bot.editServer( {"serverID":"351871492536926210", "icon":images[index]}, callback);
 }
