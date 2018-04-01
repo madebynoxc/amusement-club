@@ -185,7 +185,10 @@ function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
         }
     }
 
-    if(keywords.length > 0) query[prefix + 'name'] = new RegExp("(_|^)" + keywords.join('_'), 'ig');
+    if(keywords.length > 0) {
+        let keywordString = keywords.join('_').replace(/\\/g, '');
+        query[prefix + 'name'] = new RegExp("(_|^)" + keywordString, 'ig');
+    } 
 
     return query;
 }

@@ -101,6 +101,9 @@ function claim(user, guildID, arg, callback) {
     ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
         if(!dbUser) return;
 
+        if(_.sample([0,1,2]) === 0)
+            return getRandomJoke(dbUser, callback);
+
         let any = false;
         let promo = false;
         let amount = 1;
@@ -1200,7 +1203,7 @@ function countCardLevels(cards) {
 function getBestCardSorted(cards, n) {
     if(cards.length == 0) return [];
     
-    let name = n;
+    let name;
     if(n instanceof RegExp) 
         name = n.toString().split('/')[1].replace('(_|^)', '').replace(/\?/g, '');
     else name = n.replace(' ', '_');
@@ -1215,6 +1218,7 @@ function getBestCardSorted(cards, n) {
     });
 
     if(filtered.length > 0) {
+        name = name.replace(/\\/g, '');
         var re = new RegExp('^' + name);
         let supermatch = filtered.filter(c => re.exec(c.name.toLowerCase()));
         if(supermatch.length > 0) { 
@@ -1279,4 +1283,15 @@ function removeCardFromUser(usercards, card) {
 
 function getRandomCard(cards) {
     return cards[Math.floor(Math.random()*cards.length)];
+}
+
+function getRandomJoke(user, callback) {
+    fs.readdir('./april', (err, items) => {
+        if(err) console.log(err);
+
+        let item = _.sample(items);
+        console.log(item);
+        let name = item.split('.')[0].replace(/_/g, " ");
+        callback("**" + user.username + "** you got **" + name + "**!", './april/' + item);
+    });
 }
