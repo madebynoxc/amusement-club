@@ -229,24 +229,26 @@ function other(args) {
     }
 }
 
-const images = require('./serverpics.json');
+function startChanging() {
+    let images = require('./serverpics.json');
 
-setInterval(() => {
-    console.log("set pic");
-    setPic(1, (err) => {
-        setTimeout(() => {
-            setPic(0);
-        }, 3000)
-    });
-}, 100000);
+    setInterval(() => {
+        console.log("set pic");
+        setPic(1, (err) => {
+            setTimeout(() => {
+                setPic(0);
+            }, 3000)
+        });
+    }, 100000);
 
-setInterval(() => {
-    setPic(2, () => {
-        setTimeout(() => {
-            setPic(0);
-        }, 3000)
-    });
-}, 310000);
+    setInterval(() => {
+        setPic(2, () => {
+            setTimeout(() => {
+                setPic(0);
+            }, 3000)
+        });
+    }, 310000);
+}
 
 function setPic(index, callback) {
     bot.editServer( {"serverID":"351871492536926210", "icon":images[index]}, callback);
