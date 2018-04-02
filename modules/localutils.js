@@ -157,7 +157,7 @@ function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
             if(el === "craft") query[prefix + 'craft'] = false; 
             else if(el === "multi") query[prefix + 'amount'] = {$eq: 1};
             else if(el === "gif") query[prefix + 'animated'] = false;
-            else if(el === "fav") query[prefix + 'fav'] = false;
+            else if(el === "fav") query[prefix + 'fav'] = {$in: [null, false]};
             else {
                 col = collections.filter(c => c.includes(el))[0];
                 if(col) collectionExclude.push(col);

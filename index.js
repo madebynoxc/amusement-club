@@ -132,8 +132,8 @@ function getCommand(user, channel, guild, message, event, callback) {
     var channelType = channel? 1 : 0; //0 - DM, 1 - channel, 2 - bot channel
     if(channelType == 1) {
         if(channel.name.includes('bot')) channelType = 2;
-        dbManager.addXP(user, message.length / 20, 
-            (mes) => callback(mes));
+        // dbManager.addXP(user, message.length / 20, 
+        //     (mes) => callback(mes));
     }
 
     if(message.startsWith(settings.botprefix)) {

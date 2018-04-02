@@ -99,7 +99,23 @@ function connect(bot, callback) {
 function claim(user, guildID, arg, callback) {
     let ucollection = mongodb.collection('users');
     ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
-        if(!dbUser) return;
+        if(!dbUser) {
+            ucollection.update( { discord_id: user.id},
+                {
+                    $set: { 
+                        discord_id: user.id,
+                        username: user.username,
+                        cards: [],
+                        exp: 2000,
+                        gets: 50,
+                        sends: 50
+                    },
+                }, { upsert: true }
+            ).then(() => {
+                claim(user, guildID, arg, callback);
+            });
+            return;
+        }
 
         // if(_.sample([0,1,2]) === 0)
         //     return getRandomJoke(dbUser, callback);
@@ -294,7 +310,6 @@ function addXP(user, amount, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: user.id}).then((res) => {
         if(res) {
-            //let increment = res.hero? {exp: amount, 'hero.exp': amount * .01} : 
             amount = heroes.getHeroEffect(res, 'addXP', amount);
             collection.update( 
                 { discord_id: user.id},
@@ -303,9 +318,7 @@ function addXP(user, amount, callback) {
                     $inc: {exp: amount}
                 },
                 { upsert: true }
-            ).then((u)=>{
-                quest.checkXP(res, (mes)=>{callback(mes)});
-            });
+            );
         } else {
             collection.update( { discord_id: user.id},
                 {
@@ -313,7 +326,7 @@ function addXP(user, amount, callback) {
                         discord_id: user.id,
                         username: user.username,
                         cards: [],
-                        exp: 300,
+                        exp: 2000,
                         gets: 50,
                         sends: 50
                     },
