@@ -101,8 +101,8 @@ function claim(user, guildID, arg, callback) {
     ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
         if(!dbUser) return;
 
-        if(_.sample([0,1,2]) === 0)
-            return getRandomJoke(dbUser, callback);
+        // if(_.sample([0,1,2]) === 0)
+        //     return getRandomJoke(dbUser, callback);
 
         let any = false;
         let promo = false;
