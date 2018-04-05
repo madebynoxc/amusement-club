@@ -13,6 +13,7 @@ function connect(db) {
 function processRequest(user, cmd, args, callback) {
     var req = args.shift();
     if (cmd !== "trans" && cmd !== "transactions") {
+        //Should be got, gets, sent or sends
         req = cmd;
     }
 
@@ -34,6 +35,7 @@ function processRequest(user, cmd, args, callback) {
 function formatTransactions(res, userid) {
     let count = 0;
     let resp = "";
+    //Try catch used to limit the .map to 20 iterations
     try {
         res.map(trans => {
             if (count >= 20) throw BreakException;
@@ -42,12 +44,11 @@ function formatTransactions(res, userid) {
             let timediff = (hrs < 1) ? (mins + "m") : (hrs + "h");
             if (hrs < 1 && mins < 1) timediff = "just now";
             let isget = trans.to_id === userid;
-            //«, »
             resp += "[" + timediff + "] ";
-            resp += isget ? "«" : "»";
+            resp += isget ? "<~~  ~~" : "~~  ~~>";
             resp += " **" + (trans.exp ? (trans.exp + "🍅") : utils.toTitleCase(trans.card.name.replace(/_/g, " "))) + "** ";
-            resp += isget ? "from" : "to";
-            resp += " **" + trans.from + "** in **" + trans.guild + "**\n";
+            resp += isget ? "from **" + trans.from + "**" : "to **" + trans.to + "**";
+            resp += " in **" + trans.guild + "**\n";
             count++;
         });
     } catch (e) { }
