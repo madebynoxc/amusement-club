@@ -14,6 +14,7 @@ const helpMod = require('./modules/help.js');
 const vote = require('./modules/vote.js');
 const invite = require('./modules/invite.js');
 const crystal = require('./modules/crystal.js');
+const transactions = require('./modules/transactions.js');
 var bot, curgame = 0;
 
 var cooldownList = [];
@@ -232,11 +233,14 @@ function getCommand(user, channel, guild, message, event, callback) {
                 }
                 return;
             case 'trans':
+            case 'sent':
             case 'sends':
+            case 'got':
+            case 'gets':
             case 'transactions':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
-                    dbManager.transactions(user, (text) =>{
+                    transactions.processRequest(user, sb, cnt, (text) => {
                         callback(text);
                     });
                 }
