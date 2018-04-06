@@ -135,7 +135,7 @@ function claim(user, guildID, arg, callback) {
 
         if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, get: 0, quests: 0};
 
-        amount = Math.min(Math.max(parseInt(amount), 1), 20);
+        amount = Math.min(Math.max(parseInt(amount), 1), 20 - dbUser.dailystats.claim);
 
         if(promo) {
             claimPromotion(user, dbUser, amount, callback);
@@ -151,8 +151,7 @@ function claim(user, guildID, arg, callback) {
             return;
         }
 
-        let blockClaim = dbUser.dailystats && dbUser.dailystats.claim >= 20;
-        if(blockClaim) {
+        if (amount === 0) {
             callback("**" + user.username + "**, you reached a limit of your daily claim. \n"
                 + "It will be reset next time you successfully run `->daily`");
             return;
@@ -187,7 +186,7 @@ function claim(user, guildID, arg, callback) {
 
                 if(amount == 1) {
                     let names = [];
-                    phrase += " **" + utils.toTitleCase(res[0].name.replace(/_/g, " ")) + "**\n";
+                    phrase += " **" + utils.toTitleCase(res[0].name.replace(/_/g, " ")) + " [" + res[0].collection + "]**\n";
                     if(res[0].craft) phrase += "This is a **craft card**. Find pair and `->forge` special card of them!\n";
                     if(dbUser.cards && dbUser.cards.filter(
                         c => c.name == res[0].name && c.collection == res[0].collection).length > 0)
