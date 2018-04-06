@@ -57,7 +57,7 @@ function gets(user, callback) {
 
     collection.find({ to_id: user.id }).sort({ time: -1 }).limit(20).toArray((err, res) => {
         if (!res || res.length == 0)
-            return callback(utils.formatWarning(user, null, "Can't find recent transactions recieved."));
+            return callback(utils.formatWarning(user, null, "can't find recent transactions recieved."));
 
         let resp = formatTransactions(res, user.id);
         callback(utils.formatInfo(null, "Recent transactions", resp));
@@ -69,7 +69,7 @@ function sends(user, callback) {
 
     collection.find({ from_id: user.id }).sort({ time: -1 }).limit(20).toArray((err, res) => {
         if (!res || res.length == 0) 
-            callback(utils.formatWarning(user, null, "Can't find recent transactions sent."));
+            return callback(utils.formatWarning(user, null, "can't find recent transactions sent."));
         
         let resp = formatTransactions(res, user.id);
         callback(utils.formatInfo(null, "Recent transactions", resp));
@@ -81,7 +81,7 @@ function all(user, callback) {
 
     collection.find({ $or: [{ to_id: user.id }, { from_id: user.id }] }).sort({ time: -1 }).limit(20).toArray((err, res) => {
         if (!res || res.length == 0) 
-            callback(utils.formatWarning(user, null, "Can't find recent transactions."));
+            return callback(utils.formatWarning(user, null, "can't find recent transactions."));
 
         let resp = formatTransactions(res, user.id);
         callback(utils.formatInfo(null, "Recent transactions", resp));
