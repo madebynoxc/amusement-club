@@ -15,12 +15,12 @@ function connect(db) {
     ucollection = db.collection('users');
 }
 
-function processRequest(userID, args, callback) {
+function processRequest(userID, args, guild, callback) {
     ucollection.findOne({ discord_id: userID }).then((dbUser) => {
         if(!dbUser) return;
 
         var req = args.shift();
-        switch(req) {
+        switch (req) {
             case undefined:
                 getHero(dbUser, callback);
                 break;
@@ -34,7 +34,7 @@ function processRequest(userID, args, callback) {
                 assign(dbUser, args, callback);
                 break;
             case "lead":
-                getRating(dbUser, callback);
+                getRating(guild, args[0], callback);
                 break;
         }
     });
@@ -165,23 +165,36 @@ function getHeroEffect(user, action, value, ...params) {
     return value;
 }
 
-
-
-function getRating(user, callback) {
-    ucollection.aggregate([{$project: {_id: '$username', hero: '$hero'}}, { $sort : {'hero.exp': -1}}, {$limit: 10}]).toArray((err, users) => {
-        callback("**Global** hero rating:\n" + nameOwners(users));
-    });
+function getRating(guild, arg, callback) {
+    if (arg === "global") {
+        ucollection.aggregate([
+            { $project: { _id: '$username', hero: '$hero' } },
+            { $sort: { 'hero.exp': -1 } },
+            { $limit: 10 }
+        ]).toArray((err, users) => {
+            callback("**Global** hero rating:\n" + nameOwners(users));
+        });
+    } else {
+        var users = Object.keys(guild.members);
+        ucollection.aggregate([
+            { $match: { discord_id: { $in: users }, hero: { $exists: true } } },
+            { $project: { _id: '$username', hero: '$hero' } },
+            { $sort: { 'hero.exp': -1 } }
+        ]).limit(10).toArray((err, users) => {
+            if (!users) return callback("**Local** hero rating:\nNo heroes found on this server.")
+            callback("**Local** hero rating:\n" + nameOwners(users));
+        });
+    }
 }
 
 function nameOwners(col) {
     let res = '';
-    for(let i=0; i<col.length; i++) {
-        if(!col[i].hero || !col[i].hero.name) continue;
-        res += (i+1).toString() + ". ";
+    for (let i = 0; i < col.length; i++) {
+        if (!col[i].hero || !col[i].hero.name) continue;
+        res += (i + 1).toString() + ". ";
         res += "**" + col[i]._id + "** -- [";
         res += col[i].hero.name + "] -- **";
         res += getHeroLevel(col[i].hero.exp) + "**\n";
-        if(i >= 9) break;
     }
     return res;
 }
