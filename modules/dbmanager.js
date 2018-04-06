@@ -1,7 +1,7 @@
 module.exports = {
     connect, disconnect, claim, addXP, getXP, doesUserHave,
     getCards, summon, transfer, sell, award, getUserName,
-    pay, daily, getQuests, getBestCardSorted, transactions,
+    pay, daily, getQuests, getBestCardSorted,
     leaderboard_new, difference, dynamicSort, countCardLevels, 
     getCardFile, getDefaultChannel, isAdmin, needsCards,
     removeCardFromUser, addCardToUser, eval, whohas, block, fav, track
@@ -30,6 +30,7 @@ const stats = require('./stats.js');
 const invite = require('./invite.js');
 const helpMod = require('./help.js');
 const vote = require('./vote.js');
+const transactions = require('./transactions.js');
 const ratioInc = require('./ratioincrease.json');
 const lev = require('js-levenshtein');
 
@@ -81,6 +82,7 @@ function connect(bot, callback) {
         forge.connect(db);
         inv.connect(db);
         stats.connect(db);
+        transactions.connect(db);
         //cardmanager.updateCards(db);
         invite.connect(db, client);
         helpMod.connect(db, client);
@@ -605,32 +607,6 @@ function transfer(from, to, args, guild, callback) {
                 });
             });
         });
-    });
-}
-
-function transactions(user, callback) {
-    let collection = mongodb.collection('transactions');
-    collection.find({ to_id: user.id }).sort({ time: -1 }).toArray((err, res) => {
-        if(!res || res.length == 0)
-            return callback(utils.formatWarning(user, null, "can't find recent transactions to you"));
-
-        let count = 0;
-        let resp = "";
-        try {
-            res.map(t => {
-                if(count > 20) throw BreakException;
-                let mins = utils.getMinutesDifference(t.time);
-                let hrs = utils.getHoursDifference(t.time);
-                let timediff = (hrs < 1)? (mins + "m") : (hrs + "h");
-                if(hrs < 1 && mins < 1) timediff = "just now";
-                resp += "[" + timediff + "] ";
-                resp += "**" + (t.exp? (t.exp + "🍅") : utils.toTitleCase(t.card.name.replace(/_/g, " "))) + "** ";
-                resp += "from **" + t.from + "** in **" + t.guild + "**\n";
-                count++;
-            });
-        } catch(e) {}
-
-        callback(utils.formatInfo(null, "Recent transactions", resp));
     });
 }
 
