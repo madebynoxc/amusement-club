@@ -327,7 +327,7 @@ function getCommand(user, channel, guild, message, event, callback) {
                 if(channelType == 0) callback("Hero commands are possible on server only");
                 else if(channelType == 1) callback('Hero commands available only in bot channel');
                 else {
-                    heroDB.processRequest(user.id, cnt, (text, file) => {
+                    heroDB.processRequest(user.id, cnt, guild, (text, file) => {
                         callback(text, file);
                     });
                 }
