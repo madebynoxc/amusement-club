@@ -697,10 +697,26 @@ function sell(user, args, callback) {
     });
 }
 
-function daily(uID, callback) {
+function daily(u, callback) {
     let collection = mongodb.collection('users');
-    collection.findOne({ discord_id: uID }).then((user) => {
-        if(!user) return;
+    collection.findOne({ discord_id: u.id }).then((user) => {
+        if(!user) {
+            collection.update( { discord_id: u.id},
+                {
+                    $set: { 
+                        discord_id: u.id,
+                        username: u.username,
+                        cards: [],
+                        exp: 2000,
+                        gets: 50,
+                        sends: 50
+                    },
+                }, { upsert: true }
+            ).then(() => {
+                daily(u, callback);
+            });
+            return;
+        }
 
         var stars = countCardLevels(user.cards);
         let amount = 100;
@@ -747,7 +763,7 @@ function daily(uID, callback) {
         }
 
         collection.update(
-            { discord_id: uID }, {
+            { discord_id: u.id }, {
                 $set: {lastdaily: new Date(), quests: quest.getRandomQuests(), lastmsg:dailymessage.id},
                 $unset: {dailystats: ""},
                 $inc: incr
