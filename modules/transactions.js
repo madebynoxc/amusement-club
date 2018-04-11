@@ -43,7 +43,7 @@ function formatTransactions(res, userid) {
         if (hrs < 1 && mins < 1) timediff = "just now";
         let isget = trans.to_id === userid;
         resp += "[" + timediff + "] ";
-        resp += isget ? "<~~  ~~" : "~~  ~~>";
+        resp += isget ? "<–" : "–>";
         resp += " **" + (trans.exp ? (trans.exp + "🍅") : utils.toTitleCase(trans.card.name.replace(/_/g, " "))) + "** ";
         resp += isget ? "from **" + trans.from + "**" : "to **" + trans.to + "**";
         resp += " in **" + trans.guild + "**\n";
