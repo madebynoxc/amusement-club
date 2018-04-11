@@ -267,7 +267,7 @@ function getCommand(user, channel, guild, message, event, callback) {
                 if(channelType == 0) callback('Daily claim is available only on servers');
                 else if(channelType == 1) callback('Daily claim is available only in bot channel');
                 else {
-                    dbManager.daily(user.id, (text) => {
+                    dbManager.daily(user, (text) => {
                         callback(text);
                     });
                 }
