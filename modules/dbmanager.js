@@ -1004,11 +1004,10 @@ function fav(user, args, callback) {
         let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
+        query = {};
         query.discord_id = user.id;
-        query["cards.name"] = match.name;
-        query["cards.collection"] = match.collection;
-        query["cards.level"] = match.level;
-        //console.log(query);
+        query["cards._id"] = match._id;
+        
         mongodb.collection('users').update(
             query,
             {
