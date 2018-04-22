@@ -836,13 +836,21 @@ function difference(discUser, targetID, args, callback) {
             return callback(utils.formatError(discUser, null, "no cards found that match your request"));
 
         let cardsU1 = objs[0].cards;
+        let includeFavorite = false;
+        if(query['cards.fav'] == true) {
+            includeFavorite = true;
+            delete query['cards.fav'];
+        }
         getUserCards(targetID, query).toArray((err, objs2) => {
             if(!objs2[0]) 
                 return callback(utils.formatError(discUser, null, "no cards found that match your request"));
 
             let cardsU2 = objs2[0].cards;
             let dbUser2 = objs2[0]._id;
-            let dif = cardsU2.filter(x => !(x.fav && x.amount == 1) && cardsU1.filter(y => utils.cardsMatch(x, y)) == 0);
+            let dif = cardsU2.filter(x => cardsU1.filter(y => utils.cardsMatch(x, y)) == 0);
+            if(includeFavorite != true) {
+                dif = dif.filter(x => !(x.fav && x.amount == 1));
+            }
             if(dif.length > 0) 
                 callback(listing.addNew(discUser, dif, dbUser2.username));
             else
@@ -916,8 +924,11 @@ function doesUserHave(user, tgID, args, callback) {
     getUserCards(tgID, query).toArray((err, objs) => {
         if(!objs[0]) 
             return callback(utils.formatError(user, null, "no cards found that match your request"));
-
-        let cards = objs[0].cards.filter(c => !(c.amount == 1 && c.fav == true));
+        
+        let cards = objs[0].cards;
+        if(query['cards.fav'] != true) {
+            cards = cards.filter(c => !(c.amount == 1 && c.fav == true));
+        }
         let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
