@@ -372,7 +372,7 @@
 	{
 		"type": ["fav", "favorite"],
 		"title": "Adding cards to favorites",
-		"description": "You can add any card to favorites. That kind of card can't be sent and it won't show up for other users in `->has` or `->diff` commands, unless you have 2 or more of those cards",
+		"description": "You can add any card to favorites. That kind of card can't be sent and it won't show up for other users in `->has` or `->diff` commands, unless you have 2 or more of those cards or add the `-fav` option",
 		"fields": [
 			{
 				"title": "Favorite card",
@@ -422,7 +422,7 @@
 	{
 		"type": ["dif", "diff", "difference"],
 		"title": "About difference",
-		"description": "Difference is very useful command for trading, that will show you cards that certain user has and you not. It can accept same set of filters as `->cards` command",
+		"description": "Difference is very useful command for trading, that will show you cards that certain user has and you not. It can accept same set of filters as `->cards` command.  Add option `-fav` to include favorite cards.",
 		"fields": [
 			{
 				"title": "Useful to know",
@@ -472,7 +472,7 @@
 	{
 		"type": ["has"],
 		"title": "Know if user has a card",
-		"description": "This little useful command will try to find if user has certain card by name. It is useful, when you need to transfer card and would like to make sure target user doesn't have it already.",
+		"description": "This little useful command will try to find if user has certain card by name. It is useful, when you need to transfer card and would like to make sure target user doesn't have it already. Add option `-fav` to include favorite cards.",
 		"fields": [
 			{
 				"title": "Use command",
