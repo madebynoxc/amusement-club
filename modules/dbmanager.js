@@ -10,6 +10,7 @@ module.exports = {
 var MongoClient = require('mongodb').MongoClient;
 var mongodb, client;
 var cooldownList = [];
+var modifyingList = [];
 
 const fs = require('fs');
 const assert = require('assert');
@@ -340,7 +341,11 @@ function addXP(user, amount, callback) {
 function removeFromCooldown(userID) {
     let i = cooldownList.indexOf(userID);
     cooldownList.splice(i, 1);
-    //console.log("Removed user from cooldown");
+}
+
+function removeFromModifying(userID) {
+    let i = modifyingList.indexOf(userID);
+    modifyingList.splice(i, 1);
 }
 
 function getXP(user, callback) {
@@ -439,175 +444,192 @@ function summon(user, args, callback) {
     });
 }
 
-function transfer(from, to, args, guild, callback) {
+async function transfer(from, to, args, guild, callback) {
     let collection = mongodb.collection('users');
-    collection.findOne({ discord_id: from.id }).then(dbUser => {
-        if(!dbUser) return;
+    modifyingList.push(from.id);
+    try {
+        await _transfer(collection, from, to, args, guild, callback);
+    } finally {
+        removeFromModifying(from.id);
+    }
+}
 
-        if(!dbUser.gets) dbUser.gets = 500;
-        if(!dbUser.sends) dbUser.sends = 500;
+async function _transfer(collection, from, to, args, guild, callback) {
+    let dbUser = await collection.findOne({ discord_id: from.id });
+    if (!dbUser) return;
 
-        if(!dbUser.dailystats) dbUser.dailystats = {summon: 0, send: 0, claim: 0, get: 0};
+    if (!dbUser.gets) dbUser.gets = 500;
+    if (!dbUser.sends) dbUser.sends = 500;
 
-        if(args.includes("-ratio")) {
-            let ratio = utils.getRatio(dbUser).toFixed(2);
-            callback(utils.formatInfo(dbUser, 
-                null, "Your give/get ratio is **" + ratio + "**\n"
-                + (ratio < 2.5? "You **can** send cards\n" : "You **can not** send cards\n")
-                + (ratio > 0.4? "You **can** receive cards\n" : "You **can not** receive cards\n")
-                + "Max ratio: **2.5**\nMin ratio: **0.4**\n"
-                + "You sent today: **" + dbUser.dailystats.send + "**/25\n"
-                + "You got today: **" + dbUser.dailystats.get + "**/25"));
-            return;
-        }
+    if (!dbUser.dailystats) dbUser.dailystats = { summon: 0, send: 0, claim: 0, get: 0 };
 
-        if(!args || args.length == 0) return callback("**" + dbUser.username + "**, please specify name/collection/level");
+    if (args.includes("-ratio")) {
+        let ratio = utils.getRatio(dbUser).toFixed(2);
+        callback(utils.formatInfo(from,
+            null, "Your give/get ratio is **" + ratio + "**\n"
+            + (ratio < 2.5 ? "You **can** send cards\n" : "You **can not** send cards\n")
+            + (ratio > 0.4 ? "You **can** receive cards\n" : "You **can not** receive cards\n")
+            + "Max ratio: **2.5**\nMin ratio: **0.4**\n"
+            + "You sent today: **" + dbUser.dailystats.send + "**/25\n"
+            + "You got today: **" + dbUser.dailystats.get + "**/25"));
+        return;
+    }
 
-        for(m in args) {
-            if(args[m].includes("*"))
-                return callback("**" + dbUser.username + "**, you can't transfer crystals");
-        }
+    if (!args || args.length == 0) return callback("**" + from.username + "**, please specify name/collection/level");
 
-        if(from.id == to) {
-            callback(dbUser.username + ", did you actually think it would work?");
-            return;
-        }
+    for (m in args) {
+        if (args[m].includes("*"))
+            return callback("**" + from.username + "**, you can't transfer crystals");
+    }
 
-        if(!to) return;
+    if (from.id == to) {
+        callback(dbUser.username + ", did you actually think it would work?");
+        return;
+    }
 
-        //console.log(utils.canSend(dbUser));
-        if(dbUser.dailystats.send > 1 && !utils.canSend(dbUser)) {
-            callback(utils.formatError(dbUser, 
-                "Can't send card!",
-                "you can't send more cards. Please, trade fairly and consider **getting** more cards from users. Details: `->help trade`\n"
-                + "Your give/get ratio is **" + utils.getRatio(dbUser).toFixed(2) + "**"));
-            return;
-        }
+    if (!to) return;
+    
+    if (dbUser.dailystats.send > 1 && !utils.canSend(dbUser)) {
+        callback(utils.formatError(from,
+            "Can't send card!",
+            "you can't send more cards. Please, trade fairly and consider **getting** more cards from users. Details: `->help trade`\n"
+            + "Your give/get ratio is **" + utils.getRatio(dbUser).toFixed(2) + "**"));
+        return;
+    }
 
-        let query = utils.getRequestFromFilters(args);
-        getUserCards(from.id, query).toArray((err, objs) => {
-            if(!objs[0]) return callback(utils.formatError(dbUser, "Can't find card", "can't find card matching that request"));
+    let query = utils.getRequestFromFilters(args);
+    let objs = await getUserCards(from.id, query).toArray();
 
-            let cards = objs[0].cards;
-            let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
-            if(!match) return callback(utils.formatError(dbUser, "Can't find card", "can't find card matching that request"));
+    if (!objs[0]) return callback(utils.formatError(from, "Can't find card", "can't find card matching that request"));
 
-            if(match.fav && match.amount == 1) return callback(utils.formatError(dbUser, null, "you can't send favorite card." 
-                + " To remove from favorites use `->fav remove [card query]`"));
+    let cards = objs[0].cards;
+    let match = query['cards.name'] ? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
 
-            let name = utils.toTitleCase(match.name.replace(/_/g, " "));
-            let hours = 20 - utils.getHoursDifference(match.frozen);
-            if(match.amount <= 1 && hours && hours > 0) {
-                callback(utils.formatError(dbUser, 
-                    "Card is frozen",
-                    "the card '**" + name + "**' is frozen for **" 
-                    + hours + "** more hours! You can't transfer it"));
-                return;
-            }
+    if (!match) return callback(utils.formatError(from, "Can't find card", "can't find card matching that request"));
+    if (match.fav && match.amount == 1) return callback(utils.formatError(from, null, "you can't send favorite card."
+        + " To remove from favorites use `->fav remove [card query]`"));
 
-            collection.findOne({ discord_id: to }).then(u2 => {
-                if(!u2) return;
+    let name = utils.toTitleCase(match.name.replace(/_/g, " "));
+    let hours = 20 - utils.getHoursDifference(match.frozen);
+    if (match.amount <= 1 && hours && hours > 0) {
+        callback(utils.formatError(dbUser, 
+            "Card is frozen",
+            "the card '**" + name + "**' is frozen for **" 
+            + hours + "** more hours! You can't transfer it"));
+        return;
+    }
 
-                if(u2.blocklist && u2.blocklist.includes(from.id))
-                    return callback(utils.formatError(dbUser, "Can't send card", "this user blocked trading with you"));
+    let u2 = await collection.findOne({ discord_id: to });
 
-                if(!utils.canGet(u2)) {
-                    callback(utils.formatError(dbUser, 
-                        "Can't send card!",
-                        "user **" + u2.username + "** recieved too many cards. This user has to **send** more cards. Details: `->help trade`"));
-                    return;
-                }
+    if (!u2) return;
 
-                if(!u2.dailystats) u2.dailystats = {summon: 0, send: 0, claim: 0, get: 0};
-                else if(!u2.dailystats.get) u2.dailystats.get = 0;
+    if (u2.blocklist && u2.blocklist.includes(from.id))
+        return callback(utils.formatError(from, "Can't send card", "this user blocked trading with you"));
 
-                if(u2.dailystats.get > 25) return callback(utils.formatError(dbUser, 
-                        "Can't send card!",
-                        "user **" + u2.username + "** is out of daily trading limit. This user can't get more cards today"));
+    if (!utils.canGet(u2)) {
+        callback(utils.formatError(from,
+            "Can't send card!",
+            "user **" + u2.username + "** recieved too many cards. This user has to **send** more cards. Details: `->help trade`"));
+        return;
+    }
 
-                match.fav = false;
-                dbUser.cards = removeCardFromUser(dbUser.cards, match);
-                u2.cards = addCardToUser(u2.cards, match);
-                dbUser.dailystats.send++;
-                u2.dailystats.get++;
+    if (!u2.dailystats) u2.dailystats = { summon: 0, send: 0, claim: 0, get: 0 };
+    else if (!u2.dailystats.get) u2.dailystats.get = 0;
 
-                var fromExp = dbUser.exp;
-                fromExp = heroes.getHeroEffect(dbUser, 'send', fromExp, match.level);
-                if(fromExp > dbUser.exp) 
-                    callback("**Akari** grants **" + Math.round(fromExp - dbUser.exp) 
-                        + "**🍅 to **" + dbUser.username 
-                        + "** for sending a card!");
+    if (u2.dailystats.get > 25) return callback(utils.formatError(from,
+        "Can't send card!",
+        "user **" + u2.username + "** is out of daily trading limit. This user can't get more cards today"));
 
-                if(dbUser.dailystats.send === 25)
-                    callback(utils.formatWarning(from, null, "your **next** transfer will cost **100** Tomatoes"));
-                else if(dbUser.dailystats.send > 25) {
-                    let fee = (dbUser.dailystats.send - 25) * 100;
+    if (modifyingList.indexOf(u2.discord_id) > -1) {
+        return callback(utils.formatError(from,
+            "Can't send card!",
+            "user **" + u2.username + "** can't accept cards right now, try to send again."));
+    }
 
-                    if(fee > dbUser.exp) return callback(utils.formatError(dbUser, 
-                        "Can't send card!",
-                        "you don't have enough **Tomatoes** to pay your trading fee!"));
+    match.fav = false;
+    dbUser.cards = removeCardFromUser(dbUser.cards, match);
+    u2.cards = addCardToUser(u2.cards, match);
+    dbUser.dailystats.send++;
+    u2.dailystats.get++;
 
-                    callback(utils.formatWarning(from, null, "you paid **" + fee + "** Tomatoes fee, because you are over your daily trade limit"));
-                    fromExp -= fee;
-                } 
+    var fromExp = dbUser.exp;
+    fromExp = heroes.getHeroEffect(dbUser, 'send', fromExp, match.level);
+    if (fromExp > dbUser.exp)
+        callback("**Akari** grants **" + Math.round(fromExp - dbUser.exp)
+            + "**🍅 to **" + dbUser.username
+            + "** for sending a card!");
 
-                heroes.addXP(dbUser, .2);
-                getCardValue(match, price => {
-                    let ratioIncrease = (price === Infinity? 0 : price/100);
-                    if(quest.preCheckSend(dbUser, match.level)) ratioIncrease = 0;
-                    let newSends = objs[0]._id.sends + ratioIncrease;
-                    let newGets = objs[0]._id.gets;
+    if (dbUser.dailystats.send === 25)
+        callback(utils.formatWarning(from, null, "your **next** transfer will cost **100** Tomatoes"));
+    else if (dbUser.dailystats.send > 25) {
+        let fee = (dbUser.dailystats.send - 25) * 100;
 
-                    if(newGets + newSends > 1500) {
-                        newGets *= .5;
-                        newSends *= .5;
-                    }
+        if (fee > dbUser.exp) return callback(utils.formatError(dbUser,
+            "Can't send card!",
+            "you don't have enough **Tomatoes** to pay your trading fee!"));
 
-                    let transaction = {
-                        from: from.username,
-                        from_id: from.id,
-                        to: u2.username,
-                        to_id: to,
-                        card: match,
-                        guild: guild.name,
-                        guild_id: guild.id,
-                        time: new Date()
-                    }
+        callback(utils.formatWarning(from, null, "you paid **" + fee + "** Tomatoes fee, because you are over your daily trade limit"));
+        fromExp -= fee;
+    }
 
-                    mongodb.collection('transactions').insert(transaction);
-                    report(dbUser, transaction);
-                    report(u2, transaction);
-
-                    collection.update(
-                        { discord_id: from.id }, { 
-                            $set: { 
-                                cards: dbUser.cards, 
-                                dailystats: dbUser.dailystats, 
-                                exp: fromExp, 
-                                sends: newSends,
-                                gets: newGets
-                            }}
-                    ).then(() => {
-                        quest.checkSend(dbUser, match.level, callback);
-                    });
-
-                    match.frozen = new Date();
-                    collection.update(
-                        { discord_id: to },
-                        { 
-                            $set: { cards: u2.cards, dailystats: u2.dailystats },
-                            $inc: { gets: ratioIncrease }
-                        }
-                    ).then(() => {
-                        forge.getCardEffect(dbUser, 'send', u2, callback);
-                    });
-
-                    callback(utils.formatConfirm(from, "Sent successfully", "you sent **" + name + "** to **" + u2.username + "**\n"
-                        + "Recommended price for this card: **" + Math.floor(price) + "**🍅"));
-                });
-            });
+    heroes.addXP(dbUser, .2);
+    let price = await new Promise(resolve => {
+        getCardValue(match, price => {
+            resolve(price);
         });
+    })
+
+    let ratioIncrease = (price === Infinity ? 0 : price / 100);
+    if (quest.preCheckSend(dbUser, match.level)) ratioIncrease = 0;
+    let newSends = objs[0]._id.sends + ratioIncrease;
+    let newGets = objs[0]._id.gets;
+
+    if (newGets + newSends > 1500) {
+        newGets *= .5;
+        newSends *= .5;
+    }
+
+    let transaction = {
+        from: from.username,
+        from_id: from.id,
+        to: u2.username,
+        to_id: to,
+        card: match,
+        guild: guild.name,
+        guild_id: guild.id,
+        time: new Date()
+    }
+
+    mongodb.collection('transactions').insert(transaction);
+    report(dbUser, transaction);
+    report(u2, transaction);
+
+    await collection.update(
+        { discord_id: from.id }, {
+            $set: {
+                cards: dbUser.cards,
+                dailystats: dbUser.dailystats,
+                exp: fromExp,
+                sends: newSends,
+                gets: newGets
+            }
+        }
+    );
+    quest.checkSend(dbUser, match.level, callback);
+    
+    match.frozen = new Date();
+    collection.update(
+        { discord_id: to },
+        {
+            $set: { cards: u2.cards, dailystats: u2.dailystats },
+            $inc: { gets: ratioIncrease }
+        }
+    ).then(() => {
+        forge.getCardEffect(dbUser, 'send', u2, callback);
     });
+
+    callback(utils.formatConfirm(from, "Sent successfully", "you sent **" + name + "** to **" + u2.username + "**\n"
+        + "Recommended price for this card: **" + Math.floor(price) + "**🍅"));
 }
 
 function pay(from, to, args, guild, callback) {
