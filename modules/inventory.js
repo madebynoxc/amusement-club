@@ -76,6 +76,12 @@ function showInventory(user, callback) {
         resp += "[" + user.inventory[i].type + "]  ";
         resp += utils.toTitleCase(user.inventory[i].name.replace(/_/g, " "));
         if(user.inventory[i].amount > 1) resp += " (x" + user.inventory[i].amount + ")";
+        if(user.inventory[i].lastused) {
+            let cooldown = heroes.getHeroEffect(user, 'cooldown', user.inventory[i].cooldown) - utils.getHoursDifference(user.inventory[i].lastused);
+            if(cooldown && cooldown > 0){
+                resp += " 🕐 " + cooldown + "h"
+            }
+        }
         resp += "\n";
         cnt++;
     }
