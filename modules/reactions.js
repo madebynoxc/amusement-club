@@ -143,6 +143,17 @@ function nameCardList(arr) {
                 res[d] += " [" + dupe.collection + "]";
             name += " [" + card.collection + "]";
         }
+        let hours = 20 - utils.getHoursDifference(card.frozen);
+        if(hours && hours > 0) {
+            name += " ❄ ";
+            if(hours == 1) {
+                let mins = 60 - (utils.getMinutesDifference(card.frozen) % 60);
+                name += mins + "m";
+            }
+            else {
+                name += hours + "h";
+            }
+        }
 
         passedCards.push(card);
         res.push(name);
