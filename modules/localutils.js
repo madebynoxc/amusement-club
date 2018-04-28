@@ -145,6 +145,11 @@ function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
             else if(el === "multi") query[prefix + 'amount'] = {$gte: 2};
             else if(el === "gif") query[prefix + 'animated'] = true;
             else if(el === "fav") query[prefix + 'fav'] = true;
+            else if(el === "frozen") {
+                var yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                query[prefix + 'frozen'] = {$gte: yesterday};
+            }
             else {
                 col = collections.filter(c => c.includes(el))[0];
                 if(col) collectionInclude.push(col);
@@ -158,6 +163,11 @@ function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
             else if(el === "multi") query[prefix + 'amount'] = {$eq: 1};
             else if(el === "gif") query[prefix + 'animated'] = false;
             else if(el === "fav") query[prefix + 'fav'] = {$in: [null, false]};
+            else if(el === "frozen") {
+                var yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                query[prefix + 'frozen'] = {$lte: yesterday};
+            }
             else {
                 col = collections.filter(c => c.includes(el))[0];
                 if(col) collectionExclude.push(col);

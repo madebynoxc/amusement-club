@@ -79,7 +79,12 @@ function showInventory(user, callback) {
         if(user.inventory[i].lastused) {
             let cooldown = heroes.getHeroEffect(user, 'cooldown', user.inventory[i].cooldown) - utils.getHoursDifference(user.inventory[i].lastused);
             if(cooldown && cooldown > 0){
-                resp += " 🕐 " + cooldown + "h"
+                if(cooldown == 1) {
+                    cooldown = 60 - (utils.getMinutesDifference(user.inventory[i].lastused) % 60);
+                    resp += " 🕐 " + cooldown + "m"
+                } else {
+                    resp += " 🕐 " + cooldown + "h"
+                }
             }
         }
         resp += "\n";
