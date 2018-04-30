@@ -8,7 +8,7 @@ module.exports = {
 }
 
 var MongoClient = require('mongodb').MongoClient;
-var mongodb, client;
+var mongodb, client, userCount;
 var cooldownList = [];
 var modifyingList = [];
 
@@ -39,6 +39,10 @@ var collections = [];
 fs.readdir('./cards', (err, items) => {
     if(err) console.log(err);
     collections = items;
+});
+
+mongodb.collection('users').count({"lastdaily":{$exists:true}}).then(uc => {
+    userCount = uc;
 });
 
 function disconnect() {
@@ -909,10 +913,9 @@ function getCardValue(card, callback) {
     mongodb.collection('users').count({"cards":{"$elemMatch": utils.getCardQuery(card)}}).then(amount => {
         let price = (ratioInc.star[card.level] 
                     + (card.craft? ratioInc.craft : 0) + (card.animated? ratioInc.gif : 0)) * 100;
-        mongodb.collection('users').count({"lastdaily":{$exists:true}}).then(userCount => {
-            price *= limitPriceGrowth((userCount * 0.035)/amount);
-            callback(price);
-        });
+        
+        price *= limitPriceGrowth((userCount * 0.035)/amount);
+        callback(price);
     });
 }
 
