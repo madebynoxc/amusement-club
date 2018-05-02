@@ -27,6 +27,9 @@ function processRequest(user, cmd, args, callback) {
         case "sends":
             sends(user, callback);
             break;
+        case "pending":
+            pending(user, callback);
+            break;
         case "confirm":
             confirm(user, args, callback);
             break;
@@ -69,16 +72,31 @@ function formatTransactions(res, userid) {
     return resp;
 }
 
-function info(user, args, callback) {
+async function info(user, args, callback) {
     if(!args || args.length == 0)
         return callback(utils.formatError(user, null, "please specify transaction ID"));
 
     let transactionId = args[0];
+    let transaction = await collection.findOne({ id: transactionId });
+    if(!transaction) return callback(utils.formatError(user, null, "can't find transaction with ID '" + transactionId + "'"));
+    let name = utils.getFullCard(transaction.card);
 
+    let mins = utils.getMinutesDifference(transaction.time);
+    let hrs = utils.getHoursDifference(transaction.time);
+    let timediff = (hrs < 1) ? (mins + "m") : (hrs + "h");
+    if (hrs < 1 && mins < 1) timediff = "just now";
+
+    let resp = "Card: **" + name + "**\n";
+    resp += "Price: **" + transaction.price + "** 🍅\n";
+    resp += "From: **" + transaction.from + "**\n";
+    resp += "To: **" + (transaction.to? transaction.to : "<BOT>") + "**\n";
+    resp += "Status: **" + transaction.status + "**\n";
+
+    callback(utils.formatInfo(null, "Transaction [" + transaction.id + "] " + timediff, resp));
 }
 
 function gets(user, callback) {
-    collection.find({ to_id: user.id }).sort({ time: -1 }).limit(20).toArray((err, res) => {
+    collection.find({ to_id: user.id, status: "confirmed" }).sort({ time: -1 }).limit(20).toArray((err, res) => {
         if (!res || res.length == 0)
             return callback(utils.formatWarning(user, null, "can't find recent transactions recieved."));
 
@@ -88,12 +106,22 @@ function gets(user, callback) {
 }
 
 function sends(user, callback) {
-    collection.find({ from_id: user.id }).sort({ time: -1 }).limit(20).toArray((err, res) => {
+    collection.find({ from_id: user.id, status: "confirmed" }).sort({ time: -1 }).limit(20).toArray((err, res) => {
         if (!res || res.length == 0) 
             return callback(utils.formatWarning(user, null, "can't find recent transactions sent."));
         
         let resp = formatTransactions(res, user.id);
         callback(utils.formatInfo(null, "Recent transactions", resp));
+    });
+}
+
+function pending(user, callback) {
+    collection.find({ to_id: user.id, status: "pending" }).sort({ time: 1 }).limit(20).toArray((err, res) => {
+        if (!res || res.length == 0) 
+            return callback(utils.formatWarning(user, null, "can't find any incoming transactions"));
+        
+        let resp = formatTransactions(res, user.id);
+        callback(utils.formatInfo(null, "Incoming transactions", resp));
     });
 }
 
@@ -191,7 +219,7 @@ async function decline(user, args, callback) {
     let transaction = await collection.findOne({ id: transactionId});
     if(!transaction) return callback(utils.formatError(user, null, "can't find transaction with ID '" + transactionId + "'"));
 
-    if((transaction.to_id == user.id) || (!transaction.to_id && transaction.from_id == user.id)) {
+    if((transaction.to_id == user.id) || (transaction.from_id == user.id)) {
         await collection.update({id: transactionId}, {$set: {status: "declined"}});
         return callback(utils.formatConfirm(user, null, 
             "transaction **[" + transaction.id + "]** was declined"));

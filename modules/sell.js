@@ -25,7 +25,7 @@ async function processRequest(user, args, guild, callback) {
     if(res) {
         let msg = "you already set up this transaction.\n";
         if(parse.id) msg += "Target user has to run `->confirm " + res.id + "` to confirm it.";
-        else msg += "To confirm it run `->confirm " + res.id + "'"
+        else msg += "To confirm it run `->confirm " + res.id + "`"
         return callback(utils.formatError(dbUser, null, msg));
     }
 

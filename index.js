@@ -238,6 +238,7 @@ function getCommand(user, channel, guild, message, event, callback) {
             case 'sends':
             case 'decline':
             case 'gets':
+            case 'pending':
             case 'transactions':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
