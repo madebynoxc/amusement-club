@@ -10,16 +10,6 @@
         "award" : 500
     },
     {
-        "name" : "send2",
-        "description" : "Send a 2-star card to anyone else",
-        "award" : 200
-    },
-    {
-        "name" : "send3",
-        "description" : "Send a 3-star card to anyone else",
-        "award" : 300
-    },
-    {
         "name" : "forge2",
         "description" : "Forge a 2-star card (`->help forge`)",
         "award" : 300

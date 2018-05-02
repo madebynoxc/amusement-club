@@ -271,20 +271,7 @@ function countPages(arr) {
 
 function nameCard(card) {
     try {
-        let res = "[";
-
-        if(card.collection == "halloween") res += "H";
-        else if(card.collection == "valentine") res += "V";
-        else {
-            for(let i=0; i<parseInt(card.level); i++)
-                res += "★"; 
-        }
-        res += "]  ";
-        if(card.fav) res += "❤ "
-        if(card.craft) res += "[craft]  ";
-        if(card.collection == "christmas") res += "[xmas]  ";
-        res += utils.toTitleCase(card.name.replace(/_/g, " "));
-        
+        let res = utils.getFullCard(card);
         if(card.amount > 1) res += " (x" + card.amount + ")";
         return res;
     } catch (e) {logger.error(e);}

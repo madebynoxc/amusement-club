@@ -45,48 +45,55 @@ async function processRequest(user, args, guild, callback) {
 
     let cards = objs[0].cards;
     let match = query['cards.name'] ? dbmanager.getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
+
+    if (match.fav && match.amount == 1) 
+        return callback(utils.formatError(user, null, "you can't sell favorite card."
+        + " To remove from favorites use `->fav remove [card query]`"));
+
     transaction.card = match;
-    //TODO id generator
-    //transaction.id = generateID();
+    transaction.id = utils.generateRandomId();
 
     if(parse.id) {
-        let targetUser = await ucollection.findOne({discord_id: parse.id});
-        if(!targetUser) return callback(ustils.formatError(user, "User not found", "can't find target user. Make sure they already have at least one card."));
+        if(parse.id == dbUser.discord_id)
+            return callback(utils.formatError(user, ";~;", "you can't trade with yourself..."));
 
-        transaction.to = resp.username;
+        let targetUser = await ucollection.findOne({discord_id: parse.id});
+        if(!targetUser) return callback(utils.formatError(user, "User not found", "can't find target user. Make sure they already have at least one card."));
+
+        transaction.to = targetUser.username;
         transaction.to_id = parse.id;
 
         transaction.price = await new Promise(resolve => {
             dbmanager.getCardValue(match, price => {
-                resolve(price);
+                resolve(Math.round(price));
             });
         });
         
-        tcollection.insert(transaction).then((resp) => {
-            return callback(formatSellRequest(targetUser, transaction));
-        });
+        await tcollection.insert(transaction);
+        return callback(formatSellRequest(targetUser, transaction));
     } else {
         transaction.price = forge.getCardEffect(dbUser, 'sell', settings.cardprice[match.level - 1])[0];
-        tcollection.insert(transaction).then((resp) => {
-            return callback(formatSellToBot(dbUser, transaction));
-        });
+        await tcollection.insert(transaction);
+        return callback(formatSellToBot(dbUser, transaction));
     }
 }
 
 function formatSellToBot(user, trans) {
-    var msg = "selling **";
-    msg += utils.toTitleCase(trans.card.name.replace(/_/gi, " "));
-    msg += "** for **" + trans.price + "** tomatoes\n"
-        + "To confirm use `->confirm " + trans.id + "`";
+    var msg = "Sell **";
+    msg += utils.getFullCard(trans.card) + "**\n";
+    msg += "for **" + trans.price + "** 🍅?\n"
+        + "To confirm use `->confirm " + trans.id + "`\n"
+        + "To cancel use `->decline " + trans.id + "`";
 
-    return utils.formatWarning(user, "Sell to bot", msg);
+    return utils.formatWarning(null, "Sell to bot", msg);
 }
 
 function formatSellRequest(touser, trans) {
-    var msg = "**" + trans.from + "** wants to sell you **";
-    msg += utils.toTitleCase(trans.card.name.replace(/_/gi, " "));
-    msg += "** for **" + trans.price + "** tomatoes\n"
-        + "To confirm use `->confirm " + trans.id + "`";
+    var msg = "user **" + trans.from + "** wants to sell you **\n";
+    msg += utils.getFullCard(trans.card);
+    msg += "** for **" + trans.price + "** 🍅\n"
+        + "To confirm use `->confirm " + trans.id + "`\n"
+        + "To cancel use `->decline " + trans.id + "`";
 
     return utils.formatWarning(touser, "Incoming transaction", msg);
 }

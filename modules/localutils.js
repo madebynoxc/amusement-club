@@ -22,7 +22,9 @@ module.exports = {
     getRequestFromFiltersNoPrefix,
     getUserID,
     getRatio,
-    getCardQuery
+    getCardQuery,
+    generateRandomId,
+    getFullCard
 }
 
 const discord = require("discord.js");
@@ -291,6 +293,28 @@ function getUserID(inp) {
     }
     ret.input = inp;
     return ret;
+}
+
+function generateRandomId() {
+    return Math.random().toString(36).slice(-5);
+}
+
+function getFullCard(card) {
+    let res = "[";
+
+    if(card.collection == "halloween") res += "H";
+    else if(card.collection == "valentine") res += "V";
+    else {
+        for(let i=0; i<parseInt(card.level); i++)
+            res += "★"; 
+    }
+    res += "]  ";
+    if(card.fav) res += "❤ "
+    if(card.craft) res += "[craft]  ";
+    //if(card.collection == "christmas") res += "[xmas]  ";
+    res += toTitleCase(card.name.replace(/_/g, " "));
+    res += " [" + card.collection + "]";
+    return res;
 }
 
 // db.getCollection('users').aggregate([

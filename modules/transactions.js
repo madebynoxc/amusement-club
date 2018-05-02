@@ -5,6 +5,7 @@
 var mongodb, collection, ucollection;
 const fs = require('fs');
 const utils = require('./localutils.js');
+const dbmanager = require('./dbmanager.js');
 
 function connect(db) {
     mongodb = db;
@@ -32,6 +33,9 @@ function processRequest(user, cmd, args, callback) {
         case "decline":
             decline(user, args, callback);
             break;
+        case "info":
+            info(user, args, callback);
+            break;
         default:
             all(user, callback);
             break;
@@ -43,19 +47,34 @@ function formatTransactions(res, userid) {
     let resp = "";
     
     res.map(trans => {
-        let mins = utils.getMinutesDifference(trans.time);
-        let hrs = utils.getHoursDifference(trans.time);
-        let timediff = (hrs < 1) ? (mins + "m") : (hrs + "h");
-        if (hrs < 1 && mins < 1) timediff = "just now";
-        let isget = trans.to_id === userid;
-        resp += "[" + timediff + "] ";
-        resp += isget ? "<–" : "–>";
-        resp += " **" + (trans.exp > -1 ? (trans.exp + "🍅") : utils.toTitleCase(trans.card.name.replace(/_/g, " "))) + "** ";
-        resp += isget ? "from **" + trans.from + "**" : "to **" + trans.to + "**";
-        resp += " in **" + trans.guild + "**\n";
+        if(trans.id) {
+            let mins = utils.getMinutesDifference(trans.time);
+            let hrs = utils.getHoursDifference(trans.time);
+            let timediff = (hrs < 1) ? (mins + "m") : (hrs + "h");
+            if (hrs < 1 && mins < 1) timediff = "just now";
+            let isget = trans.from_id != userid;
+            resp += "[" + timediff + "] **";
+            resp += trans.status == "confirmed"? (isget ? "<–" : "–>") : (trans.status == "pending"? "!" : "X");
+            resp += "** [" + trans.id + "] ";
+            //resp += " **" + (trans.exp > -1 ? (trans.exp + "🍅") : utils.toTitleCase(trans.card.name.replace(/_/g, " "))) + "** ";
+            //resp += "**" + utils.getFullCard(trans.card) + "**";
+            resp += "**" + utils.toTitleCase(trans.card.name.replace(/_/g, " ")) + "**";
+            resp += isget ? " from **" + trans.from + "**" : " to **" + (trans.to? trans.to : "<BOT>") + "**";
+            resp += "\n";
+            //resp += " for **" + Math.round(trans.price) + "** 🍅";
+            //resp += " in **" + trans.guild + "**\n";
+        }
     });
 
     return resp;
+}
+
+function info(user, args, callback) {
+    if(!args || args.length == 0)
+        return callback(utils.formatError(user, null, "please specify transaction ID"));
+
+    let transactionId = args[0];
+
 }
 
 function gets(user, callback) {
@@ -88,46 +107,95 @@ function all(user, callback) {
     });
 }
 
-function confirm(user, transactionId, callback) {
-    if(!transactionId || transactionId.length == 0)
+async function confirm(user, args, callback) {
+    if(!args || args.length == 0)
         return callback(utils.formatError(user, null, "please specify transaction ID"));
 
-    collection.findOne({ transId: transactionId[0] }).then((err, res) => {
-        if(!res) return callback(utils.formatError(user, null, "can't find transaction with that ID"));
+    let transactionId = args[0];
+    let transaction = await collection.findOne({ id: transactionId, status: "pending" });
+    if(!transaction) return callback(utils.formatError(user, null, "can't find transaction with ID '" + transactionId + "'"));
+    let name = utils.getFullCard(transaction.card);
 
-        if(!res.to_id) {
-            //sell to bot
-            return;
+    //Sell to bot
+    if(!transaction.to_id && transaction.from_id == user.id) {
+        let dbUser = await ucollection.findOne({discord_id: transaction.from_id});
+        dbUser.cards = dbmanager.removeCardFromUser(dbUser.cards, transaction.card);
+        dbUser.exp += transaction.price;
+
+        if(!dbUser.cards) {
+            await collection.update({id: transactionId}, {$set: {status: "declined"}});
+            return callback(utils.formatError(user, "Unable to sell", "card that you want to sell was not found in your collection"));
         }
 
-        if(res.to_id == user.id) {
-            ucollection.find({$in: [res.from_id, res.to_id]}).then((err, res) => {
+        await ucollection.update(
+                { discord_id: user.id },
+                {
+                    $set: {cards: dbUser.cards },
+                    $inc: {exp: dbUser.exp}
+                });
 
-            });
+        await collection.update({id: transactionId}, {$set: {status: "confirmed"}});
+        return callback(utils.formatConfirm(user, "Card sold to bot", "you sold **" + name + "** for **" + transaction.price + "** 🍅"));
+
+        //report(dbUser, null, match);
+        // mongodb.collection('users').update(
+        //     { discord_id: user.id }, {$set: {dailystats: dbUser.dailystats}}
+        // );
+    }
+
+    //Sell to user
+    if(transaction.to_id == user.id) {
+        let fromUser = await ucollection.findOne({discord_id: transaction.from_id});
+        let toUser = await ucollection.findOne({discord_id: transaction.to_id});
+
+        if(toUser.exp < 0) 
+            return callback(utils.formatError(user, null, "please pay off your debt before accepting trades. Your balance is now **" 
+                + Math.round(toUser.exp) + "** 🍅"));
+
+        if(toUser.exp - transaction.price < -2000)
+            return callback(utils.formatError(user, null, "you can't go more than **2000**🍅 debt! You need at least **" 
+                + (transaction.price - (toUser.exp + 2000)) 
+                + "** more 🍅 to confirm this transaction"));
+
+        transaction.card.fav = false;
+        fromUser.cards = dbmanager.removeCardFromUser(fromUser.cards, transaction.card);
+        fromUser.exp += transaction.price;
+        toUser.cards = dbmanager.addCardToUser(toUser.cards, transaction.card);
+        toUser.exp -= transaction.price;
+
+        if(!fromUser.cards) {
+            await collection.update({id: transactionId}, {$set: {status: "declined"}});
+            return callback(utils.formatError(user, "Unable to sell", "target card was not found in seller's collection"));
         }
-    });
 
-    /*
-    dbUser.cards = removeCardFromUser(dbUser.cards, cards);
-    users.update(
-            { discord_id: user.id },
-            {
-                $set: {cards: dbUser.cards },
-                $inc: {exp: exp}
-            }
-        ).then(e => {
-            let name = utils.toTitleCase(match.name.replace(/_/g, " "));
-            callback(utils.formatConfirm(user, "Card sold to bot", "you sold **" + name + "** for **" + exp + "** 🍅"));
-            report(dbUser, null, match);
-        mongodb.collection('users').update(
-            { discord_id: user.id }, {$set: {dailystats: dbUser.dailystats}}
-        );
-    });*/
+        await ucollection.update(
+                { discord_id: fromUser.discord_id },
+                { $set: {cards: fromUser.cards, exp: fromUser.exp}});
+        await ucollection.update(
+                { discord_id: toUser.discord_id },
+                { $set: {cards: toUser.cards, exp: toUser.exp}});
+        await collection.update({id: transactionId}, {$set: {status: "confirmed"}});
+
+        return callback(utils.formatConfirm(null, "Card sold to " + toUser.username, 
+            "**" + fromUser.username + "** sold **" + name + "** to **" + toUser.username + "** for **" + transaction.price + "** 🍅"));
+    }
+
+    return callback(utils.formatError(user, null, "you have no rights to confirm this transaction"));
 }
 
-function decline(user, transactionId, callback) {
-    if(!transactionId || transactionId.length == 0)
+async function decline(user, args, callback) {
+    if(!args || args.length == 0)
         return callback(utils.formatError(user, null, "please specify transaction ID"));
 
+    let transactionId = args[0];
+    let transaction = await collection.findOne({ id: transactionId});
+    if(!transaction) return callback(utils.formatError(user, null, "can't find transaction with ID '" + transactionId + "'"));
 
+    if((transaction.to_id == user.id) || (!transaction.to_id && transaction.from_id == user.id)) {
+        await collection.update({id: transactionId}, {$set: {status: "declined"}});
+        return callback(utils.formatConfirm(user, null, 
+            "transaction **[" + transaction.id + "]** was declined"));
+    }
+
+    return callback(utils.formatError(user, null, "you have no rights to confirm this transaction"));
 }

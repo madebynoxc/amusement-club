@@ -2,8 +2,8 @@ module.exports = {
     connect, disconnect, claim, addXP, getXP, doesUserHave,
     getCards, summon, transfer, sell, award, getUserName,
     pay, daily, getQuests, getBestCardSorted, getUserCards,
-    leaderboard_new, difference, dynamicSort, countCardLevels, 
-    getCardFile, getDefaultChannel, isAdmin, needsCards,
+    leaderboard_new, difference, dynamicSort, countCardLevels, getCardValue,
+    getCardFile, getDefaultChannel, isAdmin, needsCards, 
     removeCardFromUser, addCardToUser, eval, whohas, block, fav, track
 }
 
@@ -1324,6 +1324,8 @@ function addCardToUser(usercards, card) {
 
 function removeCardFromUser(usercards, card) {
     var usercard = utils.containsCard(usercards, card);
+    if(!usercard) return null;
+
     if(usercard.amount > 1) usercard.amount--;
     else {
         var i = usercards.indexOf(usercard);
