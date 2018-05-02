@@ -1,7 +1,7 @@
 module.exports = {
     connect, disconnect, claim, addXP, getXP, doesUserHave,
     getCards, summon, transfer, sell, award, getUserName,
-    pay, daily, getQuests, getBestCardSorted,
+    pay, daily, getQuests, getBestCardSorted, getUserCards,
     leaderboard_new, difference, dynamicSort, countCardLevels, 
     getCardFile, getDefaultChannel, isAdmin, needsCards,
     removeCardFromUser, addCardToUser, eval, whohas, block, fav, track
@@ -34,15 +34,12 @@ const vote = require('./vote.js');
 const transactions = require('./transactions.js');
 const ratioInc = require('./ratioincrease.json');
 const lev = require('js-levenshtein');
+const sellManager = require('./sell.js');
 
 var collections = [];
 fs.readdir('./cards', (err, items) => {
     if(err) console.log(err);
     collections = items;
-});
-
-mongodb.collection('users').count({"lastdaily":{$exists:true}}).then(uc => {
-    userCount = uc;
 });
 
 function disconnect() {
@@ -92,11 +89,16 @@ function connect(bot, callback) {
         invite.connect(db, client);
         helpMod.connect(db, client);
         vote.connect(db, client);
+        sellManager.connect(db);
 
         let date = new Date();
         let deletDate = new Date(date.setDate(date.getDate() - 7));
         db.collection('transactions').remove({time: {$lt: deletDate}}).then(res => {
             console.log(res.result);
+        });
+
+        db.collection('users').count({"lastdaily":{$exists:true}}).then(uc => {
+            userCount = uc;
         });
 
         if(callback) callback();   
@@ -449,6 +451,11 @@ function summon(user, args, callback) {
 }
 
 async function transfer(from, to, args, guild, callback) {
+    return callback(utils.formatError(from, "Deprecated command", 
+        "since 1.9.12 sending cards was replaced with selling.\n"
+        + "Please use `->sell @user card name`\n"
+        + "Learn more by running `->help sell`"));
+
     let collection = mongodb.collection('users');
     modifyingList.push(from.id);
     try {
@@ -581,7 +588,7 @@ async function _transfer(collection, from, to, args, guild, callback) {
         getCardValue(match, price => {
             resolve(price);
         });
-    })
+    });
 
     let ratioIncrease = (price === Infinity ? 0 : price / 100);
     if (quest.preCheckSend(dbUser, match.level)) ratioIncrease = 0;
@@ -637,17 +644,21 @@ async function _transfer(collection, from, to, args, guild, callback) {
 }
 
 function pay(from, to, args, guild, callback) {
+    return callback(utils.formatError(from, "Deprecated command", 
+        "tomato transfer is not possible since 1.9.12\n"
+        + "Other users should use `->sell @you card name` in order to sell you cards for fixed tomato price.\n"
+        + "Learn more by running `->help sell`"));
+    
     let collection = mongodb.collection('users');
     let amount = args.filter(a => utils.isInt(a))[0];
-    let ignore = args.includes('-ignore');
 
     if(!amount || !to) return;
 
     amount = Math.abs(amount);
-    collection.findOne({ discord_id: from }).then(dbUser => {
+    collection.findOne({ discord_id: from.id }).then(dbUser => {
         if(!dbUser) return;
 
-        if(from == to) {
+        if(from.id == to) {
             callback("Did you actually think it would work?");
             return;
         }
@@ -657,7 +668,6 @@ function pay(from, to, args, guild, callback) {
                 if(!user2) return;
 
                 let ratio = amount/100;
-                if(ignore) ratio = 0;
                 let transaction = {
                     from: dbUser.username,
                     from_id: dbUser.discord_id,
@@ -675,7 +685,7 @@ function pay(from, to, args, guild, callback) {
                 report(user2, transaction);
 
                 mongodb.collection('transactions').insert(transaction);
-                collection.update({ discord_id: from }, {$inc: {exp: -amount, sends: ratio }});
+                collection.update({ discord_id: from.id }, {$inc: {exp: -amount, sends: ratio }});
                 collection.update({ discord_id: to }, {$inc: {exp: amount, gets: ratio }});
                 callback(utils.formatConfirm(dbUser, "Tomatoes sent", "you sent **" + amount + "**🍅 to **" + user2.username + "**"));
             });
@@ -685,7 +695,9 @@ function pay(from, to, args, guild, callback) {
     });
 }
 
-function sell(user, args, callback) {
+
+//DEPRECATED
+function sell(user, to, args, callback) {
     if(!args || args.length == 0) return callback("**" + user.username + "**, please specify name/collection/level");
     let query = utils.getRequestFromFilters(args);
     getUserCards(user.id, query).toArray((err, objs) => {

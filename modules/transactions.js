@@ -2,29 +2,35 @@
     processRequest, connect
 }
 
-var mongodb, collection;
+var mongodb, collection, ucollection;
 const fs = require('fs');
 const utils = require('./localutils.js');
 
 function connect(db) {
     mongodb = db;
+    collection = mongodb.collection("transactions");
+    ucollection = mongodb.collection("users");
 }
 
 function processRequest(user, cmd, args, callback) {
-    var req = args.shift();
+    let req;
     if (cmd !== "trans" && cmd !== "transactions") {
         //Should be got, gets, sent or sends
         req = cmd;
-    }
+    } else req = args.shift();
 
     switch (req) {
-        case "got":
         case "gets":
             gets(user, callback);
             break;
-        case "sent":
         case "sends":
             sends(user, callback);
+            break;
+        case "confirm":
+            confirm(user, args, callback);
+            break;
+        case "decline":
+            decline(user, args, callback);
             break;
         default:
             all(user, callback);
@@ -53,8 +59,6 @@ function formatTransactions(res, userid) {
 }
 
 function gets(user, callback) {
-    let collection = mongodb.collection('transactions');
-
     collection.find({ to_id: user.id }).sort({ time: -1 }).limit(20).toArray((err, res) => {
         if (!res || res.length == 0)
             return callback(utils.formatWarning(user, null, "can't find recent transactions recieved."));
@@ -65,8 +69,6 @@ function gets(user, callback) {
 }
 
 function sends(user, callback) {
-    let collection = mongodb.collection('transactions');
-
     collection.find({ from_id: user.id }).sort({ time: -1 }).limit(20).toArray((err, res) => {
         if (!res || res.length == 0) 
             return callback(utils.formatWarning(user, null, "can't find recent transactions sent."));
@@ -77,8 +79,6 @@ function sends(user, callback) {
 }
 
 function all(user, callback) {
-    let collection = mongodb.collection('transactions');
-
     collection.find({ $or: [{ to_id: user.id }, { from_id: user.id }] }).sort({ time: -1 }).limit(20).toArray((err, res) => {
         if (!res || res.length == 0) 
             return callback(utils.formatWarning(user, null, "can't find recent transactions."));
@@ -86,4 +86,48 @@ function all(user, callback) {
         let resp = formatTransactions(res, user.id);
         callback(utils.formatInfo(null, "Recent transactions", resp));
     });
+}
+
+function confirm(user, transactionId, callback) {
+    if(!transactionId || transactionId.length == 0)
+        return callback(utils.formatError(user, null, "please specify transaction ID"));
+
+    collection.findOne({ transId: transactionId[0] }).then((err, res) => {
+        if(!res) return callback(utils.formatError(user, null, "can't find transaction with that ID"));
+
+        if(!res.to_id) {
+            //sell to bot
+            return;
+        }
+
+        if(res.to_id == user.id) {
+            ucollection.find({$in: [res.from_id, res.to_id]}).then((err, res) => {
+
+            });
+        }
+    });
+
+    /*
+    dbUser.cards = removeCardFromUser(dbUser.cards, cards);
+    users.update(
+            { discord_id: user.id },
+            {
+                $set: {cards: dbUser.cards },
+                $inc: {exp: exp}
+            }
+        ).then(e => {
+            let name = utils.toTitleCase(match.name.replace(/_/g, " "));
+            callback(utils.formatConfirm(user, "Card sold to bot", "you sold **" + name + "** for **" + exp + "** 🍅"));
+            report(dbUser, null, match);
+        mongodb.collection('users').update(
+            { discord_id: user.id }, {$set: {dailystats: dbUser.dailystats}}
+        );
+    });*/
+}
+
+function decline(user, transactionId, callback) {
+    if(!transactionId || transactionId.length == 0)
+        return callback(utils.formatError(user, null, "please specify transaction ID"));
+
+
 }

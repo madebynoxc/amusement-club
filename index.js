@@ -15,6 +15,7 @@ const vote = require('./modules/vote.js');
 const invite = require('./modules/invite.js');
 const crystal = require('./modules/crystal.js');
 const transactions = require('./modules/transactions.js');
+const sellManager = require('./modules/sell.js');
 var bot, curgame = 0;
 
 var cooldownList = [];
@@ -227,15 +228,15 @@ function getCommand(user, channel, guild, message, event, callback) {
                 else if(channelType == 1) callback('Tomato transfer is possible only in bot channel');
                 else {
                     let inp = utils.getUserID(cnt);
-                    dbManager.pay(user.id, inp.id, inp.input, guild, (text) =>{
+                    dbManager.pay(user, inp.id, inp.input, guild, (text) =>{
                         callback(text);
                     });
                 }
                 return;
             case 'trans':
-            case 'sent':
+            case 'confirm':
             case 'sends':
-            case 'got':
+            case 'decline':
             case 'gets':
             case 'transactions':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
@@ -258,7 +259,7 @@ function getCommand(user, channel, guild, message, event, callback) {
             case 'sell':
                 if(channelType == 1) return callback('This operation is possible in bot channel only');
                 else {
-                    dbManager.sell(user, cnt, (text) => {
+                    sellManager.processRequest(user, cnt, guild, (text) => {
                         callback(text);
                     });
                 }
