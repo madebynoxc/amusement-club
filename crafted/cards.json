@@ -26,7 +26,7 @@
         "cooldown": 24,
         "usage": "`->inv use sunset` (works only when your claim cost is > 250🍅)",
         "cards": [
-            "cherry_sunset", "afterschool_sunset"
+            "cheery_sunset", "afterschool_sunset"
         ]
     }, {
         "name": "gift_from_tohru",
