@@ -2,7 +2,7 @@ module.exports = {
     connect, disconnect, claim, addXP, getXP, doesUserHave,
     getCards, summon, transfer, sell, award, getUserName,
     pay, daily, getQuests, getBestCardSorted, getUserCards,
-    leaderboard_new, difference, dynamicSort, countCardLevels, getCardValue,
+    leaderboard, difference, dynamicSort, countCardLevels, getCardValue,
     getCardFile, getDefaultChannel, isAdmin, needsCards, 
     removeCardFromUser, addCardToUser, eval, whohas, block, fav, track
 }
@@ -52,31 +52,6 @@ function connect(bot, callback) {
     MongoClient.connect(settings.database, function(err, db) {
         assert.equal(null, err);
         logger.message("[DB Manager] Connected correctly to database");
-
-        // Logging to figure out when nulls are sent to the database
-        let oldCollectionFunction = db.collection;
-        db.collection = function() {
-            let result = oldCollectionFunction.apply(db, arguments);
-            let oldUpdateFunction = result.update;
-            result.update = function() {
-                if (arguments[1] && arguments[1].$set) {
-                    let bad = false;
-                    if ("gets" in arguments[1].$set && typeof arguments[1].$set.gets !== "number") {
-                        bad = true;
-                    }
-                    if ("sends" in arguments[1].$set && typeof arguments[1].$set.sends !== "number") {
-                        bad = true;
-                    }
-                    if (bad) {
-                        console.error("Attempted to set a non-number into gets or sets!");
-                        console.error(arguments);
-                        console.trace();
-                    }
-                }
-                return oldUpdateFunction.apply(result, arguments);
-            };
-            return result;
-        };
 
         mongodb = db;
         quest.connect(db);
@@ -450,6 +425,7 @@ function summon(user, args, callback) {
     });
 }
 
+//DEPRECATED
 async function transfer(from, to, args, guild, callback) {
     return callback(utils.formatError(from, "Deprecated command", 
         "since 1.9.12 sending cards was replaced with selling.\n"
@@ -465,6 +441,7 @@ async function transfer(from, to, args, guild, callback) {
     }
 }
 
+//DEPRECATED
 async function _transfer(collection, from, to, args, guild, callback) {
     let dbUser = await collection.findOne({ discord_id: from.id });
     if (!dbUser) return;
@@ -643,6 +620,7 @@ async function _transfer(collection, from, to, args, guild, callback) {
         + "Recommended price for this card: **" + Math.floor(price) + "**🍅"));
 }
 
+//DEPRECATED
 function pay(from, to, args, guild, callback) {
     return callback(utils.formatError(from, "Deprecated command", 
         "tomato transfer is not possible since 1.9.12\n"
@@ -694,7 +672,6 @@ function pay(from, to, args, guild, callback) {
         callback(utils.formatError(dbUser.username, "Can't send Tomatoes", "you don't have enough funds"));
     });
 }
-
 
 //DEPRECATED
 function sell(user, to, args, callback) {
@@ -816,7 +793,7 @@ function daily(u, callback) {
     });
 }
 
-function leaderboard_new(arg, guild, callback) {
+function leaderboard(arg, guild, callback) {
     let global = arg == 'global';
     let collection = mongodb.collection('users');
     collection.aggregate([
@@ -862,7 +839,9 @@ function award(uID, amout, callback) {
 
 //{'cards.name':/Holy_Qua/},{$set:{'cards.$.name':'holy_quaternity'}}
 
-function difference(discUser, targetID, args, callback) {
+function difference(discUser, parse, callback) {
+    let targetID = parse.id;
+    let args = parse.input;
     if(discUser.id == targetID) 
         return callback("Eh? That won't work");
 
@@ -890,7 +869,7 @@ function difference(discUser, targetID, args, callback) {
                 dif = dif.filter(x => !(x.fav && x.amount == 1));
             }
             if(dif.length > 0) 
-                callback(listing.addNew(discUser, dif, dbUser2.username));
+                callback(dif, dbUser2.username);
             else
                 callback("**" + dbUser2.username + "** has no any unique cards for you\n");
         });

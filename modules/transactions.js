@@ -149,7 +149,6 @@ async function confirm(user, args, callback) {
     if(!transaction.to_id && transaction.from_id == user.id) {
         let dbUser = await ucollection.findOne({discord_id: transaction.from_id});
         dbUser.cards = dbmanager.removeCardFromUser(dbUser.cards, transaction.card);
-        dbUser.exp += transaction.price;
 
         if(!dbUser.cards) {
             await collection.update({id: transactionId}, {$set: {status: "declined"}});
@@ -161,7 +160,7 @@ async function confirm(user, args, callback) {
                 { discord_id: user.id },
                 {
                     $set: {cards: dbUser.cards },
-                    $inc: {exp: dbUser.exp}
+                    $inc: {exp: transaction.price}
                 });
 
         await collection.update({id: transactionId}, {$set: {status: "confirmed"}});
@@ -185,7 +184,7 @@ async function confirm(user, args, callback) {
 
         if(toUser.exp - transaction.price < -2000)
             return callback(utils.formatError(user, null, "you can't go more than **2000**🍅 debt! You need at least **" 
-                + (transaction.price - (toUser.exp + 2000)) 
+                + Math.round(transaction.price - (toUser.exp + 2000)) 
                 + "** more 🍅 to confirm this transaction"));
 
         transaction.card.fav = false;

@@ -25,9 +25,15 @@ async function processRequest(user, args, guild, channelID, callback) {
 
     let res = await tcollection.findOne({from_id: dbUser.discord_id, status: "pending", to_id: parse.id});
     if(res) {
-        let msg = "you have already set up transaction to this user.\n";
-        if(parse.id) msg += "Target user has to run `->confirm " + res.id + "` to confirm it.\n";
-        else msg += "To confirm it run `->confirm " + res.id + "`\nTo cancel use `->decline " + res.id + "`\n"
+        let msg = "";
+        if(parse.id) {
+            msg += "you have already set up transaction to this user.\n"
+            msg += "Target user has to run `->confirm " + res.id + "` to confirm it.\n";
+        } else {
+            msg += "There is still previous sell request in place.\n"
+            msg += "To confirm it run `->confirm " + res.id + "`\nTo cancel use `->decline " + res.id + "`\n"
+        }
+
         msg += "Use `->trans info " + res.id + "` to get more details.";
         return callback(utils.formatError(dbUser, null, msg));
     }

@@ -77,7 +77,6 @@ function _init() {
                     setTimeout(() => removeFromCooldown(userID), 1000);
 
                     getCommand(user, channel, guild, message, event, (res, obj) => {
-                        log(username, channel, guild, message);
 
                         if(obj) bot.uploadFile({to: channelID, file: obj, message: res});
                         else if(res) {
@@ -137,13 +136,11 @@ function selfMessage(msg) {
 
 function getCommand(user, channel, guild, message, event, callback) {
     var channelType = channel? 1 : 0; //0 - DM, 1 - channel, 2 - bot channel
-    if(channelType == 1) {
+    if(channelType == 1) 
         if(channel.name.includes('bot')) channelType = 2;
-        // dbManager.addXP(user, message.length / 20, 
-        //     (mes) => callback(mes));
-    }
 
     if(message.startsWith(settings.botprefix)) {
+        log(user.username, channel, guild, message);
         let cnt = message.toLowerCase().substring(2).split(' ');
         let sb = cnt.shift();
         cnt = cnt.filter(n => { return n != undefined && n != '' }); 
@@ -178,8 +175,13 @@ function getCommand(user, channel, guild, message, event, callback) {
                 else if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
                     let inp = utils.getUserID(cnt);
-                    dbManager.difference(user, inp.id, inp.input, (text) => {
-                        callback(text);
+                    dbManager.difference(user, inp, (data, found) => {
+                        if(!found) callback(data);
+                        else {
+                            react.addNewPagination(user.id, 
+                                user.username + ", your card difference with " + found, 
+                                cardList.getPages(data), channel.id);
+                        }
                     });
                 }
                 return;
@@ -259,7 +261,9 @@ function getCommand(user, channel, guild, message, event, callback) {
                   dbManager.getCards(user, cnt, (data, found) => {
                         if(!found) callback(data);
                         else {
-                            react.addNewPagination(user.id, "Pages", cardList.getPages(data), channel.id);
+                            react.addNewPagination(user.id, 
+                                user.username + ", your cards:", 
+                                cardList.getPages(data), channel.id);
                         }
                   });
                 }
@@ -317,7 +321,7 @@ function getCommand(user, channel, guild, message, event, callback) {
             case 'leaderboards':
                 if(channelType == 0) callback("You can't check leaderboards in DMs");
                 else {
-                    dbManager.leaderboard_new(cnt, guild, (text) =>{
+                    dbManager.leaderboard(cnt, guild, (text) =>{
                         callback(text);
                     });
                 }
@@ -458,22 +462,4 @@ function getHelp(com) {
         return phrases[0].values.join('\n');
     }
     return undefined;
-}
-
-function getUserID(inp) {
-    try{
-        if (/^\d+$/.test(inp)) {
-            // Filters out most names that start with a number while only
-            // filtering out the first month of snowflakes
-            // Since Discord wasn't launched until March of the year,
-            // you'd have to have a user made before its release to be filtered
-            // 1000 ms/s * 60 s/m * 60 m/h * 24 h/d * 30 d/M * 2 ** 22 snowflake date offset
-            if (inp > (1000 * 60 * 60 * 24 * 30 * 2 ** 22)) {
-                return inp
-            }
-        }
-        return inp.slice(0, -1).split('@')[1].replace('!', '');
-    } catch(e) {
-        return null;
-    }
 }

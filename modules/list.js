@@ -21,15 +21,15 @@ function nameCardList(arr) {
     let res = [];
     let passedCards = [];
     arr.map(card => {
-        let dupe = passedCards.filter(c => (c.name === card.name))[0];
+        //let dupe = passedCards.filter(c => (c.name === card.name))[0];
         let name = nameCard(card);
 
-        if(dupe) {
-            let d = res.findIndex(c => (c.includes(name)));
-            if(d >= 0 && !res[d].includes(dupe.collection)) 
-                res[d] += " [" + dupe.collection + "]";
-            name += " [" + card.collection + "]";
-        }
+        // if(dupe) {
+        //     let d = res.findIndex(c => (c.includes(name)));
+        //     if(d >= 0 && !res[d].includes(dupe.collection)) 
+        //         res[d] += " [" + dupe.collection + "]";
+        //     name += " [" + card.collection + "]";
+        // }
 
         let hours = 20 - utils.getHoursDifference(card.frozen);
         if(hours && hours > 0) {
