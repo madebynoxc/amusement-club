@@ -205,8 +205,8 @@ function claim(user, guildID, arg, callback) {
                     for (var i = 0; i < res.length; i++) {
                         if(dbUser.cards 
                             && dbUser.cards.filter(c => c.name == res[i].name && c.collection == res[i].collection).length > 0)
-                            phrase += (i + 1) + ". " + listing.nameCard(res[i], 1);
-                        else phrase += (i + 1) + ". **" + listing.nameCard(res[i], 1) + "**";
+                            phrase += (i + 1) + ". " + utils.getFullCard(res[i]);
+                        else phrase += (i + 1) + ". **" + utils.getFullCard(res[i]) + "**";
                         phrase += "\n";
                     }
                     phrase += "\nUse `->sum [card name]` to summon a card\n";
@@ -286,8 +286,8 @@ function claimPromotion(user, dbUser, amount, callback) {
             for (var i = 0; i < res.length; i++) {
                 if(dbUser.cards 
                     && dbUser.cards.filter(c => c.name == res[i].name && c.collection == res[i].collection).length > 0)
-                    phrase += (i + 1) + ". " + listing.nameCard(res[i], 1);
-                else phrase += (i + 1) + ". **" + listing.nameCard(res[i], 1) + "**";
+                    phrase += (i + 1) + ". " + utils.getFullCard(res[i]);
+                else phrase += (i + 1) + ". **" + utils.getFullCard(res[i]) + "**";
                 phrase += "\n";
             }
             phrase += "\nUse `->sum [card name]` to summon a card\n";

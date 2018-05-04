@@ -16,6 +16,8 @@ const invite = require('./modules/invite.js');
 const crystal = require('./modules/crystal.js');
 const transactions = require('./modules/transactions.js');
 const sellManager = require('./modules/sell.js');
+const cardList = require('./modules/list.js');
+
 var bot, curgame = 0;
 
 var cooldownList = [];
@@ -126,7 +128,7 @@ function selfMessage(msg) {
         let e = msg.embeds[0];
         if(!e || !e.footer) return;
         if(e.footer.text.includes('> Page')) {
-            react.setupPagination(msg, e.title.split("**")[1]);
+            //react.setupPagination(msg, e.title.split("**")[1]);
         } if(e.footer.text.includes('Confirmation')) {
 
         }
@@ -255,15 +257,17 @@ function getCommand(user, channel, guild, message, event, callback) {
                 if(channelType == 1) return callback('This operation is possible in bot channel only');
                 else {
                   dbManager.getCards(user, cnt, (data, found) => {
-                      if(!found) callback(data);
-                      else callback(react.addNew(user, data));
+                        if(!found) callback(data);
+                        else {
+                            react.addNewPagination(user.id, "Pages", cardList.getPages(data), channel.id);
+                        }
                   });
                 }
                 return;
             case 'sell':
                 if(channelType == 1) return callback('This operation is possible in bot channel only');
                 else {
-                    sellManager.processRequest(user, cnt, guild, (text) => {
+                    sellManager.processRequest(user, cnt, guild, channel.id, (text) => {
                         callback(text);
                     });
                 }

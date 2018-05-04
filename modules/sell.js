@@ -7,6 +7,8 @@ const fs = require('fs');
 const utils = require('./localutils.js');
 const dbmanager = require('./dbmanager.js');
 const forge = require('./forge.js');
+const react = require('./reactions.js');
+const transModule = require('./transactions.js');
 const settings = require('../settings/general.json');
 
 function connect(db) {
@@ -15,7 +17,7 @@ function connect(db) {
     tcollection = db.collection("transactions");
 }
 
-async function processRequest(user, args, guild, callback) {
+async function processRequest(user, args, guild, channelID, callback) {
     if(!args || args.length == 0) return callback("**" + user.username + "**, please specify card query");
     
     let dbUser = await ucollection.findOne({ discord_id: user.id });
@@ -24,8 +26,9 @@ async function processRequest(user, args, guild, callback) {
     let res = await tcollection.findOne({from_id: dbUser.discord_id, status: "pending", to_id: parse.id});
     if(res) {
         let msg = "you have already set up transaction to this user.\n";
-        if(parse.id) msg += "Target user has to run `->confirm " + res.id + "` to confirm it.";
-        else msg += "To confirm it run `->confirm " + res.id + "`"
+        if(parse.id) msg += "Target user has to run `->confirm " + res.id + "` to confirm it.\n";
+        else msg += "To confirm it run `->confirm " + res.id + "`\nTo cancel use `->decline " + res.id + "`\n"
+        msg += "Use `->trans info " + res.id + "` to get more details.";
         return callback(utils.formatError(dbUser, null, msg));
     }
 
@@ -80,30 +83,47 @@ async function processRequest(user, args, guild, callback) {
         });
         
         await tcollection.insert(transaction);
-        return callback(formatSellRequest(targetUser, transaction));
+        targetUser.id = targetUser.discord_id;
+        return react.addNewConfirmation(parse.id, formatSellRequest(targetUser, transaction), channelID, () => {
+            transModule.confirm(targetUser, [transaction.id], callback);
+        }, () => {
+            transModule.decline(targetUser, [transaction.id], callback);
+        });
     } else {
         transaction.price = forge.getCardEffect(dbUser, 'sell', settings.cardprice[match.level - 1])[0];
         await tcollection.insert(transaction);
-        return callback(formatSellToBot(dbUser, transaction));
+        return react.addNewConfirmation(dbUser.discord_id, formatSellToBot(dbUser, transaction), channelID, () => {
+            transModule.confirm(user, [transaction.id], callback);
+        }, () => {
+            transModule.decline(user, [transaction.id], callback);
+        });
     }
 }
 
-function formatSellToBot(user, trans) {
-    var msg = "Sell **";
-    msg += utils.getFullCard(trans.card) + "**\n";
-    msg += "for **" + trans.price + "** 🍅?\n"
-        + "To confirm use `->confirm " + trans.id + "`\n"
-        + "To cancel use `->decline " + trans.id + "`";
+function formatConfirmMessage(title) {
+    return utils.formatConfirm(null, title, "Transaction was confirmed");
+}
 
-    return utils.formatWarning(null, "Sell to bot", msg);
+function formatDeclineMessage(title) {
+    return utils.formatError(null, title, "Transaction was declined");
+}
+
+function formatSellToBot(user, trans) {
+    let msg = "Sell **";
+    msg += utils.getFullCard(trans.card) + "**\n";
+    msg += "for **" + trans.price + "** 🍅?\n";
+
+    let e = utils.formatWarning(null, "Sell to bot", msg);
+    e.footer = {text: "->confirm OR ->decline " + trans.id };
+    return e;
 }
 
 function formatSellRequest(touser, trans) {
-    var msg = "user **" + trans.from + "** wants to sell you **\n";
+    let msg = "user **" + trans.from + "** wants to sell you **\n";
     msg += utils.getFullCard(trans.card);
-    msg += "** for **" + trans.price + "** 🍅\n"
-        + "To confirm use `->confirm " + trans.id + "`\n"
-        + "To cancel use `->decline " + trans.id + "`";
+    msg += "** for **" + trans.price + "** 🍅\n";
 
-    return utils.formatWarning(touser, "Incoming transaction", msg);
+    let e = utils.formatWarning(touser, "Incoming transaction", msg);
+    e.footer = {text: "->confirm OR ->decline " + trans.id };
+    return e;
 }

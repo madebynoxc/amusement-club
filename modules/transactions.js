@@ -1,11 +1,12 @@
 ﻿module.exports = {
-    processRequest, connect
+    processRequest, connect, confirm, decline
 }
 
 var mongodb, collection, ucollection;
 const fs = require('fs');
 const utils = require('./localutils.js');
 const dbmanager = require('./dbmanager.js');
+const react = require('./reactions.js');
 
 function connect(db) {
     mongodb = db;
@@ -152,6 +153,7 @@ async function confirm(user, args, callback) {
 
         if(!dbUser.cards) {
             await collection.update({id: transactionId}, {$set: {status: "declined"}});
+            react.removeExisting(user.id, true);
             return callback(utils.formatError(user, "Unable to sell", "card that you want to sell was not found in your collection"));
         }
 
@@ -163,6 +165,7 @@ async function confirm(user, args, callback) {
                 });
 
         await collection.update({id: transactionId}, {$set: {status: "confirmed"}});
+        react.removeExisting(user.id, true);
         return callback(utils.formatConfirm(user, "Card sold to bot", "you sold **" + name + "** for **" + transaction.price + "** 🍅"));
 
         //report(dbUser, null, match);
@@ -192,6 +195,7 @@ async function confirm(user, args, callback) {
         toUser.exp -= transaction.price;
 
         if(!fromUser.cards) {
+            react.removeExisting(user.id, true);
             await collection.update({id: transactionId}, {$set: {status: "declined"}});
             return callback(utils.formatError(user, "Unable to sell", "target card was not found in seller's collection"));
         }
@@ -204,6 +208,7 @@ async function confirm(user, args, callback) {
                 { $set: {cards: toUser.cards, exp: toUser.exp}});
         await collection.update({id: transactionId}, {$set: {status: "confirmed"}});
 
+        react.removeExisting(user.id, true);
         return callback(utils.formatConfirm(null, "Card sold to " + toUser.username, 
             "**" + fromUser.username + "** sold **" + name + "** to **" + toUser.username + "** for **" + transaction.price + "** 🍅"));
     }
@@ -220,6 +225,7 @@ async function decline(user, args, callback) {
     if(!transaction) return callback(utils.formatError(user, null, "can't find transaction with ID '" + transactionId + "'"));
 
     if((transaction.to_id == user.id) || (transaction.from_id == user.id)) {
+        react.removeExisting(user.id, true);
         await collection.update({id: transactionId}, {$set: {status: "declined"}});
         return callback(utils.formatConfirm(user, null, 
             "transaction **[" + transaction.id + "]** was declined"));
