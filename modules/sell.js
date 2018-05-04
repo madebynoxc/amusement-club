@@ -50,6 +50,13 @@ async function processRequest(user, args, guild, callback) {
         return callback(utils.formatError(user, null, "you can't sell favorite card."
         + " To remove from favorites use `->fav remove [card query]`"));
 
+    let hours = 20 - utils.getHoursDifference(match.frozen);
+    if (hours && hours > 0)
+        return callback(utils.formatError(dbUser, 
+            "Card is frozen",
+            "the card '**" + utils.getFullCard(match) + "**' is frozen for **" 
+            + hours + "** more hours! You can't transfer it"));
+
     transaction.card = match;
     transaction.id = utils.generateRandomId();
 
@@ -59,6 +66,9 @@ async function processRequest(user, args, guild, callback) {
 
         let targetUser = await ucollection.findOne({discord_id: parse.id});
         if(!targetUser) return callback(utils.formatError(user, "User not found", "can't find target user. Make sure they already have at least one card."));
+
+        if (targetUser.blocklist && targetUser.blocklist.includes(dbUser.discord_id))
+        return callback(utils.formatError(dbUser, "Can't send card", "this user blocked trading with you"));
 
         transaction.to = targetUser.username;
         transaction.to_id = parse.id;

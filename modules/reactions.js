@@ -2,7 +2,7 @@ module.exports = {
     setupPagination, addNew, nameCard, setBot, onCollectReaction
 }
 
-var paginations = [];
+var reactMessages = [];
 var collections = [];
 var bot;
 const fs = require('fs');
@@ -22,37 +22,52 @@ function setBot(b) {
     bot = b;
 }
 
-function addNew(user, data, dif = "") {
+function addNewPagination(user, embed, data, dif = "") {
     removeExisting(user.id);
-    //var flt = setFiltering(filter);
-    var pgn = {
-        "page": 1, 
+    var mes = {
+        "page": 1,
         "user": user, 
         "data": nameCardList(data),
         "dif": dif
     };
-    paginations.push(pgn);
-    return buildCardList(pgn);
+    reactMessages.push(mes);
+    return buildCardList(mes);
+}
+
+function addNewConfirmation(user, data) {
+    removeExisting(user.id);
+    var mes = {
+        "page": 1,
+        "user": user, 
+        "data": nameCardList(data),
+        "dif": dif
+    };
+    reactMessages.push(mes);
+    return buildCardList(mes);
 }
 
 function setupPagination(message, author) {
-    if(paginations.filter((o)=> o.id == message.id) > 0) return;
-    var pgn = paginations.filter((o)=> o.user.username == author)[0];
-    if(!pgn) return;
+    if(reactMessages.filter((o)=> o.id == message.id) > 0) return;
+    var mes = reactMessages.filter((o)=> o.user.username == author)[0];
+    if(!mes) return;
 
-    react(message);
+    reactPages(message);
 
-    pgn.id = message.id;
-    pgn.message = message;
-    /*var collector = message.createReactionCollector(
-        (reaction, user) => user.id === pgn.user.id,
-        { time: 100000 }
-    );
-    collector.on('collect', r => {
-        processEmoji(r.emoji.name, message);
-        r.remove(pgn.user.id).catch();
-    });*/
-    setTimeout(()=> removeExisting(pgn.user.id), 90000);
+    mes.id = message.id;
+    mes.message = message;
+    setTimeout(()=> removeExisting(mes.user.id), 300000);
+}
+
+function setupConfirmation(message, author) {
+    if(reactMessages.filter((o)=> o.id == message.id) > 0) return;
+    var mes = reactMessages.filter((o)=> o.user.username == author)[0];
+    if(!mes) return;
+
+    reactConfirm(message);
+
+    mes.id = message.id;
+    mes.message = message;
+    setTimeout(()=> removeExisting(mes.user.id), 300000);
 }
 
 function onCollectReaction(userID, channelID, messageID, emoji) {
@@ -63,40 +78,52 @@ function onCollectReaction(userID, channelID, messageID, emoji) {
             userID: userID, 
             reaction: emoji.name
         };
-        console.log(opts);
         bot.removeReaction(opts);
     }
 }
 
 function processEmoji(userID, channelID, messageID, emoji) {
-    var pgn = paginations.filter((o)=> (o.id == messageID && o.user.id == userID))[0];
-    if(!pgn) return false;
+    var mes = reactMessages.filter((o)=> (o.id == messageID && o.user.id == userID))[0];
+    if(!mes) return false;
     switch(emoji.name) {
         case '⬅':
-            if(pgn.page > 1 ) {
-                pgn.page--;
-                bot.editMessage({channelID: channelID, messageID: messageID, embed: buildCardList(pgn)});
+            if(mes.page > 1 ) {
+                mes.page--;
+                editMessage(channelID, messageID, buildCardList(mes));
             }
             break;
         case '➡':
-            pgn.page++;
-            bot.editMessage({channelID: channelID, messageID: messageID, embed: buildCardList(pgn)});
+            mes.page++;
+            editMessage(channelID, messageID, buildCardList(mes));
+            break;
+        case '✅':
+            mes.data.description = "Confirmed";
+            editMessage(channelID, messageID, mes.data);
+            break;
+        case '❌':
+            mes.data.description = "Declined";
+            editMessage(channelID, messageID, mes.data);
             break;
     }
     return true;
 }
 
-function react(message) {
-    //message.clearReactions();
-    var opts1 = { channelID: message.channel_id, messageID: message.id, reaction: "⬅" };
-    var opts2 = { channelID: message.channel_id, messageID: message.id, reaction: "➡" };
+function editMessage(channelID, messageID, embedContent) {
+    bot.editMessage({channelID: channelID, messageID: messageID, embed: embedContent});
+}
 
-    setTimeout(()=> bot.addReaction(opts1), 200);
-    setTimeout(()=> bot.addReaction(opts2), 800);
+function reactPages(message) {
+    setTimeout(()=> bot.addReaction({ channelID: message.channel_id, messageID: message.id, reaction: "⬅" }), 200);
+    setTimeout(()=> bot.addReaction({ channelID: message.channel_id, messageID: message.id, reaction: "➡" }), 800);
+}
+
+function reactConfirm(message) {
+    setTimeout(()=> bot.addReaction({ channelID: message.channel_id, messageID: message.id, reaction: "✅" }), 200);
+    setTimeout(()=> bot.addReaction({ channelID: message.channel_id, messageID: message.id, reaction: "❌" }), 800);
 }
 
 function removeExisting(userID) {
-    var pgn = paginations.filter((o)=> o.user.id == userID)[0];
+    var pgn = reactMessages.filter((o)=> o.user.id == userID)[0];
     if(pgn){
         if(pgn.message) {
             bot.removeAllReactions({
@@ -105,8 +132,8 @@ function removeExisting(userID) {
             });
         }
 
-        var index = paginations.indexOf(pgn);
-        paginations.splice(index, 1);
+        var index = reactMessages.indexOf(pgn);
+        reactMessages.splice(index, 1);
     }
 }
 
@@ -115,6 +142,8 @@ function buildCardList(pgn) {
         return "**" + pgn.user.username + "**, no cards found matching request \n";
 
     let pages = Math.floor(pgn.data.length / 15) + 1;
+    let overflow = pages > 10;
+    if(overflow) pages = 10;
     if(pgn.page > pages) pgn.page = pages;
 
     var max = Math.min((pgn.page * 15), pgn.data.length);
@@ -125,7 +154,7 @@ function buildCardList(pgn) {
     else emb.setTitle("**" + pgn.user.username + "**, you have (**" + pgn.data.length + "** results):");
 
     emb.setDescription(pgn.data.slice(((pgn.page - 1) * 15), max).join('\n'));
-    if(pages > 1) emb.setFooter("> Page "+ pgn.page +" of " + pages);
+    if(pages > 1) emb.setFooter("> Page "+ pgn.page +" of " + overflow? "9+" : pages);
     emb.setColor("#77B520");
     return emb;
 }

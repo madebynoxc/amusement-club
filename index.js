@@ -68,14 +68,15 @@ function _init() {
         if(user.bot && userID === bot.id)
             selfMessage(event.d);
         else if(!user.bot) {
-            log(username, channel, guild, message);
             invite.checkStatus(message, guild, t => {
                 if(!t){
                     if(cooldownList.includes(userID)) return;
                     cooldownList.push(userID);
-                    setTimeout(() => removeFromCooldown(userID), 2000);
+                    setTimeout(() => removeFromCooldown(userID), 1000);
 
                     getCommand(user, channel, guild, message, event, (res, obj) => {
+                        log(username, channel, guild, message);
+
                         if(obj) bot.uploadFile({to: channelID, file: obj, message: res});
                         else if(res) {
                             if(typeof res === "string") bot.sendMessage({to: channelID, message: res});
@@ -126,6 +127,8 @@ function selfMessage(msg) {
         if(!e || !e.footer) return;
         if(e.footer.text.includes('> Page')) {
             react.setupPagination(msg, e.title.split("**")[1]);
+        } if(e.footer.text.includes('Confirmation')) {
+
         }
     //} finally {};
 }
