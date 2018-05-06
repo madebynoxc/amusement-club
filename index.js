@@ -17,6 +17,7 @@ const crystal = require('./modules/crystal.js');
 const transactions = require('./modules/transactions.js');
 const sellManager = require('./modules/sell.js');
 const cardList = require('./modules/list.js');
+const auctions = require('./modules/auctions.js');
 
 var bot, curgame = 0;
 
@@ -201,15 +202,20 @@ function getCommand(user, channel, guild, message, event, callback) {
                     });
                 }
                 return;
+            case 'auc':
+            case 'auctions':
+                if(channelType == 1) callback('This operation is possible in bot channel only');
+                else {
+                    auctions.processRequest(user, cnt, channel.id, callback);
+                }
+                return;
             case 'give':
             case 'send':
                 if(channelType == 0) callback('Card transfer is possible only on servers');
                 else if(channelType == 1) callback('Card transfer is possible only in bot channel');
                 else {
                     let inp = utils.getUserID(cnt);
-                    dbManager.transfer(user, inp.id, inp.input, guild, (text) =>{
-                        callback(text);
-                    });
+                    dbManager.transfer(user, inp.id, inp.input, guild, callback);
                 }
                 return;
             case 'block':

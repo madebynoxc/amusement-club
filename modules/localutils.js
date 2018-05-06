@@ -20,6 +20,7 @@ module.exports = {
     formatWarning,
     getRequestFromFilters,
     getRequestFromFiltersNoPrefix,
+    getRequestFromFiltersWithPrefix,
     getUserID,
     getRatio,
     getCardQuery,
@@ -125,7 +126,7 @@ function sortByStars(cards) {
     return cards;
 }
 
-function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
+function getRequestFromFiltersWithPrefix(args, prefix) {
     prefix = prefix || "";
     let query = {};
     let keywords = [];
@@ -135,7 +136,7 @@ function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
     let collectionExclude = [];
 
     //console.log(args);
-    if(!args) return {};
+    if(!args || args.length == 0) return {};
     args.forEach(element => {
         element = element.trim();
         if(isInt(element) && parseInt(element) <= 5 && parseInt(element) > 0)
@@ -206,11 +207,11 @@ function getRequestFromFiltersWithSpecifiedPrefix(args, prefix) {
 }
 
 function getRequestFromFilters(args) {
-    return getRequestFromFiltersWithSpecifiedPrefix(args, "cards.");
+    return getRequestFromFiltersWithPrefix(args, "cards.");
 }
 
 function getRequestFromFiltersNoPrefix(args) {
-    return getRequestFromFiltersWithSpecifiedPrefix(args, "");
+    return getRequestFromFiltersWithPrefix(args, "");
 }
 
 function getCardQuery(card) {

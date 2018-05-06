@@ -34,12 +34,13 @@ function addNewPagination(userID, title, data, channelID) {
     reactMessages.push(mes);
 
     bot.sendMessage({to: channelID, embed: getPageEmbed(mes)}, (err, resp) => {
-        if(!err) {
+        if(!err && data.length > 1) {
             mes.id = resp.id;
             mes.message = resp;
             reactPages(resp);
             setTimeout(()=> removeExisting(mes.userID), 300000);
-        }
+        } else
+            removeExisting(mes.userID);
     });
 }
 
@@ -94,11 +95,11 @@ function processEmoji(userID, channelID, messageID, emoji) {
             }
             break;
         case '✅':
-            mes.onConfirm();
+            if(mes.onConfirm) mes.onConfirm();
             removeExisting(userID, true);
             break;
         case '❌':
-            mes.onDecline();
+            if(mes.onDecline) mes.onDecline();
             removeExisting(userID, true);
             break;
     }

@@ -35,6 +35,7 @@ const transactions = require('./transactions.js');
 const ratioInc = require('./ratioincrease.json');
 const lev = require('js-levenshtein');
 const sellManager = require('./sell.js');
+const auctions = require('./auctions.js');
 
 var collections = [];
 fs.readdir('./cards', (err, items) => {
@@ -65,6 +66,7 @@ function connect(bot, callback) {
         helpMod.connect(db, client);
         vote.connect(db, client);
         sellManager.connect(db);
+        auctions.connect(db, client);
 
         let date = new Date();
         let deletDate = new Date(date.setDate(date.getDate() - 7));
@@ -83,19 +85,15 @@ function connect(bot, callback) {
 function claim(user, guildID, arg, callback) {
     let ucollection = mongodb.collection('users');
     ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
-        if(!dbUser) {
-            ucollection.update( { discord_id: user.id},
-                {
-                    $set: { 
-                        discord_id: user.id,
-                        username: user.username,
-                        cards: [],
-                        exp: 2000,
-                        gets: 50,
-                        sends: 50
-                    },
-                }, { upsert: true }
-            ).then(() => {
+        if(!user) {
+            collection.insert( { 
+                discord_id: u.id,
+                username: u.username,
+                cards: [],
+                exp: 2000,
+                gets: 50,
+                sends: 50
+            }).then(() => {
                 claim(user, guildID, arg, callback);
             });
             return;
@@ -716,18 +714,14 @@ function daily(u, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: u.id }).then((user) => {
         if(!user) {
-            collection.update( { discord_id: u.id},
-                {
-                    $set: { 
-                        discord_id: u.id,
-                        username: u.username,
-                        cards: [],
-                        exp: 2000,
-                        gets: 50,
-                        sends: 50
-                    },
-                }, { upsert: true }
-            ).then(() => {
+            collection.insert( { 
+                discord_id: u.id,
+                username: u.username,
+                cards: [],
+                exp: 2000,
+                gets: 50,
+                sends: 50
+            }).then(() => {
                 daily(u, callback);
             });
             return;
@@ -779,7 +773,7 @@ function daily(u, callback) {
 
         collection.update(
             { discord_id: u.id }, {
-                $set: {lastdaily: new Date(), quests: quest.getRandomQuests(), lastmsg:dailymessage.id},
+                $set: {lastdaily: new Date(), quests: quest.getRandomQuests(), lastmsg:dailymessage.id, username: u.username},
                 $unset: {dailystats: ""},
                 $inc: incr
             }
