@@ -1,5 +1,18 @@
 [
     {
+        "version": "1.9.12",
+        "changes": [
+            "Completely reworked trading (`->help sell`)",
+            "Removed ratio",
+            "Added global auctions (`->help auc`)", 
+            "Changed ability for Kyoko",
+            "Changed ability for Akari",
+            "Changed effect for 'Skies of Friendship' craft",
+            "Improved Ayano stability",
+            "Added function to rename cards"
+        ]
+    },
+    {
         "version": "1.9.10",
         "changes": [
             "Improvements to trading system",

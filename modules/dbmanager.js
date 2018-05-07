@@ -74,6 +74,10 @@ function connect(bot, callback) {
             console.log(res.result);
         });
 
+        db.collection('auctions').remove({date: {$lt: deletDate}}).then(res => {
+            console.log(res.result);
+        });
+
         db.collection('users').count({"lastdaily":{$exists:true}}).then(uc => {
             userCount = uc;
         });

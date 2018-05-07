@@ -6,7 +6,6 @@ var mongodb, acollection, ucollection, bot;
 const dbManager = require('./dbmanager.js');
 const reactions = require('./reactions');
 const utils = require('./localutils');
-//const timeago = require("timeago.js");
 const settings = require('../settings/general.json');
 const aucTime = 50;
 
@@ -16,7 +15,6 @@ function connect(db, client) {
     acollection = db.collection('auctions');
     ucollection = db.collection('users');
     tcollection = db.collection('transactions');
-    //startTimer();
     setInterval(checkAuctionList, 5000);
 }
 
