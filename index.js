@@ -292,7 +292,7 @@ function getCommand(user, channel, guild, message, event, callback) {
                 }
                 return;
             case 'baka': 
-                var u = getUserID(cnt[0]);
+                var u = utils.getUserID(cnt).id;
                 var time = Date.now() - new Date(event.d.timestamp);
                 if(u) dbManager.getUserName(u, name => 
                     callback("**" + name + "** is now baka! ( ` ω ´ )"));
@@ -309,7 +309,7 @@ function getCommand(user, channel, guild, message, event, callback) {
                 return;
             case 'award': 
                 if(dbManager.isAdmin(user.id)) {
-                    let tusr = getUserID(cnt.shift());
+                    let tusr = utils.getUserID(cnt).id;
                     let tom = parseInt(cnt);
                     if(tusr && tom){
                         dbManager.award(tusr, tom, (text) => {

@@ -1,5 +1,5 @@
 module.exports = {
-    processRequest, connect, checkAuctions
+    processRequest, connect, checkAuctionList
 }
 
 var mongodb, acollection, ucollection, bot;
@@ -8,7 +8,7 @@ const reactions = require('./reactions');
 const utils = require('./localutils');
 //const timeago = require("timeago.js");
 const settings = require('../settings/general.json');
-var timerActive = false;
+const aucTime = 50;
 
 function connect(db, client) {
     mongodb = db;
@@ -17,7 +17,7 @@ function connect(db, client) {
     ucollection = db.collection('users');
     tcollection = db.collection('transactions');
     //startTimer();
-    setInterval(checkAuctions, 10000);
+    setInterval(checkAuctionList, 5000);
 }
 
 function processRequest(user, args, channelID, callback) {
@@ -33,14 +33,37 @@ function processRequest(user, args, channelID, callback) {
             info(user, args, callback);
             break;
         default:
+            if(command) args.push(command);
             list(user, args, channelID, callback);
             break;
     }
 }
 
 async function list(user, args, channelID, callback) {
+    let match = {finished: false};
+    let title = "Current auctions";
+
+    args.map(a => {
+        if(a[0] === '!' || a[0] === '-') {
+            let el = a.substr(1);
+            let m = a[0] == '!'? { $ne: user.id } : user.id;
+            switch(el){
+                case 'me':
+                    match.author = m;
+                    title = "Your auctions";
+                    args = args.filter(arg => arg != a);
+                    break;
+                case 'bid':
+                    match.lastbidder = m;
+                    title = "Your bids";
+                    args = args.filter(arg => arg != a);
+                    break;
+            }
+        }
+    });
+
     let pages = getPages(await acollection.aggregate([
-        {"$match": {finished: false}},
+        {"$match": match},
         {"$match": utils.getRequestFromFiltersWithPrefix(args, "card.")},
         {"$sort": {date: 1}},
         {"$limit": 200}
@@ -49,7 +72,7 @@ async function list(user, args, channelID, callback) {
     if(pages.length == 0) return callback(utils.formatError(user, null, 
         "no auctions with that request found"));
 
-    reactions.addNewPagination(user.id, "Current auctions", pages, channelID);
+    reactions.addNewPagination(user.id, title, pages, channelID);
 }
 
 async function bid(user, args, callback) {
@@ -64,20 +87,32 @@ async function bid(user, args, callback) {
     if(!auc)
         return callback(utils.formatError(user, null, "auction `" + args[0] + "` not found"));
 
+    if(auc.author == user.id) 
+        return callback(utils.formatError(user, null, "you can't bid on your own auction"));
+
+    if(auc.finished)
+        return callback(utils.formatError(user, null, "auction `" + args[0] + "` already finished"));
+
     if(price <= auc.price)
         return callback(utils.formatError(user, null, "your bid for this auction should be more than **" + auc.price + "**🍅"));
 
     let dbUser = await ucollection.findOne({discord_id: user.id});
+    // if(!dbUser.hero)
+    //     return callback(utils.formatError(user, null, "you have to have a hero in order to take part in auction"));
+
     if(dbUser.exp < price)
         return callback(utils.formatError(user, null, "you do not have enough tomatoes for that bid"));
+
+    if(auc.lastbidder && auc.lastbidder == user.id) 
+        return callback(utils.formatError(user, null, "you already bidded on that auction"));
 
     await acollection.update({id: auc.id}, {$set: {price: price, lastbidder: user.id}});
     await ucollection.update({discord_id: user.id}, {$inc: {exp: -price}});
     if(auc.lastbidder) {
         await ucollection.update({discord_id: auc.lastbidder}, {$inc: {exp: auc.price}});
-        bot.sendMessage({to: auc.lastbidder, embed: utils.formatWarning(null, "You are losing auction!", 
+        bot.sendMessage({to: auc.lastbidder, embed: utils.formatWarning(null, "Oh no!", 
             "Another player has outbid you on card **" + utils.getFullCard(auc.card)  + "** with a bid of **" + price + "**🍅\n"
-            + "To remain in the auction, you should increase your bid. Use `->bid " + auc.id + " [new bid]`\n"
+            + "To remain in the auction, you should increase your bid. Use `->auc bid " + auc.id + " [new bid]`\n"
             + "This auction will end in **" + getTime(auc) + "**")});
     }
 
@@ -107,11 +142,18 @@ async function sell(user, incArgs, channelID, callback) {
         dbManager.getCardValue(match, async (eval) => {
             let p = Math.round(eval * .5);
             let dbUser = await ucollection.findOne({discord_id: user.id});
+
+            // if(!dbUser.hero)
+            //     return callback(utils.formatError(user, null, "you have to have a hero in order to take part in auction"));
+
             if(price < p)
-                return callback(utils.formatError(user, null, "You can't set price less than **" + Math.round(p) + "**🍅 for this card"));
+                return callback(utils.formatError(user, null, "you can't set price less than **" + Math.round(p) + "**🍅 for this card"));
+
+            if(price > eval * 4)
+                return callback(utils.formatError(user, null, "you can't set price more than **" + Math.round(eval * 4) + "**🍅 for this card"));
 
             if(dbUser.exp - 100 < 0)
-                return callback(utils.formatError(user, null, "You have to have at least **100**🍅 to use auction"));
+                return callback(utils.formatError(user, null, "you have to have at least **100**🍅 to use auction"));
 
             reactions.addNewConfirmation(user.id, formatSell(user, match, price), channelID, async () => {
                 let aucID = utils.generateRandomId();
@@ -122,7 +164,7 @@ async function sell(user, incArgs, channelID, callback) {
                     id: aucID, finished: false, date: new Date(), price: price, author: user.id, card: match
                 });
 
-                callback(utils.formatConfirm(user, null, "You successfully put **" + utils.getFullCard(match) + "** on auction.\nYour auction ID `" + aucID + "`"));
+                callback(utils.formatConfirm(user, null, "you successfully put **" + utils.getFullCard(match) + "** on auction.\nYour auction ID `" + aucID + "`"));
             });
         });
     });
@@ -146,28 +188,34 @@ async function info(user, args, callback) {
     dbManager.getCardValue(auc.card, (eval) => {
         let resp = "";
         resp += "Seller: **" + author.username + "**\n";
-        resp += "Finishes in: **" + getTime(auc) + "**\n";
         resp += "Last bid: **" + auc.price + "**🍅\n";
         resp += "Card: **" + utils.getFullCard(auc.card) + "**\n";
         resp += "Card value: **" + Math.floor(eval) + "**🍅";
+        if(auc.finished) resp += "This auction finished**\n";
+        else resp += "Finishes in: **" + getTime(auc) + "**\n";
 
         callback(utils.formatInfo(null, "Information about auction", resp));
     });
 }
 
 async function checkAuctionList() {
-    let auc = await acollection.aggregate([
-        {"$match": {'finished': false, date : {$lte: new Date(new Date().getTime() - 5)}}},
-        {"$sort": {date: 1}, {limit: 1}}
+    let timeago = new Date();
+    //timeago.setHours(timeago.getHours() - aucTime);
+    timeago.setMinutes(timeago.getMinutes() - aucTime);
+
+    let awaitauc = await acollection.aggregate([
+        {"$match": {'finished': false, 'date' : {$lt: timeago}}},
+        {"$sort": {date: 1}}, {'$limit': 1}
     ]).toArray();
 
+    let auc = awaitauc[0];
     if(!auc) return;
 
-    let dbuser = await ucollection.findOne({discord_id: auc.lastbidder});
+    let dbuser = await ucollection.findOne({discord_id: auc.author});
     let transaction = {
-        auc_id = auc.id,
-        from: dbUser.username,
-        from_id: dbUser.discord_id,
+        id: auc.id,
+        from: dbuser.username,
+        from_id: dbuser.discord_id,
         status: "auction",
         time: new Date()
     }
@@ -200,190 +248,6 @@ async function checkAuctionList() {
     await acollection.update({id: auc.id}, {$set: {finished: true}});
 }
 
-async function checkAuctions() {
-    if(!timerActive) return;
-    await acollection.aggregate([
-        {"$match": {'finished': 0, date : {$lte: new Date(new Date().getTime() - (settings.auctionduration))}}},
-        {"$sort": {date: 1}}
-    ]).toArray(async (err, objs) => {
-        await objs.forEach(async (element) => {
-            await acollection.update( 
-                { auctionid: element.auctionid},
-                {
-                    $set: {finished: 1}
-                },
-            );
-            if(element.lastbidder != -1) {
-                await ucollection.findOne({ discord_id: element.lastbidder }).then(async (res) => {
-                    if(res.exp >= element.bid) {
-                        let cards = dbManager.addCardToUser(res.cards, element.card);
-
-                        let t1 = {
-                            from: '**Auction**',
-                            from_id: element.seller,
-                            to: null,
-                            to_id: element.lastbidder,
-                            card: element.card,
-                            guild: '**Auction**',
-                            guild_id: -1,
-                            time: new Date(),
-                            auction: 1
-                        }
-                        
-                        let t2 = {
-                            from: '**Auction**',
-                            from_id: element.lastbidder,
-                            to: null,
-                            to_id: element.seller,
-                            exp: element.bid,
-                            guild: '**Auction**',
-                            guild_id: -1,
-                            time: new Date(),
-                            auction: 1
-                        }
-    
-                        mongodb.collection('transactions').insert([t1,t2]);
-
-                        await ucollection.update( 
-                            { discord_id: element.lastbidder},
-                            {
-                                $set: {cards: cards},
-                                $inc: {exp: -element.bid}
-                            },
-                        ).then(async (u)=>{
-                            await ucollection.update( 
-                                { discord_id: element.seller},
-                                {
-                                    $inc: {exp: element.bid}
-                                },
-                            ).then(async (u)=>{
-
-                            });
-                            bot.createDMChannel(element.lastbidder, (err, res) => {
-                                if(!err) {
-                                    bot.sendMessage({to: res.id, message: "You won auction for **" + utils.formatCardName(element.card.name) + "** for **" + element.bid + "** 🍅"});
-                                }
-                            });
-                            bot.createDMChannel(element.seller, (err, res) => {
-                                if(!err) {
-                                    bot.sendMessage({to: res.id, message: "You won **" + element.bid + "** 🍅 for **" + utils.formatCardName(element.card.name) + "**"});
-                                }
-                            });
-                        });
-                    } else {
-                        var finished = false;
-                        await bcollection.aggregate([
-                            {"$match": {auctionid: element.auctionid}},
-                            {"$lookup": {
-                                from: "users",
-                                localField: "bidder",
-                                foreignField: "discord_id",
-                                as: "user",
-                            }}
-                        ]).toArray(async (err, objs) => {
-                            await objs.forEach(async (history) => {
-                                if(finished) return;
-                                
-                                if (history.user[0].exp >= history.bid) {
-                                    finished = true;
-                                    let cards = dbManager.addCardToUser(history.user[0].cards, element.card);
-
-                                    let t1 = {
-                                        from: 'Auction',
-                                        from_id: element.seller,
-                                        to: null,
-                                        to_id: history.bidder,
-                                        card: element.card,
-                                        guild: '**Auction**',
-                                        guild_id: -1,
-                                        time: new Date(),
-                                        auction: 1
-                                    }
-                                    let t2 = {
-                                        from: 'Auction',
-                                        from_id: history.bidder,
-                                        to: null,
-                                        to_id: element.seller,
-                                        exp: history.bid,
-                                        guild: 'Auction',
-                                        guild_id: -1,
-                                        time: new Date(),
-                                        auction: 1
-                                    }
-                
-                                    mongodb.collection('transactions').insert([t1,t2]);
-
-                                    await ucollection.update(
-                                        { discord_id: history.bidder },
-                                        {
-                                            $set: { cards: cards },
-                                            $inc: { exp: -history.bid }
-                                        },
-                                    ).then(async (u) => {
-                                        await ucollection.update(
-                                            { discord_id: element.seller },
-                                            {
-                                                $inc: { exp: history.bid }
-                                            },
-                                        );
-                                        bot.createDMChannel(history.bidder, (err, res) => {
-                                            if (!err) {
-                                                bot.sendMessage({ to: res.id, message: "You won auction for **" + utils.formatCardName(element.card.name) + "** for **" + history.bid + "** 🍅" });
-                                            }
-                                        });
-                                        bot.createDMChannel(element.seller, (err, res) => {
-                                            if (!err) {
-                                                bot.sendMessage({ to: res.id, message: "You won **" + history.bid + "** 🍅 for **" + utils.formatCardName(element.card.name) + "**" });
-                                            }
-                                        });
-                                    });
-                                }
-                            });
-
-                            if(!finished) {
-                                await ucollection.findOne({ discord_id: element.seller }).then(async (res) => {
-                                    let cards = dbManager.addCardToUser(res.cards, element.card);
-                                    await ucollection.update( 
-                                        { discord_id: element.seller},
-                                        {
-                                            $set: {cards: cards},
-                                        },
-                                    ).then(async (u)=>{
-                                        bot.createDMChannel(element.seller, (err, res) => {
-                                            if(!err) {
-                                                bot.sendMessage({to: res.id, message: "Nobody bid your auction for **" + utils.formatCardName(element.card.name) + "**. You got it back."});
-                                            }
-                                        });
-                                    });
-                                });
-                            }
-                        });
-                    }
-                });
-            } else {
-                await ucollection.findOne({ discord_id: element.seller }).then(async (res) => {
-                    let cards = dbManager.addCardToUser(res.cards, element.card);
-                    await ucollection.update( 
-                        { discord_id: element.seller},
-                        {
-                            $set: {cards: cards},
-                        },
-                    ).then(async (u)=>{
-                        bot.createDMChannel(element.seller, (err, res) => {
-                            if(!err) {
-                                bot.sendMessage({to: res.id, message: "Nobody bid your auction for **" + utils.formatCardName(element.card.name) + "**. You got it back."});
-                            }
-                        });
-                    });
-                });
-            }
-        });
-        timerActive = false; 
-    });
-    startTimer();
-    return;
-}
-
 function getPages(auc) {
     let count = 0;
     let pages = [];
@@ -399,7 +263,7 @@ function getPages(auc) {
 
 function auctionToString(auc) {
     let resp = "";
-    let hours = 5 - utils.getHoursDifference(auc.date);
+    let hours = aucTime - utils.getHoursDifference(auc.date);
 
     if(hours < 0) return "";
 
@@ -411,11 +275,11 @@ function auctionToString(auc) {
 }
 
 function getTime(auc) {
-    let hours = 5 - utils.getHoursDifference(auc.date);
-    if(hours == 1){
-        let mins = 60 - (utils.getMinutesDifference(auc.date) % 60);
+    //let hours = aucTime - utils.getHoursDifference(auc.date);
+    //if(hours <= 1){
+        let mins = aucTime - (utils.getMinutesDifference(auc.date) % 60);
         return mins + "m";
-    } else 
-        return hours + "h";
+    //} else 
+    //    return hours + "h";
 }
 
