@@ -327,6 +327,10 @@
             {
                 "title": "Sell a card to USER",
                 "description": "Use `->sell @user [card query]` to sell a card to user. Target user will be asked to confirm or decline your transaction. You can **not** send more than 1 request to the same user. Selling price is decided by bot using **eval algorithm**. You can always run `->eval [card query]` to find out card cost before trading it"
+            },
+            {
+                "title": "Getting into Debt",
+                "description": "If someone sells you a card for more tomatoes than you own, you will find yourself in **debt**. You will need to come out of debt before you can trade with others. You **can** however, daily and sell cards to come out of debt."
             }
         ]
     },
@@ -484,31 +488,39 @@
     {
         "type": ["auc", "auction", "auctions"],
         "title": "About auctions",
-        "description": "Auctions are a way to trade your cards introduced in `v1.10`. You can put any card on auction for 100 🍅 Tomatoes and other users will bid on it. Each card will exist for 5 hours on auction and sold to the person who bidded the most. If nobody bids on your card, you will get it back (you won't get back 100 🍅 auction fee). Bid amount, starting price and top price are limited according to eval",
+        "description": "Auctions are a way to trade your cards introduced in `v1.10`. You can put any card on auction for a fee of 100 🍅 Tomatoes and other users will bid on it. Each card will be on the auction list for 5 hours and sold to the highest bidder. If nobody bids on your card, your card will return to you, but not your 100 🍅 auction fee.",
         "fields": [
             {
-                "title": "->auc [card query]",
-                "description": "Use `->auc` or `->auc some card` to get list of auctions you like"
+                "title": "Searching for cards/collection",
+                "description": "Use `->auc` or `->auc [card title]` or `->auc [-card collection]` to find the list of current auctions.\n"
             },
             {
-                "title": "->auc sell [card query], [amount]",
-                "description": "`->auc sell my card, 100` will sell your card on auction. The lowest possible price is 1/2 of eval, while highest is 4x eval"
+                "title": "Selling a card",
+                "description": "Command:`->auc sell [card title], [amount]` will list your card on auction. The lowest possible price is 1/2 of eval, while the highest is 4x eval.\n"
+            },            
+            {
+                "title": "Bidding on a card", 
+                "description": "Command: `->auc bid [id] [amount]` For example `->auc bid ktgs4 500` will bid 500 🍅 on auction with ID `ktgs4`. You can not bid on your own auction.\n**IMPORTANT**: Place your bids carefully! Your tomatoes will be taken automatically when you place a bid. It will be returned to you when you have been outbid.\n"
             },
             {
-                "title": "->auc bid [id] [amount]",
-                "description": "`->auc bid ktgs4 500` will bid 500 🍅 on auction with ID `ktgs4`. Auction ID is a 5-character word shown in the list. You can not bid on your own auction"
+                "title": "Finding information on a bid",
+                "description": "Command:`->auc info [id]` will show you detailed information about that auction auction.\n"
             },
             {
-                "title": "->auc info [id]",
-                "description": "`->auc info ktgs4` will show detailed information about auction"
+                "title": "Tracking my auctions",
+                "description": "Command: `->auc -me` This command will show you the auctions you have created.\n"
+            },
+            {
+                "title": "Tracking my bids",
+                "description": "Command: `->auc -bid` This command will show you the auctions you have bid in.\n"
             },
             {
                 "title": "Diamond marks",
-                "description": "Auctions in the list has diamond marks on them:\n🔹 means that you created that auction\n🔸 means that your bid is leading in this auction\n▪️ means you can bid on this auction"
+                "description": "Auctions in the list has diamond marks on them:\n🔹 means that you created that auction\n🔸 means that your bid is leading in this auction\n▪️ means you can bid on this auction.\n"
             },
             {
                 "title": "Unknown prices",
-                "description": "Sometimes bids will show up as **???**. That means that bid was done by player that has hero with bid hiding effect. You will have to guess how to outbid them"
+                "description": "Sometimes bids will show up as **???**. That means that bid was done by player that has a hero with a bid hiding effect. You will have to guess how to outbid them."
             }
         ]
     },
