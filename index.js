@@ -372,6 +372,15 @@ function getCommand(user, channel, guild, message, event, callback) {
             case 'miss':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
+                    dbManager.needsCards(user, cnt, (data, found) => {
+                        if(!found) callback(data);
+                        else {
+                            react.addNewPagination(user.id, 
+                                "You miss these cards:", 
+                                cardList.getPages(data), channel.id);
+                        }
+                    });
+
                     dbManager.needsCards(user, cnt, (text) => {
                         callback(text);
                     });

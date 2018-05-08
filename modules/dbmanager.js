@@ -887,8 +887,9 @@ function eval(user, args, callback, isPromo) {
         }
 
         getCardValue(match, price => {
-            let name = utils.toTitleCase(match.name.replace(/_/g, " "));
-            callback(utils.formatInfo(user, null, "the card **" + name + "** is worth around **" + Math.floor(price) + "**🍅"));
+            let name = utils.toTitleCase(utils.getFullCard(match));
+            if(price == 0) callback(utils.formatInfo(user, null, "impossible to evaluate **" + name + "** since nobody has it"));
+            else callback(utils.formatInfo(user, null, "the card **" + name + "** is worth **" + Math.floor(price) + "**🍅"));
         });
     });
 }
@@ -898,8 +899,11 @@ function getCardValue(card, callback) {
         let price = (ratioInc.star[card.level] 
                     + (card.craft? ratioInc.craft : 0) + (card.animated? ratioInc.gif : 0)) * 100;
         
-        price *= limitPriceGrowth((userCount * 0.035)/amount);
-        callback(price);
+        if(amount > 0){
+            price *= limitPriceGrowth((userCount * 0.035)/amount);
+            return callback(price);
+        }
+        callback(0);
     });
 }
 
@@ -955,6 +959,7 @@ function needsCards(user, args, callback) {
 
     let query = utils.getRequestFromFilters(args);
     getUserCards(user.id, query).toArray((err, objs) => {
+
         let cards;
         if(objs[0]) cards = objs[0].cards;
         else        cards = [];
@@ -964,7 +969,7 @@ function needsCards(user, args, callback) {
             let dif = res.filter(x => cards.filter(y => utils.cardsMatch(x, y)) == 0);
             
             if(dif.length > 0) 
-                callback(listing.addNew(user, dif, '--Database--'));
+                callback(dif, true);
             else if (cards.length == 0)
                 callback(utils.formatError(user, null, "No cards were found that match your request"));
             else

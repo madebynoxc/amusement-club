@@ -22,7 +22,7 @@ bot.on("ready", (event) => {
     if(child) return;
 
     child = new (forever.Monitor)(settings.startpoint, {
-        max: -1,
+        max: 100,
         silent: false,
         killTree: true,
         minUptime: 4000
