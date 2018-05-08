@@ -1,6 +1,6 @@
 [
     {
-        "version": "1.9.12",
+        "version": "1.10",
         "changes": [
             "Completely reworked trading (`->help sell`)",
             "Removed ratio",

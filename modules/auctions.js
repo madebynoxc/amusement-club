@@ -237,7 +237,7 @@ async function checkAuctionList() {
     if(auc.lastbidder) {
         let bidder = await ucollection.findOne({discord_id: auc.lastbidder});
         bidder.cards = dbManager.addCardToUser(bidder.cards, auc.card);
-        let tomatoback = forge.getCardEffect(bidder, 'auc', auc.price)[0];
+        let tomatoback = Math.floor(forge.getCardEffect(bidder, 'auc', auc.price)[0]);
         await ucollection.update({discord_id: auc.lastbidder}, {$set: {cards: bidder.cards}}, {$inc : {exp: tomatoback}});
         await ucollection.update({discord_id: auc.author}, {$inc: {exp: auc.price}});
 
