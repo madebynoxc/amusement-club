@@ -266,9 +266,10 @@ function getCommand(user, channel, guild, message, event, callback) {
                   dbManager.getCards(user, cnt, (data, found) => {
                         if(!found) callback(data);
                         else {
+                            let chanID = channel? channel.id : user.id;
                             react.addNewPagination(user.id, 
                                 user.username + ", your cards:", 
-                                cardList.getPages(data), channel.id);
+                                cardList.getPages(data), chanID);
                         }
                   });
                 }
