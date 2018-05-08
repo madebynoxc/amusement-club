@@ -177,9 +177,10 @@ function getCommand(user, channel, guild, message, event, callback) {
                     dbManager.difference(user, inp, (data, found) => {
                         if(!found) callback(data);
                         else {
+                            let chanID = channel? channel.id : user.id;
                             react.addNewPagination(user.id, 
                                 user.username + ", your card difference with " + found, 
-                                cardList.getPages(data), channel.id);
+                                cardList.getPages(data), chanID);
                         }
                     });
                 }
@@ -277,7 +278,8 @@ function getCommand(user, channel, guild, message, event, callback) {
             case 'sell':
                 if(channelType == 1) return callback('This operation is possible in bot channel only');
                 else {
-                    sellManager.processRequest(user, cnt, guild, channel.id, (text) => {
+                    let chanID = channel? channel.id : user.id;
+                    sellManager.processRequest(user, cnt, guild, chanID, (text) => {
                         callback(text);
                     });
                 }
@@ -376,9 +378,10 @@ function getCommand(user, channel, guild, message, event, callback) {
                     dbManager.needsCards(user, cnt, (data, found) => {
                         if(!found) callback(data);
                         else {
+                            let chanID = channel? channel.id : user.id;
                             react.addNewPagination(user.id, 
                                 "You miss these cards:", 
-                                cardList.getPages(data), channel.id);
+                                cardList.getPages(data), chanID);
                         }
                     });
 
