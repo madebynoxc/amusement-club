@@ -59,17 +59,17 @@ async function processRequest(user, args, guild, channelID, callback) {
         return callback(utils.formatError(user, null, "you can't sell favorite card."
         + " To remove from favorites use `->fav remove [card query]`"));
 
-    let hours = 20 - utils.getHoursDifference(match.frozen);
-    if (hours && hours > 0)
-        return callback(utils.formatError(dbUser, 
-            "Card is frozen",
-            "the card '**" + utils.getFullCard(match) + "**' is frozen for **" 
-            + hours + "** more hours! You can't transfer it"));
-
     transaction.card = match;
     transaction.id = utils.generateRandomId();
 
     if(parse.id) {
+        let hours = 20 - utils.getHoursDifference(match.frozen);
+        if (hours && hours > 0)
+            return callback(utils.formatError(dbUser, 
+                "Card is frozen",
+                "the card '**" + utils.getFullCard(match) + "**' is frozen for **" 
+                + hours + "** more hours! You can't transfer it"));
+        
         if(parse.id == dbUser.discord_id)
             return callback(utils.formatError(user, ";~;", "you can't trade with yourself..."));
 

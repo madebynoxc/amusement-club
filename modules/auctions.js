@@ -164,7 +164,7 @@ async function sell(user, incArgs, channelID, callback) {
                 return callback(utils.formatError(user, null, "you have to have at least **100**🍅 to use auction"));
 
             reactions.addNewConfirmation(user.id, formatSell(user, match, price), channelID, async () => {
-                let aucID = utils.generateRandomId();
+                let aucID = await generateBetterID();
                 dbUser.cards = dbManager.removeCardFromUser(dbUser.cards, match);
 
                 await ucollection.update({discord_id: user.id}, {$set: {cards: dbUser.cards}, $inc: {exp: -100}});
@@ -302,5 +302,14 @@ function getTime(auc) {
         return mins + "m";
     } else 
         return hours + "h";
+}
+
+async function generateBetterID() {
+    let ids = await acollection.find({}, {id: 1}).toArray();
+    let newID = "";
+    do {
+        newID = utils.generateRandomId();
+    } while(ids.filter(i => i === newID).length > 0);
+    return newID;
 }
 

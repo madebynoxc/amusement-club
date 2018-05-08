@@ -79,7 +79,7 @@ async function info(user, args, callback) {
         return callback(utils.formatError(user, null, "please specify transaction ID"));
 
     let transactionId = args[0];
-    let transaction = await collection.findOne({ id: transactionId });
+    let transaction = await collection.findOne({ id: transactionId, $or: [{from_id: user.id}, {to_id: user.id}] });
     if(!transaction) return callback(utils.formatError(user, null, "can't find transaction with ID '" + transactionId + "'"));
     let name = utils.getFullCard(transaction.card);
 
@@ -225,7 +225,7 @@ async function decline(user, args, callback) {
         return callback(utils.formatError(user, null, "please specify transaction ID"));
 
     let transactionId = args[0];
-    let transaction = await collection.findOne({ id: transactionId});
+    let transaction = await collection.findOne({ id: transactionId, status: "pending" });
     if(!transaction) return callback(utils.formatError(user, null, "can't find transaction with ID '" + transactionId + "'"));
 
     if((transaction.to_id == user.id) || (transaction.from_id == user.id)) {
