@@ -26,18 +26,18 @@ function processRequest(user, channel, args, callback) {
     if(!req) help = helpAll[0];
     else help = helpAll.filter(h => h.type.includes(req))[0];
 
-    bot.createDMChannel(user.id, (err, res) => {
-        if(err && channel) {
-            callback("**" + user.username 
-                + "**, can't send you a message. Please, allow direct messages from server members in privacy settings");
-        }
-        else if(!err) {
-            if(help) bot.sendMessage({to: res.id, embed: getEmbed(help)});
-            else bot.sendMessage({to: res.id, message: "Can't find module/command **" + req  + "**. Run `->help` to see the list" });
+    //bot.createDMChannel(user.id, (err, res) => {
+        // if(err && channel) {
+        //     callback("**" + user.username 
+        //         + "**, can't send you a message. Please, allow direct messages from server members in privacy settings");
+        // }
+        //else if(!err) {
+            if(help) bot.sendMessage({to: user.id, embed: getEmbed(help)});
+            else bot.sendMessage({to: user.id, message: "Can't find module/command **" + req  + "**. Run `->help` to see the list" });
 
             if(channel) callback("**" + user.username + "**, help was sent to you"); 
-        }
-    });
+        //}
+    //});
 }
 
 function getEmbed(o) {

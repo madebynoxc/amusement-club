@@ -1,14 +1,14 @@
 module.exports = {
     connect, disconnect, claim, addXP, getXP, doesUserHave,
     getCards, summon, transfer, sell, award, getUserName,
-    pay, daily, getQuests, getBestCardSorted,
-    leaderboard_new, difference, dynamicSort, countCardLevels, 
-    getCardFile, getDefaultChannel, isAdmin, needsCards,
+    pay, daily, getQuests, getBestCardSorted, getUserCards,
+    leaderboard, difference, dynamicSort, countCardLevels, getCardValue,
+    getCardFile, getDefaultChannel, isAdmin, needsCards, 
     removeCardFromUser, addCardToUser, eval, whohas, block, fav, track
 }
 
 var MongoClient = require('mongodb').MongoClient;
-var mongodb, client;
+var mongodb, client, userCount;
 var cooldownList = [];
 var modifyingList = [];
 
@@ -34,6 +34,8 @@ const vote = require('./vote.js');
 const transactions = require('./transactions.js');
 const ratioInc = require('./ratioincrease.json');
 const lev = require('js-levenshtein');
+const sellManager = require('./sell.js');
+const auctions = require('./auctions.js');
 
 var collections = [];
 fs.readdir('./cards', (err, items) => {
@@ -52,31 +54,6 @@ function connect(bot, callback) {
         assert.equal(null, err);
         logger.message("[DB Manager] Connected correctly to database");
 
-        // Logging to figure out when nulls are sent to the database
-        let oldCollectionFunction = db.collection;
-        db.collection = function() {
-            let result = oldCollectionFunction.apply(db, arguments);
-            let oldUpdateFunction = result.update;
-            result.update = function() {
-                if (arguments[1] && arguments[1].$set) {
-                    let bad = false;
-                    if ("gets" in arguments[1].$set && typeof arguments[1].$set.gets !== "number") {
-                        bad = true;
-                    }
-                    if ("sends" in arguments[1].$set && typeof arguments[1].$set.sends !== "number") {
-                        bad = true;
-                    }
-                    if (bad) {
-                        console.error("Attempted to set a non-number into gets or sets!");
-                        console.error(arguments);
-                        console.trace();
-                    }
-                }
-                return oldUpdateFunction.apply(result, arguments);
-            };
-            return result;
-        };
-
         mongodb = db;
         quest.connect(db);
         heroes.connect(db);
@@ -88,11 +65,21 @@ function connect(bot, callback) {
         invite.connect(db, client);
         helpMod.connect(db, client);
         vote.connect(db, client);
+        sellManager.connect(db);
+        auctions.connect(db, client);
 
         let date = new Date();
         let deletDate = new Date(date.setDate(date.getDate() - 7));
         db.collection('transactions').remove({time: {$lt: deletDate}}).then(res => {
             console.log(res.result);
+        });
+
+        db.collection('auctions').remove({date: {$lt: deletDate}}).then(res => {
+            console.log(res.result);
+        });
+
+        db.collection('users').count({"lastdaily":{$exists:true}}).then(uc => {
+            userCount = uc;
         });
 
         if(callback) callback();   
@@ -102,19 +89,15 @@ function connect(bot, callback) {
 function claim(user, guildID, arg, callback) {
     let ucollection = mongodb.collection('users');
     ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
-        if(!dbUser) {
-            ucollection.update( { discord_id: user.id},
-                {
-                    $set: { 
-                        discord_id: user.id,
-                        username: user.username,
-                        cards: [],
-                        exp: 2000,
-                        gets: 50,
-                        sends: 50
-                    },
-                }, { upsert: true }
-            ).then(() => {
+        if(!user) {
+            collection.insert( { 
+                discord_id: u.id,
+                username: u.username,
+                cards: [],
+                exp: 2000,
+                gets: 50,
+                sends: 50
+            }).then(() => {
                 claim(user, guildID, arg, callback);
             });
             return;
@@ -199,8 +182,8 @@ function claim(user, guildID, arg, callback) {
                     for (var i = 0; i < res.length; i++) {
                         if(dbUser.cards 
                             && dbUser.cards.filter(c => c.name == res[i].name && c.collection == res[i].collection).length > 0)
-                            phrase += (i + 1) + ". " + listing.nameCard(res[i], 1);
-                        else phrase += (i + 1) + ". **" + listing.nameCard(res[i], 1) + "**";
+                            phrase += (i + 1) + ". " + utils.getFullCard(res[i]);
+                        else phrase += (i + 1) + ". **" + utils.getFullCard(res[i]) + "**";
                         phrase += "\n";
                     }
                     phrase += "\nUse `->sum [card name]` to summon a card\n";
@@ -280,8 +263,8 @@ function claimPromotion(user, dbUser, amount, callback) {
             for (var i = 0; i < res.length; i++) {
                 if(dbUser.cards 
                     && dbUser.cards.filter(c => c.name == res[i].name && c.collection == res[i].collection).length > 0)
-                    phrase += (i + 1) + ". " + listing.nameCard(res[i], 1);
-                else phrase += (i + 1) + ". **" + listing.nameCard(res[i], 1) + "**";
+                    phrase += (i + 1) + ". " + utils.getFullCard(res[i]);
+                else phrase += (i + 1) + ". **" + utils.getFullCard(res[i]) + "**";
                 phrase += "\n";
             }
             phrase += "\nUse `->sum [card name]` to summon a card\n";
@@ -388,25 +371,19 @@ function getQuests(user, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: user.id }).then((u) => {
         if(u) {
-            let res = "**" + user.username + "**";
+            let res = "";
             if(!u.quests || u.quests.length <= 0){
-                res += ", you don't have any quests. \n"
-                    + "New quests will appear after successfull '->daily' command";
+                if(u.hero) res += "you don't have any quests. \n"
+                    + "New quests will appear after `->daily`";
+                else res += "you will start getting quests once you get a hero";
+                return callback(utils.formatError(user, null, res));
             } else {
-
-                res += ", your quests for today: \n";
                 for(let i=0; i<u.quests.length; i++) {
                     res += (i+1).toString() + ". " + u.quests[i].description;
-                    res += " [" + u.quests[i].award + "🍅] \n";
+                    res += " [" + u.quests[i].award + "`🍅`] \n";
                 }
+                return callback(utils.formatInfo(null, u.username + ", your quests for today:", res));
             }
-
-            /*if(promotions.current > -1) {
-                let promo = promotions.list[promotions.current];
-                let active = promo.quests.filter(q => !u.dailystats.promoquests.includes(q.name));
-                res += "\nAdditional limited time quests:\n";
-            }*/
-            callback(res);
         }
     });
 }
@@ -444,7 +421,13 @@ function summon(user, args, callback) {
     });
 }
 
+//DEPRECATED
 async function transfer(from, to, args, guild, callback) {
+    return callback(utils.formatError(from, "Deprecated command", 
+        "since 1.9.12 sending cards was replaced with selling.\n"
+        + "Please use `->sell @user card name`\n"
+        + "Learn more by running `->help sell`"));
+
     let collection = mongodb.collection('users');
     modifyingList.push(from.id);
     try {
@@ -454,6 +437,7 @@ async function transfer(from, to, args, guild, callback) {
     }
 }
 
+//DEPRECATED
 async function _transfer(collection, from, to, args, guild, callback) {
     let dbUser = await collection.findOne({ discord_id: from.id });
     if (!dbUser) return;
@@ -577,7 +561,7 @@ async function _transfer(collection, from, to, args, guild, callback) {
         getCardValue(match, price => {
             resolve(price);
         });
-    })
+    });
 
     let ratioIncrease = (price === Infinity ? 0 : price / 100);
     if (quest.preCheckSend(dbUser, match.level)) ratioIncrease = 0;
@@ -632,18 +616,23 @@ async function _transfer(collection, from, to, args, guild, callback) {
         + "Recommended price for this card: **" + Math.floor(price) + "**🍅"));
 }
 
+//DEPRECATED
 function pay(from, to, args, guild, callback) {
+    return callback(utils.formatError(from, "Deprecated command", 
+        "tomato transfer is not possible since 1.9.12\n"
+        + "Other users should use `->sell @you card name` in order to sell you cards for fixed tomato price.\n"
+        + "Learn more by running `->help sell`"));
+    
     let collection = mongodb.collection('users');
     let amount = args.filter(a => utils.isInt(a))[0];
-    let ignore = args.includes('-ignore');
 
     if(!amount || !to) return;
 
     amount = Math.abs(amount);
-    collection.findOne({ discord_id: from }).then(dbUser => {
+    collection.findOne({ discord_id: from.id }).then(dbUser => {
         if(!dbUser) return;
 
-        if(from == to) {
+        if(from.id == to) {
             callback("Did you actually think it would work?");
             return;
         }
@@ -653,7 +642,6 @@ function pay(from, to, args, guild, callback) {
                 if(!user2) return;
 
                 let ratio = amount/100;
-                if(ignore) ratio = 0;
                 let transaction = {
                     from: dbUser.username,
                     from_id: dbUser.discord_id,
@@ -671,7 +659,7 @@ function pay(from, to, args, guild, callback) {
                 report(user2, transaction);
 
                 mongodb.collection('transactions').insert(transaction);
-                collection.update({ discord_id: from }, {$inc: {exp: -amount, sends: ratio }});
+                collection.update({ discord_id: from.id }, {$inc: {exp: -amount, sends: ratio }});
                 collection.update({ discord_id: to }, {$inc: {exp: amount, gets: ratio }});
                 callback(utils.formatConfirm(dbUser, "Tomatoes sent", "you sent **" + amount + "**🍅 to **" + user2.username + "**"));
             });
@@ -681,7 +669,8 @@ function pay(from, to, args, guild, callback) {
     });
 }
 
-function sell(user, args, callback) {
+//DEPRECATED
+function sell(user, to, args, callback) {
     if(!args || args.length == 0) return callback("**" + user.username + "**, please specify name/collection/level");
     let query = utils.getRequestFromFilters(args);
     getUserCards(user.id, query).toArray((err, objs) => {
@@ -723,33 +712,29 @@ function daily(u, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: u.id }).then((user) => {
         if(!user) {
-            collection.update( { discord_id: u.id},
-                {
-                    $set: { 
-                        discord_id: u.id,
-                        username: u.username,
-                        cards: [],
-                        exp: 2000,
-                        gets: 50,
-                        sends: 50
-                    },
-                }, { upsert: true }
-            ).then(() => {
+            collection.insert( { 
+                discord_id: u.id,
+                username: u.username,
+                cards: [],
+                exp: 2000,
+                gets: 50,
+                sends: 50
+            }).then(() => {
                 daily(u, callback);
             });
             return;
         }
 
         var stars = countCardLevels(user.cards);
-        let amount = 100;
+        let amount = 300;
         
         if(user.dailystats && user.dailystats.claim) 
-            amount = Math.max(heroes.getHeroEffect(user, 'daily', user.dailystats.claim), 100);
+            amount = Math.max(heroes.getHeroEffect(user, 'daily', user.dailystats.claim), amount);
 
         let cardEffect = forge.getCardEffect(user, 'daily', amount, 20);
         amount = cardEffect[0];
         
-        if(stars < 35) amount += 200;
+        if(!user.hero) amount += 700;
         let hours = cardEffect[1] - utils.getHoursDifference(user.lastdaily);           
         if(hours && hours > 0) {
             if(hours == 1){
@@ -765,8 +750,8 @@ function daily(u, callback) {
         var msg = "**" + user.username + "** recieved daily **" + amount + "** 🍅 You now have " 
         + (Math.floor(user.exp) + amount) + "🍅 \n";
 
-        if(stars < 35) msg += "(you got extra 200🍅 as a new player bonus)\n";
-        msg += "You also got **2 daily quests**. To view them use `->quests`\n";
+        if(!user.hero) msg += "(you got extra 700🍅 as a new player bonus)\n";
+        else msg += "You also got **2 daily quests**. To view them use `->quests`\n";
         
         if(!user.hero && stars >= 50) 
             msg += "You have enough stars to get a hero! use `->hero list`\n";
@@ -784,9 +769,10 @@ function daily(u, callback) {
                 + "Use `->claim promo` to get special limited time cards";
         }
 
+        let quests = user.hero? quest.getRandomQuests() : [];
         collection.update(
             { discord_id: u.id }, {
-                $set: {lastdaily: new Date(), quests: quest.getRandomQuests(), lastmsg:dailymessage.id},
+                $set: {lastdaily: new Date(), quests: quests, lastmsg: dailymessage.id, username: u.username},
                 $unset: {dailystats: ""},
                 $inc: incr
             }
@@ -800,7 +786,7 @@ function daily(u, callback) {
     });
 }
 
-function leaderboard_new(arg, guild, callback) {
+function leaderboard(arg, guild, callback) {
     let global = arg == 'global';
     let collection = mongodb.collection('users');
     collection.aggregate([
@@ -846,7 +832,9 @@ function award(uID, amout, callback) {
 
 //{'cards.name':/Holy_Qua/},{$set:{'cards.$.name':'holy_quaternity'}}
 
-function difference(discUser, targetID, args, callback) {
+function difference(discUser, parse, callback) {
+    let targetID = parse.id;
+    let args = parse.input;
     if(discUser.id == targetID) 
         return callback("Eh? That won't work");
 
@@ -874,7 +862,7 @@ function difference(discUser, targetID, args, callback) {
                 dif = dif.filter(x => !(x.fav && x.amount == 1));
             }
             if(dif.length > 0) 
-                callback(listing.addNew(discUser, dif, dbUser2.username));
+                callback(dif, dbUser2.username);
             else
                 callback("**" + dbUser2.username + "** has no any unique cards for you\n");
         });
@@ -909,10 +897,9 @@ function getCardValue(card, callback) {
     mongodb.collection('users').count({"cards":{"$elemMatch": utils.getCardQuery(card)}}).then(amount => {
         let price = (ratioInc.star[card.level] 
                     + (card.craft? ratioInc.craft : 0) + (card.animated? ratioInc.gif : 0)) * 100;
-        mongodb.collection('users').count({"lastdaily":{$exists:true}}).then(userCount => {
-            price *= limitPriceGrowth((userCount * 0.035)/amount);
-            callback(price);
-        });
+        
+        price *= limitPriceGrowth((userCount * 0.035)/amount);
+        callback(price);
     });
 }
 
@@ -1034,6 +1021,7 @@ function fav(user, args, callback) {
 
         let cards = objs[0].cards;
         let dbUser = objs[0]._id;
+        if(!remove) cards = cards.filter(c => !c.fav);
         let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
@@ -1152,7 +1140,8 @@ function getUserCards(userID, query) {
                 sends: "$sends"
             }, 
             cards: {"$push": "$cards"}}
-        }
+        },
+        {"$limit": 200}
     ]);
 }
 
@@ -1309,6 +1298,8 @@ function addCardToUser(usercards, card) {
 
 function removeCardFromUser(usercards, card) {
     var usercard = utils.containsCard(usercards, card);
+    if(!usercard) return null;
+
     if(usercard.amount > 1) usercard.amount--;
     else {
         var i = usercards.indexOf(usercard);
