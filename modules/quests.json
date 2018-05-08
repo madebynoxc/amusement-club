@@ -1,22 +1,32 @@
 [
     {
         "name" : "claim4",
-        "description" : "Claim at least 4 cards today",
+        "description" : "Claim at least 4 cards today (`->claim`)",
         "award" : 400
     },
     {
         "name" : "claim6",
-        "description" : "Claim at least 6 cards today",
+        "description" : "Claim at least 6 cards today (`->claim`)",
         "award" : 500
     },
     {
         "name" : "forge2",
         "description" : "Forge a 2-star card (`->help forge`)",
-        "award" : 300
+        "award" : 400
     },
     {
         "name" : "forge3",
         "description" : "Forge a 3-star card (`->help forge`)",
+        "award" : 500
+    },
+    {
+        "name" : "auc1",
+        "description" : "Sell a card on auction (`->help auction`)",
+        "award" : 500
+    },
+    {
+        "name" : "auc2",
+        "description" : "Bid on auction (`->help auction`)",
         "award" : 400
     }
 ]

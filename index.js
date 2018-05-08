@@ -68,9 +68,7 @@ function _init() {
         if(!user) return;
         user.username = username;
 
-        if(user.bot && userID === bot.id)
-            selfMessage(event.d);
-        else if(!user.bot) {
+        if(!user.bot) {
             invite.checkStatus(message, guild, t => {
                 if(!t){
                     if(cooldownList.includes(userID)) return;
@@ -206,7 +204,8 @@ function getCommand(user, channel, guild, message, event, callback) {
             case 'auctions':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
-                    auctions.processRequest(user, cnt, channel.id, callback);
+                    let chanID = channel? channel.id : user.id;
+                    auctions.processRequest(user, cnt, chanID, callback);
                 }
                 return;
             case 'give':

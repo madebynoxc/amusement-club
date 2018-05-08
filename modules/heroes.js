@@ -136,20 +136,15 @@ function getHeroEffect(user, action, value, ...params) {
     if(user.hero) {
         switch(user.hero.name.toLowerCase()) {
             case 'akaza akari':
-                if(action == 'claim_akari') return Math.floor(value *.75);
-                if(action == 'send') {
-                    let p = params[0] * 130;
-                    if(user.dailystats) p -= (p * .2 * user.dailystats.send);
-                    if(p < 0) p = 0;
-                    return value + p;
-                } 
+                if(action == 'claim_akari') return Math.floor(value *.65);
+                //;~;\\
                 break;
             case 'toshino kyoko':
-                if(action == 'addXP') return value * 1.8;
+                if(action == 'auc') return true;
                 if(action == 'forge') return 0;
                 break;
             case 'funami yui':
-                if(action == 'daily') return value * 100;
+                if(action == 'daily') return 300 + (value * 100);
                 if(action == 'cooldown') return Math.floor(value * .5);
                 break;
             case 'yoshikawa chinatsu':

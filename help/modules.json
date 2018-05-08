@@ -2,7 +2,7 @@
     {
         "type": ["general"],
         "title": "\u2B50 Amusement Club \u2B50 Card Game",
-        "description": "Welcome! You already have **300 🍅 Tomatoes**! Use `->claim` to get cards.\nYou can call `->daily` every **20** hours and get free tomatoes.\nEarn tomatoes from typing and completing `->quests` that you get with `->daily`!",
+        "description": "Amusement Club is an amazing gacha game for discord! Use `->claim` to get cards.\nYou can call `->daily` every **20** hours and get free tomatoes.\nEarn tomatoes from typing and completing `->quests` that you get with `->daily`!",
         "fields": [
             {
                 "title": "Commands. Use `->help [command]`",

@@ -33,6 +33,7 @@ function addNewPagination(userID, title, data, channelID) {
 
     reactMessages.push(mes);
 
+    //bot.sendMessage({to: channelID, message: "```" + data.join('\n') + "```"}, (err, resp) => {
     bot.sendMessage({to: channelID, embed: getPageEmbed(mes)}, (err, resp) => {
         if(!err && data.length > 1) {
             mes.id = resp.id;

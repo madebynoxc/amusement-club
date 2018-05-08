@@ -55,18 +55,19 @@ function formatTransactions(res, userid) {
             let mins = utils.getMinutesDifference(trans.time);
             let hrs = utils.getHoursDifference(trans.time);
             let timediff = (hrs < 1) ? (mins + "m") : (hrs + "h");
-            if (hrs < 1 && mins < 1) timediff = "just now";
+            if (hrs < 1 && mins < 1) timediff = "<1m";
+            else if (hrs >= 100) timediff = "---";
+
             let isget = trans.from_id != userid;
-            resp += "[" + timediff + "] **";
-            resp += trans.status == "confirmed"? (isget ? "<–" : "–>") : (trans.status == "pending"? "!" : "X");
-            resp += "** [" + trans.id + "] ";
-            //resp += " **" + (trans.exp > -1 ? (trans.exp + "🍅") : utils.toTitleCase(trans.card.name.replace(/_/g, " "))) + "** ";
-            //resp += "**" + utils.getFullCard(trans.card) + "**";
+            if(timediff.length == 3) resp += "`[" + timediff + "] ";
+            else resp += "`[" + timediff + " ] ";
+
+            resp += (trans.status == "confirmed" || trans.status == "auction")? (
+                isget ? "⬅️" : "➡️") : (trans.status == "pending"? "❗" : "❌");
+            resp += " [" + trans.id + "]`  ";
             resp += "**" + utils.toTitleCase(trans.card.name.replace(/_/g, " ")) + "**";
-            resp += isget ? " from **" + trans.from + "**" : " to **" + (trans.to? trans.to : "<BOT>") + "**";
+            resp += isget ? " <- `" + trans.from + "`" : " -> `" + (trans.to? trans.to : "<BOT>") + "`";
             resp += "\n";
-            //resp += " for **" + Math.round(trans.price) + "** 🍅";
-            //resp += " in **" + trans.guild + "**\n";
         }
     });
 

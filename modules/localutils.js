@@ -310,11 +310,11 @@ function getFullCard(card) {
             res += "★"; 
     }
     res += "]  ";
-    if(card.fav) res += "❤ "
+    if(card.fav) res += "`❤` "
     if(card.craft) res += "[craft]  ";
     //if(card.collection == "christmas") res += "[xmas]  ";
     res += toTitleCase(card.name.replace(/_/g, " "));
-    res += " [" + card.collection + "]";
+    res += " `[" + card.collection + "]`";
     return res;
 }
 

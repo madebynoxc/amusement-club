@@ -371,25 +371,19 @@ function getQuests(user, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: user.id }).then((u) => {
         if(u) {
-            let res = "**" + user.username + "**";
+            let res = "";
             if(!u.quests || u.quests.length <= 0){
-                res += ", you don't have any quests. \n"
-                    + "New quests will appear after successfull '->daily' command";
+                if(u.hero) res += "you don't have any quests. \n"
+                    + "New quests will appear after `->daily`";
+                else res += "you will start getting quests once you get a hero";
+                return callback(utils.formatError(user, null, res));
             } else {
-
-                res += ", your quests for today: \n";
                 for(let i=0; i<u.quests.length; i++) {
                     res += (i+1).toString() + ". " + u.quests[i].description;
-                    res += " [" + u.quests[i].award + "🍅] \n";
+                    res += " [" + u.quests[i].award + "`🍅`] \n";
                 }
+                return callback(utils.formatInfo(null, u.username + ", your quests for today:", res));
             }
-
-            /*if(promotions.current > -1) {
-                let promo = promotions.list[promotions.current];
-                let active = promo.quests.filter(q => !u.dailystats.promoquests.includes(q.name));
-                res += "\nAdditional limited time quests:\n";
-            }*/
-            callback(res);
         }
     });
 }
@@ -732,15 +726,15 @@ function daily(u, callback) {
         }
 
         var stars = countCardLevels(user.cards);
-        let amount = 100;
+        let amount = 300;
         
         if(user.dailystats && user.dailystats.claim) 
-            amount = Math.max(heroes.getHeroEffect(user, 'daily', user.dailystats.claim), 100);
+            amount = Math.max(heroes.getHeroEffect(user, 'daily', user.dailystats.claim), amount);
 
         let cardEffect = forge.getCardEffect(user, 'daily', amount, 20);
         amount = cardEffect[0];
         
-        if(stars < 35) amount += 200;
+        if(!user.hero) amount += 700;
         let hours = cardEffect[1] - utils.getHoursDifference(user.lastdaily);           
         if(hours && hours > 0) {
             if(hours == 1){
@@ -756,8 +750,8 @@ function daily(u, callback) {
         var msg = "**" + user.username + "** recieved daily **" + amount + "** 🍅 You now have " 
         + (Math.floor(user.exp) + amount) + "🍅 \n";
 
-        if(stars < 35) msg += "(you got extra 200🍅 as a new player bonus)\n";
-        msg += "You also got **2 daily quests**. To view them use `->quests`\n";
+        if(!user.hero) msg += "(you got extra 700🍅 as a new player bonus)\n";
+        else msg += "You also got **2 daily quests**. To view them use `->quests`\n";
         
         if(!user.hero && stars >= 50) 
             msg += "You have enough stars to get a hero! use `->hero list`\n";
@@ -775,9 +769,10 @@ function daily(u, callback) {
                 + "Use `->claim promo` to get special limited time cards";
         }
 
+        let quests = user.hero? quest.getRandomQuests() : [];
         collection.update(
             { discord_id: u.id }, {
-                $set: {lastdaily: new Date(), quests: quest.getRandomQuests(), lastmsg:dailymessage.id, username: u.username},
+                $set: {lastdaily: new Date(), quests: quests, lastmsg: dailymessage.id, username: u.username},
                 $unset: {dailystats: ""},
                 $inc: incr
             }
@@ -1026,6 +1021,7 @@ function fav(user, args, callback) {
 
         let cards = objs[0].cards;
         let dbUser = objs[0]._id;
+        if(!remove) cards = cards.filter(c => !c.fav);
         let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
