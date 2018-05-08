@@ -78,7 +78,7 @@ function connect(bot, callback) {
             console.log(res.result);
         });
 
-        db.collection('users').count({"lastdaily":{$exists:true}}).then(uc => {
+        db.collection('users').count({'cards.1': {$exists: true}}).then(uc => {
             userCount = uc;
         });
 
@@ -887,7 +887,7 @@ function eval(user, args, callback, isPromo) {
         }
 
         getCardValue(match, price => {
-            let name = utils.toTitleCase(utils.getFullCard(match));
+            let name = utils.getFullCard(match);
             if(price == 0) callback(utils.formatInfo(user, null, "impossible to evaluate **" + name + "** since nobody has it"));
             else callback(utils.formatInfo(user, null, "the card **" + name + "** is worth **" + Math.floor(price) + "**🍅"));
         });
