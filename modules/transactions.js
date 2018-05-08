@@ -92,7 +92,7 @@ async function info(user, args, callback) {
     resp += "Price: **" + transaction.price + "** 🍅\n";
     resp += "From: **" + transaction.from + "**\n";
     resp += "To: **" + (transaction.to? transaction.to : "<BOT>") + "**\n";
-    if(transaction.status == auction) resp += "This is an **auction** transaction\n";
+    if(transaction.status == "auction") resp += "This is an **auction** transaction\n";
     else {
         resp += "On server: **" + transaction.guild + "**\n";
         resp += "Status: **" + transaction.status + "**\n";
