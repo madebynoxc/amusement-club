@@ -143,9 +143,11 @@ async function sell(user, incArgs, channelID, callback) {
             return callback(utils.formatError(user, null, "price should be a number"));
 
         let price = parseInt(args[1]);
-        let match = objs[0].cards[0];
+        let match = query['cards.name']? dbManager.getBestCardSorted(objs[0].cards, query['cards.name'])[0] : objs[0].cards[0];
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
-        match.fav = false;
+        if (match.fav && match.amount == 1) 
+            return callback(utils.formatError(user, null, "you can't sell favorite card."
+                + " To remove from favorites use `->fav remove [card query]`"));
 
         dbManager.getCardValue(match, async (eval) => {
             let p = Math.round(eval * .5);
