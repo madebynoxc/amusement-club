@@ -25,6 +25,7 @@ module.exports = {
     getRatio,
     getCardQuery,
     generateRandomId,
+    generateNextId,
     getFullCard
 }
 
@@ -298,6 +299,13 @@ function getUserID(inp) {
 
 function generateRandomId() {
     return (Date.now().toString(36).substr(2, 3) + Math.random().toString(36).substr(2, 5));
+}
+
+function generateNextId(last) {
+    var num = parseInt(last, 36);
+    num += Math.pow(77, 4);
+    num %= Math.pow(36, 5);
+    return next = num.toString(36);
 }
 
 function getFullCard(card) {

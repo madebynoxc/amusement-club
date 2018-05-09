@@ -310,7 +310,12 @@ async function generateBetterID() {
     let ids = await acollection.find({}, {id: 1}).toArray();
     let newID = "";
     do {
-        newID = utils.generateRandomId();
+        let lastAuction = await acollection.aggregate([
+            {"$match": {'finished': false}},
+            {"$sort": {date: 1}}
+        ]).toArray();
+        let auc = lastAuction[lastAuction.length-1];
+        newID = utils.generateNextId(auc ? auc.id : "start");
     } while(ids.filter(i => i.id === newID).length > 0);
     return newID;
 }
