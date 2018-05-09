@@ -90,7 +90,7 @@ function claim(user, guildID, arg, callback) {
     let ucollection = mongodb.collection('users');
     ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
         if(!dbUser) {
-            collection.insert( { 
+            ucollection.insert( { 
                 discord_id: user.id,
                 username: user.username,
                 cards: [],
