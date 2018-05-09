@@ -1,566 +1,591 @@
 [
-	{
-		"type": ["general"],
-	    "title": "\u2B50 Amusement Club \u2B50 Card Game",
-	    "description": "Welcome! You already have **300 🍅 Tomatoes**! Use `->claim` to get cards.\nYou can call `->daily` every **20** hours and get free tomatoes.\nEarn tomatoes from typing and completing `->quests` that you get with `->daily`!",
-	    "fields": [
-	        {
-	            "title": "Quick help",
-	            "description": "use `->?[command]` OR `->?[module]` to get a quick help\ne.g. `->?give`" 
-	        },
-	        {
-	            "title": "Commands. Use `->help [command]`",
-	            "description": "->help claim\n->help summon\n->help daily\n->help balance\n->help give\n->help pay\n->help cards\n->help sell\n->help fav\n->help difference\n->help quests\n->help has\n->help whatsnew"
-	        },
-	        {
-	            "title": "Modules. Use `->help [module]`",
-	            "description": "->help leaderboards\n->help hero\n->help crystal\n->help forge\n->help ratio\n->help inventory\n->help stats\n->help invite"
-	        },
-	        {
-	            "title": "Contacts",
-	            "description": "[Bot Discord](https://discord.gg/kqgAvdX) | [Source Code](https://github.com/NoxCaos/amusement-club/) | [Developer](https://github.com/NoxCaos/)"
-	        },
-	        {
-	            "title": "Running",
-	            "description": "[Discord.io](https://github.com/izy521/discord.io) | [NodeJS](https://nodejs.org/) | [MongoDB](https://www.mongodb.com/)"
-	        },
-	        {
-	            "title": "Invite bot",
-	            "description": "Please run `->help invite` and read the conditions"
-	        }
-	    ]
-	},
-	{
-		"type": ["craft", "forge"],
-		"title": "About card craft/forge",
-		"description": "This command allows you to get new cards using cards that you have. Forge will consume old cards. There are two types of forge, however: *Ordinary cards forge* and *Craft cards forge*",
-		"fields": [
-			{
-				"title": "Ordinary cards forge",
-				"description": "Can be used to forge simple non-craft cards. You can convert two 1-star cards into 2-star card, four 1-star cards (or two 2-star cards) into 3-star card. New card is completely random, except that if cards that you use for forging are from the same collection (fandom). In this case new card will be also from same collection. Ordinary forge costs 120 Tomatoes for 1-star cards and 240 Tomatoes for 2-star."
-			},
-			{
-				"title": "Craft cards forge",
-				"description": "Used when all cards in arguments are craft cards. You have to combine certain cards in order to get a special effect card, that will be added to your inventory. This special card provides valuable effect. If you get a special *craft card*, try using part of it name to find info (e.g. `->forge info tohru`)."
-			},
-			{
-				"title": "To forge cards",
-				"description": "->forge [card 1 name], [second card]"
-			},
-			{
-				"title": "See info about effect card",
-				"description": "->forge info [card name]"
-			},
-			{
-				"title": "Useful to know",
-				"description": "You can’t combine ordinary and craft card\nYou can’t combine cards of different level\nMinimum amount of cards is 2\nCraft cards usually contain part of effect card name"
-			}
-		]
-	},
-	{
-		"type": ["crystal"],
-		"title": "About crystals",
-		"description": "In **Christmas event** you can get 1-2 star cards using `->claim promo`. However, 3+ star cards can be recieved only by forging **crystals**",
-		"fields": [
-			{
-				"title": "Get crystals",
-				"description": "Forge 2-star cards or 1-star cards and get different crystals. Depending on overall star amount in forge request you will get crystal with higher value. You can find your crystals in **inventory** (`->inv`)"
-			},
-			{
-				"title": "Crystal values",
-				"description": "[red, green, blue] -> [cyan, magenta] -> [gold] -> [platinum]"
-			},
-			{
-				"title": "Forge crystals to get new cards",
-				"description": "Once you have some crystals, forge them like this (example)\n`->forge *red, *green, *blue` and get a higher value card. If you were the first one to forge this card with those crystals, you will assign your own **crystal recipe** to it. Once someone uses your recipe to get this card, you will get extra **snowflakes**. Read more: `->help recipe`"
-			},
-			{
-				"title": "Order and value matters!",
-				"description": "Depending on order of crystals and their value, you get different recipes. Cyan and Magenta crystals will give you 100% 3-star card and some chance to get a 4-star. Gold crystal is 100% 4-star card. To get christmas legendary, you have to forge 3 platinum crystals.\n**NOTE** that legendary becomes available in first couple of days after christmas. It will be announced separately"
-			}
-		]
-	},
-	{
-		"type": ["res", "recipe"],
-		"title": "About recipe",
-		"description": "Recipe allows you to craft card that you want. Following certain crystal pattern you can forge you favourite card",
-		"fields": [
-			{
-				"title": "Getting card recipe",
-				"description": "->res [card query]"
-			},
-			{
-				"title": "Getting possible crystal recipe",
-				"description": "->res *crystal1 *crystal2 ..."
-			}
-		]
-	},
-	{
-		"type": ["inv", "inventory"],
-		"title": "About inventory",
-		"description": "Inventory contains different items that cam be used in game. For example, effect cards (from v1.9.0), claim tickets (from v2.0), etc. Items can be stored unlimited amount of time. Some items provide effect if they are in user’s inventory, some of them should be used.",
-		"fields": [
-			{
-				"title": "See the list of your items",
-				"description": "->inv"
-			},
-			{
-				"title": "Use item",
-				"description": "->inv use [some item name]"
-			},
-			{
-				"title": "Get item info",
-				"description": "->inv info [some item name]"
-			}
-		]
-	},
-	{
-		"type": ["lead", "leaderboard", "leaderboards"],
-		"title": "About leaderboards",
-		"description": "Provides a list of players, who have most stars (from cards) Globally or Locally. Card duplicates are not counted.",
-		"fields": [
-			{
-				"title": "Get local rating",
-				"description": "->lead"
-			},
-			{
-				"title": "Get global rating",
-				"description": "->lead global"
-			}
-		]
-	},
-	{
-		"type": ["hero"],
-		"title": "About hero",
-		"description": "Hero is a character with certain set of abilities that help you in the game. You can get hero for free after you get more than 50 \u2B50. You can get your amount of stars by running `->bal`.\nHero change costs 2000 🍅 Tomatoes and resets hero level. To change hero without losing your level, purchase a hero change ticket from `->store` (from v2.0).\nHero gets XP if you are active. Hero level unlocks certain effect cards and also gives more `->daily` 🍌 Bananas (from v2.0)",
-		"fields": [
-			{
-				"title": "Hero club (from v2.0)",
-				"description": "Special for TOP-5 heroes that are chosen every 1st day of month. Members get different daily bonuses and increased *reputation points* (from v1.9.7)"
-			},
-			{
-				"title": "Get your hero info",
-				"description": "->hero"
-			},
-			{
-				"title": "Get list of available heroes",
-				"description": "->hero list"
-			},
-			{
-				"title": "Get info about certain hero",
-				"description": "->hero info [hero name]"
-			},
-			{
-				"title": "Get info about all heroes",
-				"description": "->hero info all"
-			},
-			{
-				"title": "Get/replace hero",
-				"description": "->hero get [hero name]"
-			},
-			{
-				"title": "Global hero rating by level",
-				"description": "->hero lead"
-			}
-		]
-	},
-	{
-		"type": ["stat", "stats", "statistics"],
-		"title": "About bot statistics",
-		"description": "Provides information about server/players/cards",
-		"fields": [
-			{
-				"title": "Get general statistics",
-				"description": "->stats"
-			},
-			{
-				"title": "Get cards statistics",
-				"description": "->stats cards"
-			},
-			{
-				"title": "Get hero statistics",
-				"description": "->stats hero"
-			}
-		]
-	},
-	{
-		"type": ["cl", "claim"],
-		"title": "About card claiming",
-		"description": "You can claim cards as long as you have enough 🍅 Tomatoes. Claim costs start at 50 tomatoes and increase by 50 each claim. The claim cost goes back to minimum after running `->daily`. ",
-		"fields": [
-			{
-				"title": "Locked claims",
-				"description": "If the server you are claiming on is related to specific fandom/series, that means that only one collection is used for claiming. However, you can always try and claim among all available cards for the bot. Use `->claim any` for that"
-			},
-			{
-				"title": "Useful to know",
-				"description": "This command can be executed only in bot channel (`->help channel` for more info)\nClaim cost can be different for certain *heroes*\nSome *effect cards* can reduce claim cost\nThe message above card shows cost of your next claim and can also include important information about the card"
-			},
-			{
-				"title": "Get a random card (can be locked)",
-				"description": "->claim"
-			},
-			{
-				"title": "Get any random card",
-				"description": "->claim any"
-			},
-			{
-				"title": "Get several cards",
-				"description": "->claim [amount]"
-			}
-		]
-	},
-	{
-		"type": ["sum", "summon"],
-		"title": "About card summon",
-		"description": "You can summon card in any channel on server, but only if you have this card. This operation won't consume card.\nYou can include partial name of the card, but it has to be more than 3 characters long. The system will try to find *most suitable card* using name you provided",
-		"fields": [
-			{
-				"title": "Summon a card",
-				"description": "->sum [card query] [-collection] [level] [!collection]"
-			}
-		]
-	},
-	{
-		"type": ["daily"],
-		"title": "About daily bonus",
-		"description": "You can get free **100🍅** Tomatoes every 20 hours. This command will also reset your `->claim` cost and give **2 quests**",
-		"fields": [
-			{
-				"title": "Useful to know",
-				"description": "New players get 300🍅 bonus\nThe daily bonus can be different for certain heroes\n*Effect cards* and *Hero Club* can change daily bonus"
-			},
-			{
-				"title": "Get daily bonus",
-				"description": "->daily"
-			}
-		]
-	},
-	{
-		"type": ["eval", "evaluate"],
-		"title": "About card pricing",
-		"description": "Bot evaluates card value depending on amount of stars, type and amount users that already have it. This is really useful to know the market price of item when trading it.",
-		"fields": [
-			{
-				"title": "Useful to know",
-				"description": "You can use any filters for card search, except `-multi`\nBot uses those values to determine your **give/get ratio** (read more in `->help trade`)"
-			},
-			{
-				"title": "Get evaluated card price",
-				"description": "->eval [card query]"
-			}
-		]
-	},
-	{
-		"type": ["bal", "balance", "economy", "currency", "tomatoes"],
-		"title": "About currencies",
-		"description": "This command will show your amount of 🍅 Tomatoes \u2B50 Stars and 🍌 Bananas (from v2.0).\n**Tomatoes** is a main currency in game, that is used for card `->claim`, trading, forging, etc. You can get them by completing `->quests` and claiming `->daily`\n**Stars** show you overall (clean) sum of card stars that you have. This is used mostly for rating and some benefits, like *heroes*\n**Bananas** (from v2.0) is a currency used in `->store` to get special items and *premium*. Daily bonus gives Bananas depending on hero level",
-		"fields": [
-			{
-				"title": "Useful to know",
-				"description": "You can `->pay` tomatoes to other people\n`->bal` shows 'clean' amount of stars, that means that those are no affected by any hero abilities.\nYou can't transfer Bananas."
-			},
-			{
-				"title": "Get your balance",
-				"description": "->bal"
-			}
-		]
-	},
-	{
-		"type": ["give", "send"],
-		"title": "About __card__ sending",
-		"description": "You can send cards to other users. Note, that this command has no confirmation, so it will send best matched card at once. To make sure, that you will send the correct card, type full card name, or summon it first to check if the name is correct.\n**Since v1.9.8 bot has trading limits. To see them run `->help trade`**",
-		"fields": [
-			{
-				"title": "Send card to a user",
-				"description": "->send @username [name/-collection/-filters]"
-			},
-			{
-				"title": "Get your G/G ratio",
-				"description":"->send -ratio"
-			}
-		]
-	},
-	{
-		"type": ["trading", "trade", "ratio"],
-		"title": "About trading rules",
-		"description": "**Since v1.9.10** limit to daily trading was added. After sending 15 cards, user will have to pay an increasing **100 tomatoes fee**. User who got 15 cards can't recieve more. You can get amount of cards send with `->ratio`, this statistics resets after you run `->daily`\n**Since v1.9.8** Amusement Club has limits to user trading. In order to keep card balance between users the **give/get ratio system** was implemented. When you send or get cards, Amusement Club will count your send/receive (officially give/get or g/g) ratio. If you send or receive too many cards, trading will be blocked. The g/g ratio is calculated from card value. You can get card value by running `->eval [card query]`",
-		"fields": [
-			{
-				"title": "Ratio is higher than 2.5",
-				"description":"You sent too many cards and have to get more cards or tomatoes from other users"
-			},
-			{
-				"title": "Ratio is lower than 0.4",
-				"description":"You got too many cards from users. Feel free to thank them with tomatoes or by sending other cards"
-			},
-			{
-				"title": "Get your G/G ratio",
-				"description":"->send -ratio OR ->ratio"
-			},
-			{
-				"title": "Send Tomatoes",
-				"description":"Get the cost of the card by running `->eval [card query]`"
-			},
-			{
-				"title": "Daily won't reset your ratio",
-				"description": "`->daily` won't reset G/G ratio, however it will improve ratio a little. First 2 sends a day that are not included into g/g calculation"
-			}
-		]
-	},
-	{
-		"type": ["pay"],
-		"title": "About __tomato__ sending",
-		"description": "You can send tomatoes to other users. Usually this is used as a part of trade deal between users.",
-		"fields": [
-			{
-				"title": "Send Tomatoes to a user",
-				"description": "->pay @username amount"
-			}
-		]
-	},
-	{
-		"type": ["cards"],
-		"title": "About card listing",
-		"description": "Gets your cards and shows it in several pages. If you have a long card list, use *card filters* to show only cards that you are interested in. See the filters below.",
-		"fields": [
-			{
-				"title": "Useful to know",
-				"description": "You can combine any filters in any order. If no cards found, bot will tell you that\nTo see all collections, run `->stats cards`"
-			},
-			{
-				"title": "Show all your cards",
-				"description": "->cards"
-			},
-			{
-				"title": "Show only multiple (x2+) cards",
-				"description": "->cards -multi"
-			},
-			{
-				"title": "Show only special forge cards",
-				"description": "->cards -craft"
-			},
-			{
-				"title": "Show only cards from some collection",
-				"description": "->cards -[collection]\n(e.g. `->cards -yuru`)"
-			},
-			{
-				"title": "Show only cards with certain amount of stars",
-				"description": "->cards [stars]\n(e.g. `->cards 3`)"
-			},
-			{
-				"title": "Show only cards with tag (from 1.9.10)",
-				"description": "->cards #[tag]\n(e.g. `->cards #saber`)"
-			},
-			{
-				"title": "Show cards that has keyword in the name",
-				"description": "->cards [keywords]\n(e.g. `->cards kyoko`)"
-			}
-		]
-	},
-	{
-		"type": ["sell"],
-		"title": "About cards selling",
-		"description": "Sell cards that you don't need. You get:\n300🍅 for 3🌟 card, 150🍅 for 2🌟 and 80🍅 for 1🌟\nNote, that this command has no confirmation, so it will sell best matched card at once. To make sure, that you will sell correct card, type full card name, or summon it first to check if the name is correct",
-		"fields": [
-			{
-				"title": "Sell a card",
-				"description": "->sell [card query]"
-			}
-		]
-	},
-	{
-		"type": ["fav", "favorite"],
-		"title": "Adding cards to favorites",
-		"description": "You can add any card to favorites. That kind of card can't be sent and it won't show up for other users in `->has` or `->diff` commands, unless you have 2 or more of those cards or add the `-fav` option",
-		"fields": [
-			{
-				"title": "Favorite card",
-				"description": "->fav [card query]"
-			},
-			{
-				"title": "Remove from favorites",
-				"description": "->fav remove [card query]"
-			},
-			{
-				"title": "List favorite cards",
-				"description": "->cards -fav"
-			}
-		]
-	},
-	{
-		"type": ["query"],
-		"title": "Card query",
-		"description": "In the help messages you will often see `[card query]`. But what does it mean?\n In Amusement Club you can get cards in any request type (except `forge`) by using different card parameters. Those parameters can be also combined",
-		"fields": [
-			{
-				"title": "Name",
-				"description": "->cards [some name]"
-			},
-			{
-				"title": "Collection",
-				"description": "->cards -[collection]"
-			},
-			{
-				"title": "Craft",
-				"description": "->cards -craft"
-			},
-			{
-				"title": "Animated",
-				"description": "->cards -gif"
-			},
-			{
-				"title": "Favorite",
-				"description": "->cards -fav"
-			},
-			{
-				"title": "Make NEGATIVE request",
-				"description": "->cards ![collection] !fav !gif !craft"
-			}
-		]
-	},
-	{
-		"type": ["dif", "diff", "difference"],
-		"title": "About difference",
-		"description": "Difference is very useful command for trading, that will show you cards that certain user has and you not. It can accept same set of filters as `->cards` command.  Add option `-fav` to include favorite cards.",
-		"fields": [
-			{
-				"title": "Useful to know",
-				"description": "You can combine any filters in any order.\nTo see all collections, run `->stats cards`"
-			},
-			{
-				"title": "Show all different cards",
-				"description": "->diff @someuser"
-			},
-			{
-				"title": "Show only multiple (x2+) cards",
-				"description": "->diff @someuser -multi"
-			},
-			{
-				"title": "Show only special forge cards",
-				"description": "->diff @someuser -craft"
-			},
-			{
-				"title": "Show only cards from some collection",
-				"description": "->diff @someuser -[collection]]\n(e.g. `->diff @John -yuru`)"
-			},
-			{
-				"title": "Show only cards with certain amount of stars",
-				"description": "->diff @someuser [stars]\n(e.g. `->diff @John 3`)"
-			},
-			{
-				"title": "Show only cards with tag (from 1.9.10)",
-				"description": "->diff #[tag]\n(e.g. `->diff #saber`)"
-			},
-			{
-				"title": "Show cards that has keyword in the name",
-				"description": "->diff [keywords]\n(e.g. `->diff kyoko`)"
-			}
-		]
-	},
-	{
-		"type": ["quest", "quests", "task"],
-		"title": "About quests",
-		"description": "Quests are small daily tasks that players get after running `->daily` command. Usually you will get 2 different quests (that might be different depending on your hero).",
-		"fields": [
-			{
-				"title": "See quest list",
-				"description": "->quests"
-			}
-		]
-	},
-	{
-		"type": ["has"],
-		"title": "Know if user has a card",
-		"description": "This little useful command will try to find if user has certain card by name. It is useful, when you need to transfer card and would like to make sure target user doesn't have it already. Add option `-fav` to include favorite cards.",
-		"fields": [
-			{
-				"title": "Use command",
-				"description": "->has @username [cardname]\n(e.g. `->has @John deceptive love`)"
-			}
-		]
-	},
-	{
-		"type": ["whatsnew", "changelog", "updates", "version"],
-		"title": "About updates",
-		"description": "This command provides list of latest updates for the bot. This is always useful to check for latest changes to not make mistakes and lose tomatoes! For more details and update notifications, join [Bot Discord](https://discord.gg/kqgAvdX)",
-		"fields": [
-			{
-				"title": "Get latest update",
-				"description": "->whatsnew"
-			},
-			{
-				"title": "Get last 7 updates",
-				"description": "->whatsnew all"
-			}
-		]
-	},
-	{
-		"type": ["channel"],
-		"title": "About bot channels",
-		"description": "Amusement Club is a discord bot that can read commands from any channel. However, there are some limitations",
-		"fields": [
-			{
-				"title": "Any channel",
-				"description": "You can `->summon` cards and call `->help`. Bot uses your messages to add 🍅 Tomatoes to your balance"
-			},
-			{
-				"title": "Bot channel",
-				"description": "Any command is available"
-			},
-			{
-				"title": "Direct messages",
-				"description": "The functionality of DMs is limited to `->help` and `->invite` (for bot invites). Please, use server bot chats for full bot functionality"
-			}
-		]
-	},
-	{
-		"type": ["store", "st"],
-		"title": "About store",
-		"description": "Command is not available.\nThis function will be available after v2.0",
-		"fields": [ ]
-	},
-	{
-		"type": ["auc", "auction"],
-		"title": "About auction",
-		"description": "Command is not available.\nThis function will be available after v1.9.x",
-		"fields": [ ]
-	},
-	{
-		"type": ["tag"],
-		"title": "About tagging",
-		"description": "Command is not available.\nThis function will be available after v1.9.x",
-		"fields": [ ]
-	},
-	{
-		"type": ["inv", "invite"],
-		"title": "About bot invitation",
-		"description": "You can add Amusement Club on any other server, but you have to register this server in bot database first. Type `->invite [your server id]` and it will be added for 20 hours. If you won't invite bot within that time, link will not be active.",
-		"fields": [
-			{
-				"title": "READ THIS",
-				"description": "Bot constantly reads and **logs** all the messages on server in order to give Tomatoes and debug purposes. Feel free to exclude bot from ANY channels, that you want to secure contents of. However, keep in mind, that bot **won't read** messages in those channels, so you won't get Tomatoes from them.\n**Messages in Logs** can be used by **bot administration** to find bugs/errors and cheaters. Make sure that bot is **not** present in channels, that may contain any **confidential** information"
-			},
-			{
-				"title": "Bot administration and disclaimers",
-				"description": "Administration will **never** use information in logs for personal purposes. However, [disclaimer] administration is **NOT RESPONSIBLE** for consequences of you or any Member of server/guild including sensible/confidential information.\nAdministration will **never ask** you about your *discord password* or *administrative permissions* for your server.\n[disclaimer] All information used by bot is in **public chat** and can be accessed by **any** member of the guild/server. If you invite bot to private server, consider that **administration** can see and read the messages"
-			},
-			{
-				"title": "Server administration",
-				"description": "**Please note**, that bot can be invited only by users, that have permission to invite bots to server. If you are NOT target server administrator, send *generated link* to administrator or any person with corresponding role"
-			},
-			{
-				"title": "Any questions?",
-				"description": "If you have any questions regarding bot, please ask them [in bot discord](https://discord.gg/kqgAvdX)"
-			},
-			{
-				"title": "Ready to invite?",
-				"description": "Please, run `->invite [server id]` to register your server. If you won't register your server, bot **will not** work!\n**PLEASE NOTE**: After you run this command, your *discord name* will be visible to anyone else, who decides to invite this bot to the same server"
-			},
-			{
-				"title": "To check invite status",
-				"description": "->invite status [server id]"
-			}
-		]
-	}
+    {
+        "type": ["general"],
+        "title": "\u2B50 Amusement Club \u2B50 Card Game",
+        "description": "Amusement Club is an amazing gacha game for discord!\nUse `->claim` to get cards.\nYou can call `->daily` every **20** hours and get free tomatoes.\nGet a hero after 50 Stars and earn tomatoes from completing `->quests` that you get with `->daily` and trading using `->sell` and `->auction`!",
+        "fields": [
+            {
+                "title": "Commands.",
+                "description": "->help claim\n->help summon\n->help daily\n->help balance\n->help cards\n->help sell\n->help fav\n->help diff\n->help quests\n->help has\n->help whatsnew"
+            },
+            {
+                "title": "Modules.",
+                "description": "->help leaderboards\n->help hero\n->help crystal\n->help forge\n->help auction\n->help transactions\n->help query\n->help inventory\n->help stats\n->help invite"
+            },
+            {
+                "title": "Contacts",
+                "description": "[Bot Discord](https://discord.gg/kqgAvdX) | [Source Code](https://github.com/NoxCaos/amusement-club/) | [Developer](https://github.com/NoxCaos/)"
+            },
+            {
+                "title": "Running",
+                "description": "[Discord.io](https://github.com/izy521/discord.io) | [NodeJS](https://nodejs.org/) | [MongoDB](https://www.mongodb.com/)"
+            },
+            {
+                "title": "Invite bot",
+                "description": "Please run `->help invite` and read the conditions"
+            }
+        ]
+    },
+    {
+        "type": ["craft", "forge"],
+        "title": "About card craft/forge",
+        "description": "This command allows you to get new cards using cards that you have. Forge will consume old cards. There are two types of forge, however: *Ordinary cards forge* and *Craft cards forge*",
+        "fields": [
+            {
+                "title": "Ordinary cards forge",
+                "description": "Can be used to forge simple non-craft cards. You can convert two 1-star cards into 2-star card, four 1-star cards (or two 2-star cards) into 3-star card. New card is completely random, except that if cards that you use for forging are from the same collection (fandom). In this case new card will be also from same collection. Ordinary forge costs 120 Tomatoes for 1-star cards and 240 Tomatoes for 2-star."
+            },
+            {
+                "title": "Craft cards forge",
+                "description": "Used when all cards in arguments are craft cards. You have to combine certain cards in order to get a special effect card, that will be added to your inventory. This special card provides valuable effect. If you get a special *craft card*, try using part of it name to find info (e.g. `->forge info tohru`)."
+            },
+            {
+                "title": "To forge cards",
+                "description": "->forge [card 1 name], [second card]"
+            },
+            {
+                "title": "See info about effect card",
+                "description": "->forge info [card name]"
+            },
+            {
+                "title": "Useful to know",
+                "description": "You can’t combine ordinary and craft card\nYou can’t combine cards of different level\nMinimum amount of cards is 2\nCraft cards usually contain part of effect card name"
+            }
+        ]
+    },
+    {
+        "type": ["crystal"],
+        "title": "About crystals",
+        "description": "[THIS FUNCTIONALITY IS DISABLED] In **Christmas event** you can get 1-2 star cards using `->claim promo`. However, 3+ star cards can be recieved only by forging **crystals**",
+        "fields": [
+            {
+                "title": "Get crystals",
+                "description": "Forge 2-star cards or 1-star cards and get different crystals. Depending on overall star amount in forge request you will get crystal with higher value. You can find your crystals in **inventory** (`->inv`)"
+            },
+            {
+                "title": "Crystal values",
+                "description": "[red, green, blue] -> [cyan, magenta] -> [gold] -> [platinum]"
+            },
+            {
+                "title": "Forge crystals to get new cards",
+                "description": "Once you have some crystals, forge them like this (example)\n`->forge *red, *green, *blue` and get a higher value card. If you were the first one to forge this card with those crystals, you will assign your own **crystal recipe** to it. Once someone uses your recipe to get this card, you will get extra **snowflakes**. Read more: `->help recipe`"
+            },
+            {
+                "title": "Order and value matters!",
+                "description": "Depending on order of crystals and their value, you get different recipes. Cyan and Magenta crystals will give you 100% 3-star card and some chance to get a 4-star. Gold crystal is 100% 4-star card. To get christmas legendary, you have to forge 3 platinum crystals.\n**NOTE** that legendary becomes available in first couple of days after christmas. It will be announced separately"
+            }
+        ]
+    },
+    {
+        "type": ["res", "recipe"],
+        "title": "About recipe",
+        "description": "[THIS FUNCTIONALITY IS DISABLED] Recipe allows you to craft card that you want. Following certain crystal pattern you can forge you favourite card",
+        "fields": [
+            {
+                "title": "Getting card recipe",
+                "description": "->res [card query]"
+            },
+            {
+                "title": "Getting possible crystal recipe",
+                "description": "->res *crystal1 *crystal2 ..."
+            }
+        ]
+    },
+    {
+        "type": ["inv", "inventory"],
+        "title": "About inventory",
+        "description": "Inventory contains different items that cam be used in game. For example, effect cards (from v1.9.0), claim tickets (from v2.0), etc. Items can be stored unlimited amount of time. Some items provide effect if they are in user’s inventory, some of them should be used.",
+        "fields": [
+            {
+                "title": "See the list of your items",
+                "description": "->inv"
+            },
+            {
+                "title": "Use item",
+                "description": "->inv use [some item name]"
+            },
+            {
+                "title": "Get item info",
+                "description": "->inv info [some item name]"
+            }
+        ]
+    },
+    {
+        "type": ["lead", "leaderboard", "leaderboards"],
+        "title": "About leaderboards",
+        "description": "Provides a list of players, who have most stars (from cards) Globally or Locally. Card duplicates are not counted.",
+        "fields": [
+            {
+                "title": "Get local rating",
+                "description": "->lead"
+            },
+            {
+                "title": "Get global rating",
+                "description": "->lead global"
+            }
+        ]
+    },
+    {
+        "type": ["hero"],
+        "title": "About hero",
+        "description": "Hero is a character with certain set of abilities that help you in the game. You can get hero for free after you get more than 50 \u2B50. You can get your amount of stars by running `->bal`.\nHero change costs 2000 🍅 Tomatoes and resets hero level. To change hero without losing your level, purchase a hero change ticket from `->store` (from v2.0).\nHero gets XP if you are active. Hero level unlocks certain effect cards",
+        "fields": [
+            {
+                "title": "Get your hero info",
+                "description": "->hero"
+            },
+            {
+                "title": "Get list of available heroes",
+                "description": "->hero list"
+            },
+            {
+                "title": "Get info about certain hero",
+                "description": "->hero info [hero name]"
+            },
+            {
+                "title": "Get info about all heroes",
+                "description": "->hero info all"
+            },
+            {
+                "title": "Get/replace hero",
+                "description": "->hero get [hero name]"
+            },
+            {
+                "title": "Global hero rating by level",
+                "description": "->hero lead"
+            }
+        ]
+    },
+    {
+        "type": ["stat", "stats", "statistics"],
+        "title": "About bot statistics",
+        "description": "Provides information about server/players/cards",
+        "fields": [
+            {
+                "title": "Get general statistics",
+                "description": "->stats"
+            },
+            {
+                "title": "Get cards statistics",
+                "description": "->stats cards"
+            },
+            {
+                "title": "Get hero statistics",
+                "description": "->stats hero"
+            }
+        ]
+    },
+    {
+        "type": ["cl", "claim"],
+        "title": "About card claiming",
+        "description": "You can claim cards as long as you have enough 🍅 Tomatoes. Claim costs start at 50 tomatoes and increase by 50 each claim. The claim cost goes back to minimum after running `->daily`. ",
+        "fields": [
+            {
+                "title": "Locked claims",
+                "description": "If the server you are claiming on is related to specific fandom/series, that means that only one collection is used for claiming. However, you can always try and claim among all available cards for the bot. Use `->claim any` for that"
+            },
+            {
+                "title": "Useful to know",
+                "description": "This command can be executed only in bot channel (`->help channel` for more info)\nClaim cost can be different for certain *heroes*\nSome *effect cards* can reduce claim cost\nThe message above card shows cost of your next claim and can also include important information about the card"
+            },
+            {
+                "title": "Get a random card (can be locked)",
+                "description": "->claim"
+            },
+            {
+                "title": "Get any random card",
+                "description": "->claim any"
+            },
+            {
+                "title": "Get several cards",
+                "description": "->claim [amount]"
+            }
+        ]
+    },
+    {
+        "type": ["sum", "summon"],
+        "title": "About card summon",
+        "description": "You can summon card in any channel on server, but only if you have this card. This operation won't consume card.\nYou can include partial name of the card, but it has to be more than 3 characters long. The system will try to find *most suitable card* using name you provided",
+        "fields": [
+            {
+                "title": "Summon a card",
+                "description": "->sum [card query] [-collection] [level] [!collection]"
+            }
+        ]
+    },
+    {
+        "type": ["daily"],
+        "title": "About daily bonus",
+        "description": "You can get free **300🍅** Tomatoes every 20 hours. This command will also reset your `->claim` cost and give **2 quests** if you have a hero",
+        "fields": [
+            {
+                "title": "Useful to know",
+                "description": "New players get 1000🍅 bonus\nThe daily bonus can be different for certain heroes\n*Effect cards* can also change daily bonus"
+            },
+            {
+                "title": "Get daily bonus",
+                "description": "->daily"
+            }
+        ]
+    },
+    {
+        "type": ["eval", "evaluate"],
+        "title": "About card pricing",
+        "description": "Bot evaluates card value depending on amount of stars, type and amount users that already have it. This is really useful to know the market price of item when trading it.",
+        "fields": [
+            {
+                "title": "Useful to know",
+                "description": "You can use any filters for card search, except `-multi`\nBot uses those values to determine your **give/get ratio** (read more in `->help trade`)"
+            },
+            {
+                "title": "Get evaluated card price",
+                "description": "->eval [card query]"
+            }
+        ]
+    },
+    {
+        "type": ["bal", "balance", "economy", "currency", "tomatoes"],
+        "title": "About currencies",
+        "description": "This command will show your amount of 🍅 Tomatoes and \u2B50 Stars.\n**Tomatoes** is a main currency in game, that is used for card `->claim`, trading, forging, etc. You can get them by completing `->quests` and claiming `->daily`\n**Stars** show you overall (clean) sum of card stars that you have. This is used mostly for rating and some benefits, like *heroes*\nDaily bonus gives Bananas depending on hero level",
+        "fields": [
+            {
+                "title": "Useful to know",
+                "description": "You can also spend your tomatoes by accepting trade requests from other users (`->help sell`) and selling cards on auction (`->help auc`)"
+            },
+            {
+                "title": "Get your balance",
+                "description": "->bal"
+            }
+        ]
+    },
+    {
+        "type": ["give", "send"],
+        "title": "About __card__ sending",
+        "description": "Direct card sending has been removed since `1.10`\nPlease consider using `->sell` for card exchange",
+        "fields": [ ]
+    },
+    {
+        "type": ["trading", "trade"],
+        "title": "About trading rules",
+        "description": "**Since v1.9.12** trading was replaced with selling and auctions. Please use `->help sell` and `->help auction` to learn more",
+        "fields": [ ]
+    },
+    {
+        "type": ["pay"],
+        "title": "About __tomato__ sending",
+        "description": "This functionality is not available. Please read `->help sell` for more information",
+        "fields": []
+    },
+    {
+        "type": ["cards"],
+        "title": "About card listing",
+        "description": "Gets your cards and shows it in several pages. If you have a long card list, use *card filters* to show only cards that you are interested in. See the filters below or read more at `->help query`",
+        "fields": [
+            {
+                "title": "Useful to know",
+                "description": "You can combine any filters in any order. If no cards found, bot will tell you that\nTo see all collections, run `->stats cards`"
+            },
+            {
+                "title": "Show all your cards",
+                "description": "->cards"
+            },
+            {
+                "title": "Show only multiple (x2+) cards",
+                "description": "->cards -multi"
+            },
+            {
+                "title": "Show only special forge cards",
+                "description": "->cards -craft"
+            },
+            {
+                "title": "Show only cards from some collection",
+                "description": "->cards -[collection]\n(e.g. `->cards -yuru`)"
+            },
+            {
+                "title": "Show only cards with certain amount of stars",
+                "description": "->cards [stars]\n(e.g. `->cards 3`)"
+            },
+            {
+                "title": "Show only cards with tag (from 2018.0.0)",
+                "description": "->cards #[tag]\n(e.g. `->cards #saber`)"
+            },
+            {
+                "title": "Show cards that has keyword in the name",
+                "description": "->cards [keywords]\n(e.g. `->cards kyoko`)"
+            }
+        ]
+    },
+    {
+        "type": ["sell"],
+        "title": "About cards selling",
+        "description": "**Since 1.10** direct tomato and card sending was replaced with selling. Users can sell cards either to bot or to other users. In both cases prices are defined by bot.",
+        "fields": [
+            {
+                "title": "Sell a card to BOT",
+                "description": "Use `->sell [card query]` to sell cards that you don't need. You get:\n300🍅 for 3🌟 card, 150🍅 for 2🌟 and 80🍅 for 1🌟\nNote that selling to bot doesn't mean selling for eval price."
+            },
+            {
+                "title": "Sell a card to USER",
+                "description": "Use `->sell @user [card query]` to sell a card to user. Target user will be asked to confirm or decline your transaction. You can **not** send more than 1 request to the same user. Selling price is decided by bot using **eval algorithm**. You can always run `->eval [card query]` to find out card cost before trading it"
+            },
+            {
+                "title": "Getting into Debt",
+                "description": "If someone sells you a card for more tomatoes than you own, you will find yourself in **debt**. You will need to come out of debt before you can trade with others. You **can** however, daily and sell cards to come out of debt."
+            }
+        ]
+    },
+    {
+        "type": ["fav", "favorite"],
+        "title": "Adding cards to favorites",
+        "description": "You can add any card to favorites. That kind of card can't be sent and it won't show up for other users in `->has` or `->diff` commands, unless you have 2 or more of those cards or add the `-fav` option",
+        "fields": [
+            {
+                "title": "Favorite card",
+                "description": "->fav [card query]"
+            },
+            {
+                "title": "Remove from favorites",
+                "description": "->fav remove [card query]"
+            },
+            {
+                "title": "List favorite cards",
+                "description": "->cards -fav"
+            }
+        ]
+    },
+    {
+        "type": ["query"],
+        "title": "Card query",
+        "description": "In the help messages you will often see `[card query]`. But what does it mean?\n In Amusement Club you can get cards in any request type (except `forge`) by using different card parameters. Those parameters can be also combined",
+        "fields": [
+            {
+                "title": "Name",
+                "description": "->cards [some name]"
+            },
+            {
+                "title": "Collection",
+                "description": "->cards -[collection]"
+            },
+            {
+                "title": "Craft",
+                "description": "->cards -craft"
+            },
+            {
+                "title": "Animated",
+                "description": "->cards -gif"
+            },
+            {
+                "title": "Favorite",
+                "description": "->cards -fav"
+            },
+            {
+                "title": "Make NEGATIVE request",
+                "description": "->cards ![collection] !fav !gif !craft"
+            }
+        ]
+    },
+    {
+        "type": ["dif", "diff", "difference"],
+        "title": "About difference",
+        "description": "Difference is very useful command for trading, that will show you cards that certain user has and you not. It can accept same set of filters as `->cards` command.  Add option `-fav` to include favorite cards.",
+        "fields": [
+            {
+                "title": "Useful to know",
+                "description": "You can combine any filters in any order.\nTo see all collections, run `->stats cards`"
+            },
+            {
+                "title": "Show all different cards",
+                "description": "->diff @someuser"
+            },
+            {
+                "title": "Show only multiple (x2+) cards",
+                "description": "->diff @someuser -multi"
+            },
+            {
+                "title": "Show only special forge cards",
+                "description": "->diff @someuser -craft"
+            },
+            {
+                "title": "Show only cards from some collection",
+                "description": "->diff @someuser -[collection]]\n(e.g. `->diff @John -yuru`)"
+            },
+            {
+                "title": "Show only cards with certain amount of stars",
+                "description": "->diff @someuser [stars]\n(e.g. `->diff @John 3`)"
+            },
+            {
+                "title": "Show only cards with tag (from 2018.0)",
+                "description": "->diff #[tag]\n(e.g. `->diff #saber`)"
+            },
+            {
+                "title": "Show cards that has keyword in the name",
+                "description": "->diff [keywords]\n(e.g. `->diff kyoko`)"
+            }
+        ]
+    },
+    {
+        "type": ["quest", "quests", "task"],
+        "title": "About quests",
+        "description": "Quests are small daily tasks that players get after running `->daily` command. Usually you will get 2 different quests (that might be different depending on your hero). Users starts getting quests only after they get a hero",
+        "fields": [
+            {
+                "title": "See quest list",
+                "description": "->quests"
+            }
+        ]
+    },
+    {
+        "type": ["has"],
+        "title": "Learn if user has a card",
+        "description": "This little useful command will try to find if user has certain card by name. It is useful, when you need to transfer card and would like to make sure target user doesn't have it already. Add option `-fav` to include favorite cards.",
+        "fields": [
+            {
+                "title": "Use command",
+                "description": "->has @username [cardname]\n(e.g. `->has @John deceptive love`)"
+            }
+        ]
+    },
+    {
+        "type": ["whatsnew", "changelog", "updates", "version"],
+        "title": "About updates",
+        "description": "This command provides list of latest updates for the bot. This is always useful to check for latest changes to not make mistakes and lose tomatoes! For more details and update notifications, join [Bot Discord](https://discord.gg/kqgAvdX)",
+        "fields": [
+            {
+                "title": "Get latest update",
+                "description": "->whatsnew"
+            },
+            {
+                "title": "Get last 7 updates",
+                "description": "->whatsnew all"
+            }
+        ]
+    },
+    {
+        "type": ["channel"],
+        "title": "About bot channels",
+        "description": "Amusement Club is a discord bot that can read commands from any channel. However, there are some limitations",
+        "fields": [
+            {
+                "title": "Any channel",
+                "description": "You can `->summon` cards and call `->help`. Bot uses your messages to add 🍅 Tomatoes to your balance"
+            },
+            {
+                "title": "Bot channel",
+                "description": "Any command is available"
+            },
+            {
+                "title": "Direct messages",
+                "description": "The functionality of DMs is limited to `->help` and `->invite` (for bot invites). Please, use server bot chats for full bot functionality"
+            }
+        ]
+    },
+    {
+        "type": ["store", "st"],
+        "title": "About store",
+        "description": "Command is not available.\nThis function will be available after v2018.0",
+        "fields": [ ]
+    },
+    {
+        "type": ["auc", "auction", "auctions"],
+        "title": "About auctions",
+        "description": "Auctions are a way to trade your cards introduced in `v1.10`. You can put any card on auction for a fee of 100 🍅 Tomatoes and other users will bid on it. Each card will be on the auction list for 5 hours and sold to the highest bidder. If nobody bids on your card, your card will return to you, but not your 100 🍅 auction fee.",
+        "fields": [
+            {
+                "title": "Searching for cards/collection",
+                "description": "Use `->auc` or `->auc [card title]` or `->auc [-card collection]` to find the list of current auctions.\n"
+            },
+            {
+                "title": "Selling a card",
+                "description": "Command:`->auc sell [card title], [amount]` will list your card on auction. The lowest possible price is 1/2 of eval, while the highest is 4x eval.\n"
+            },            
+            {
+                "title": "Bidding on a card", 
+                "description": "Command: `->auc bid [id] [amount]` For example `->auc bid ktgs4 500` will bid 500 🍅 on auction with ID `ktgs4`. You can not bid on your own auction.\n**IMPORTANT**: Place your bids carefully! Your tomatoes will be taken automatically when you place a bid. It will be returned to you when you have been outbid.\n"
+            },
+            {
+                "title": "Finding information on a bid",
+                "description": "Command:`->auc info [id]` will show you detailed information about that auction auction.\n"
+            },
+            {
+                "title": "Tracking my auctions",
+                "description": "Command: `->auc -me` This command will show you the auctions you have created.\n"
+            },
+            {
+                "title": "Tracking my bids",
+                "description": "Command: `->auc -bid` This command will show you the auctions you have bid in.\n"
+            },
+            {
+                "title": "Diamond marks",
+                "description": "Auctions in the list has diamond marks on them:\n🔹 means that you created that auction\n🔸 means that your bid is leading in this auction\n▪️ means you can bid on this auction.\n"
+            },
+            {
+                "title": "Unknown prices",
+                "description": "Sometimes bids will show up as **???**. That means that bid was done by player that has a hero with a bid hiding effect. You will have to guess how to outbid them."
+            }
+        ]
+    },
+    {
+        "type": ["trans", "transactions"],
+        "title": "About transaction history",
+        "description": "Tou can review your transaction history; this includes sells and auctions. Transactions older than a week will be erased.\nIf transaction was done via auction, you can also get auction details using TransactionID `->auc info [transaction_id]`",
+        "fields": [
+            {
+                "title": "->trans",
+                "description": "List of all recent transactions"
+            },
+            {
+                "title": "->gets",
+                "description": "List of the transactions where you got a card"
+            },
+            {
+                "title": "->sends",
+                "description": "List of the transactions where you sent a card"
+            },
+            {
+                "title": "->pending",
+                "description": "List of the transactions that are waiting for confirmations"
+            },
+            {
+                "title": "->info [id]",
+                "description": "Gets detailed info about transaction using TransactionID"
+            }
+        ]
+    },
+    {
+        "type": ["tag"],
+        "title": "About tagging",
+        "description": "Command is not available.\nThis function will be available after v2018.0",
+        "fields": [ ]
+    },
+    {
+        "type": ["inv", "invite"],
+        "title": "About bot invitation",
+        "description": "You can add Amusement Club on any other server, but you have to register this server in bot database first. Type `->invite [your server id]` and it will be added for 20 hours. If you won't invite bot within that time, link will not be active.",
+        "fields": [
+            {
+                "title": "READ THIS",
+                "description": "Bot constantly reads and **logs** all the messages on server in order to give Tomatoes and debug purposes. Feel free to exclude bot from ANY channels, that you want to secure contents of. However, keep in mind, that bot **won't read** messages in those channels, so you won't get Tomatoes from them.\n**Messages in Logs** can be used by **bot administration** to find bugs/errors and cheaters. Make sure that bot is **not** present in channels, that may contain any **confidential** information"
+            },
+            {
+                "title": "Bot administration and disclaimers",
+                "description": "Administration will **never** use information in logs for personal purposes. However, [disclaimer] administration is **NOT RESPONSIBLE** for consequences of you or any Member of server/guild including sensible/confidential information.\nAdministration will **never ask** you about your *discord password* or *administrative permissions* for your server.\n[disclaimer] All information used by bot is in **public chat** and can be accessed by **any** member of the guild/server. If you invite bot to private server, consider that **administration** can see and read the messages"
+            },
+            {
+                "title": "Server administration",
+                "description": "**Please note**, that bot can be invited only by users, that have permission to invite bots to server. If you are NOT target server administrator, send *generated link* to administrator or any person with corresponding role"
+            },
+            {
+                "title": "Any questions?",
+                "description": "If you have any questions regarding bot, please ask them [in bot discord](https://discord.gg/kqgAvdX)"
+            },
+            {
+                "title": "Ready to invite?",
+                "description": "Please, run `->invite [server id]` to register your server. If you won't register your server, bot **will not** work!\n**PLEASE NOTE**: After you run this command, your *discord name* will be visible to anyone else, who decides to invite this bot to the same server"
+            },
+            {
+                "title": "To check invite status",
+                "description": "->invite status [server id]"
+            }
+        ]
+    }
 ]

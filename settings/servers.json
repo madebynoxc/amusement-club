@@ -44,27 +44,31 @@
         "collection": "nonnonbiyori"
     },
     {
-	"guild_id": 292277485310312448,
-	"collection": "codegeass"
+        "guild_id": 292277485310312448,
+        "collection": "codegeass"
     },
     {
-	"guild_id": 364704870177046531,
-	"collection": "madokamagica"
+        "guild_id": 364704870177046531,
+        "collection": "madokamagica"
     },
     {
         "guild_id": 399727229321609217,
         "collection": "mitsuboshicolors"
     },
     {
-	"guild_id": "239658013055516672",
-	"collection": "k-on"
+        "guild_id": "239658013055516672",
+        "collection": "k-on"
     },
     {
-	"guild_id": "435299344296706049",
-	"collection": "steinsgate"
+        "guild_id": "435299344296706049",
+        "collection": "steinsgate"
     },
     {
-	"guild_id": "437092938368155668",
-	"collection": "gochiusa"
+        "guild_id": "437092938368155668",
+        "collection": "gochiusa"
+    },
+    {
+        "guild_id": "299035139948675074",
+        "collection": "neptunia"
     }
 ]

@@ -287,17 +287,9 @@ function getCardEffect(user, action, ...params) {
         case 'forge':
             if(inv.has(user, 'cherry_blossoms')) params *= .5;
             break;
-        case 'send':
-            if(params[0].inventory && inv.has(params[0], 'skies_of_friendship')) {
-                let tom = 160 - user.dailystats.send * 10;
-                if(tom <= 0) break;
-                ucollection.update( 
-                    { discord_id: user.discord_id},
-                    { $inc: {exp: tom} }
-                ).then(u => {
-                    params[1]("**" + user.username + "**, you got **" + tom + " Tomatoes** for sending card to this user");
-                });
-            }
+        case 'auc':
+            if(inv.has(user, 'skies_of_friendship')) params[0] *= .1;
+            else params[0] = 0;
             break;
     }
     return params;

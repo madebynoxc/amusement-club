@@ -74,7 +74,7 @@ function updateCardsS3(connection) {
 }
 
 function getCardObject(name, collection) {
-    name = name.replace(' ', '');
+    name = name.replace(/ /g, '_');
     let split = name.split('.');
     let craft = name.substr(1, 2) === "cr";
 

@@ -1,5 +1,5 @@
 {
-	"id":"vote3",
-	"title":"Voting results!",
-	"body":"4-star competition is over! [Results here](http://nonrg1.com/contest.html)"
+	"id":"update1912",
+	"title":"Great Update",
+	"body":"Lots of changes! We got completely new trading and auctions. Use `->help sell` to learn about new trading and `->help auc` to get started with auctions. To get whole list of updates run `->whatsnew`"
 }

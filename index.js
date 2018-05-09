@@ -15,6 +15,10 @@ const vote = require('./modules/vote.js');
 const invite = require('./modules/invite.js');
 const crystal = require('./modules/crystal.js');
 const transactions = require('./modules/transactions.js');
+const sellManager = require('./modules/sell.js');
+const cardList = require('./modules/list.js');
+const auctions = require('./modules/auctions.js');
+
 var bot, curgame = 0;
 
 var cooldownList = [];
@@ -64,17 +68,15 @@ function _init() {
         if(!user) return;
         user.username = username;
 
-        if(user.bot && userID === bot.id)
-            selfMessage(event.d);
-        else if(!user.bot) {
-            log(username, channel, guild, message);
+        if(!user.bot) {
             invite.checkStatus(message, guild, t => {
                 if(!t){
                     if(cooldownList.includes(userID)) return;
                     cooldownList.push(userID);
-                    setTimeout(() => removeFromCooldown(userID), 2000);
+                    setTimeout(() => removeFromCooldown(userID), 1000);
 
                     getCommand(user, channel, guild, message, event, (res, obj) => {
+
                         if(obj) bot.uploadFile({to: channelID, file: obj, message: res});
                         else if(res) {
                             if(typeof res === "string") bot.sendMessage({to: channelID, message: res});
@@ -124,20 +126,20 @@ function selfMessage(msg) {
         let e = msg.embeds[0];
         if(!e || !e.footer) return;
         if(e.footer.text.includes('> Page')) {
-            react.setupPagination(msg, e.title.split("**")[1]);
+            //react.setupPagination(msg, e.title.split("**")[1]);
+        } if(e.footer.text.includes('Confirmation')) {
+
         }
     //} finally {};
 }
 
 function getCommand(user, channel, guild, message, event, callback) {
     var channelType = channel? 1 : 0; //0 - DM, 1 - channel, 2 - bot channel
-    if(channelType == 1) {
+    if(channelType == 1) 
         if(channel.name.includes('bot')) channelType = 2;
-        // dbManager.addXP(user, message.length / 20, 
-        //     (mes) => callback(mes));
-    }
 
     if(message.startsWith(settings.botprefix)) {
+        log(user.username, channel, guild, message);
         let cnt = message.toLowerCase().substring(2).split(' ');
         let sb = cnt.shift();
         cnt = cnt.filter(n => { return n != undefined && n != '' }); 
@@ -172,8 +174,14 @@ function getCommand(user, channel, guild, message, event, callback) {
                 else if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
                     let inp = utils.getUserID(cnt);
-                    dbManager.difference(user, inp.id, inp.input, (text) => {
-                        callback(text);
+                    dbManager.difference(user, inp, (data, found) => {
+                        if(!found) callback(data);
+                        else {
+                            let chanID = channel? channel.id : user.id;
+                            react.addNewPagination(user.id, 
+                                user.username + ", your card difference with " + found, 
+                                cardList.getPages(data), chanID);
+                        }
                     });
                 }
                 return;
@@ -193,15 +201,21 @@ function getCommand(user, channel, guild, message, event, callback) {
                     });
                 }
                 return;
+            case 'auc':
+            case 'auctions':
+                if(channelType == 1) callback('This operation is possible in bot channel only');
+                else {
+                    let chanID = channel? channel.id : user.id;
+                    auctions.processRequest(user, cnt, chanID, callback);
+                }
+                return;
             case 'give':
             case 'send':
                 if(channelType == 0) callback('Card transfer is possible only on servers');
                 else if(channelType == 1) callback('Card transfer is possible only in bot channel');
                 else {
                     let inp = utils.getUserID(cnt);
-                    dbManager.transfer(user, inp.id, inp.input, guild, (text) =>{
-                        callback(text);
-                    });
+                    dbManager.transfer(user, inp.id, inp.input, guild, callback);
                 }
                 return;
             case 'block':
@@ -227,16 +241,17 @@ function getCommand(user, channel, guild, message, event, callback) {
                 else if(channelType == 1) callback('Tomato transfer is possible only in bot channel');
                 else {
                     let inp = utils.getUserID(cnt);
-                    dbManager.pay(user.id, inp.id, inp.input, guild, (text) =>{
+                    dbManager.pay(user, inp.id, inp.input, guild, (text) =>{
                         callback(text);
                     });
                 }
                 return;
             case 'trans':
-            case 'sent':
+            case 'confirm':
             case 'sends':
-            case 'got':
+            case 'decline':
             case 'gets':
+            case 'pending':
             case 'transactions':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
@@ -250,15 +265,21 @@ function getCommand(user, channel, guild, message, event, callback) {
                 if(channelType == 1) return callback('This operation is possible in bot channel only');
                 else {
                   dbManager.getCards(user, cnt, (data, found) => {
-                      if(!found) callback(data);
-                      else callback(react.addNew(user, data));
+                        if(!found) callback(data);
+                        else {
+                            let chanID = channel? channel.id : user.id;
+                            react.addNewPagination(user.id, 
+                                user.username + ", your cards:", 
+                                cardList.getPages(data), chanID);
+                        }
                   });
                 }
                 return;
             case 'sell':
                 if(channelType == 1) return callback('This operation is possible in bot channel only');
                 else {
-                    dbManager.sell(user, cnt, (text) => {
+                    let chanID = channel? channel.id : user.id;
+                    sellManager.processRequest(user, cnt, guild, chanID, (text) => {
                         callback(text);
                     });
                 }
@@ -273,7 +294,7 @@ function getCommand(user, channel, guild, message, event, callback) {
                 }
                 return;
             case 'baka': 
-                var u = getUserID(cnt[0]);
+                var u = utils.getUserID(cnt).id;
                 var time = Date.now() - new Date(event.d.timestamp);
                 if(u) dbManager.getUserName(u, name => 
                     callback("**" + name + "** is now baka! ( ` ω ´ )"));
@@ -290,7 +311,7 @@ function getCommand(user, channel, guild, message, event, callback) {
                 return;
             case 'award': 
                 if(dbManager.isAdmin(user.id)) {
-                    let tusr = getUserID(cnt.shift());
+                    let tusr = utils.getUserID(cnt).id;
                     let tom = parseInt(cnt);
                     if(tusr && tom){
                         dbManager.award(tusr, tom, (text) => {
@@ -308,7 +329,7 @@ function getCommand(user, channel, guild, message, event, callback) {
             case 'leaderboards':
                 if(channelType == 0) callback("You can't check leaderboards in DMs");
                 else {
-                    dbManager.leaderboard_new(cnt, guild, (text) =>{
+                    dbManager.leaderboard(cnt, guild, (text) =>{
                         callback(text);
                     });
                 }
@@ -354,6 +375,16 @@ function getCommand(user, channel, guild, message, event, callback) {
             case 'miss':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
+                    dbManager.needsCards(user, cnt, (data, found) => {
+                        if(!found) callback(data);
+                        else {
+                            let chanID = channel? channel.id : user.id;
+                            react.addNewPagination(user.id, 
+                                "You miss these cards:", 
+                                cardList.getPages(data), chanID);
+                        }
+                    });
+
                     dbManager.needsCards(user, cnt, (text) => {
                         callback(text);
                     });
@@ -449,22 +480,4 @@ function getHelp(com) {
         return phrases[0].values.join('\n');
     }
     return undefined;
-}
-
-function getUserID(inp) {
-    try{
-        if (/^\d+$/.test(inp)) {
-            // Filters out most names that start with a number while only
-            // filtering out the first month of snowflakes
-            // Since Discord wasn't launched until March of the year,
-            // you'd have to have a user made before its release to be filtered
-            // 1000 ms/s * 60 s/m * 60 m/h * 24 h/d * 30 d/M * 2 ** 22 snowflake date offset
-            if (inp > (1000 * 60 * 60 * 24 * 30 * 2 ** 22)) {
-                return inp
-            }
-        }
-        return inp.slice(0, -1).split('@')[1].replace('!', '');
-    } catch(e) {
-        return null;
-    }
 }

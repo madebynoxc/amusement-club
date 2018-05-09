@@ -1,6 +1,6 @@
 module.exports = {
     checkClaim, connect, getRandomQuests, completeNext,
-    checkXP, checkSend, checkSummon, addBonusQuest, checkForge, preCheckSend
+    checkXP, checkSend, checkSummon, addBonusQuest, checkForge, preCheckSend, checkAuction
 }
 
 var mongodb, col;
@@ -94,6 +94,17 @@ function checkForge(user, lvl, callback) {
 
     if((q.name == 'forge2' && lvl == 2) || 
         (q.name == 'forge3' && lvl == 3)) {
+        callback(completeMsg(user, q));
+        removeQuest(user, q, callback);
+    }
+}
+
+function checkAuction(user, type, callback) {
+    let q = getQuest(user, 'auc');
+    if(!q) return;
+
+    if((q.name == 'auc1' && type == "sell") || 
+        (q.name == 'auc2' && type == "bid")) {
         callback(completeMsg(user, q));
         removeQuest(user, q, callback);
     }
