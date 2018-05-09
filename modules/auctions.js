@@ -309,7 +309,7 @@ async function generateBetterID() {
     let newID = "";
     do {
         newID = utils.generateRandomId();
-    } while(ids.filter(i => i === newID).length > 0);
+    } while(ids.filter(i => i.id === newID).length > 0);
     return newID;
 }
 
