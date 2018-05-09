@@ -261,7 +261,7 @@ async function checkAuctionList() {
             + "You got your card back")});
     }
 
-    await acollection.update({id: auc.id}, {$set: {finished: true}});
+    await acollection.update({_id: auc._id}, {$set: {finished: true}});
 }
 
 function getPages(auc, userID) {
