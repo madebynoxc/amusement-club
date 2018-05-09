@@ -86,7 +86,7 @@ function showInventory(user, callback) {
                     resp += " 🕐 " + cooldown + "h"
                 }
             } else {
-                resp += " 🕐 " + "Ready!"
+                resp += " ⏰ " + "**Ready!**"
             }
         }
         resp += "\n";
