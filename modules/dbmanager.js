@@ -89,10 +89,10 @@ function connect(bot, callback) {
 function claim(user, guildID, arg, callback) {
     let ucollection = mongodb.collection('users');
     ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
-        if(!user) {
+        if(!dbUser) {
             collection.insert( { 
-                discord_id: u.id,
-                username: u.username,
+                discord_id: user.id,
+                username: user.username,
                 cards: [],
                 exp: 2000,
                 gets: 50,
