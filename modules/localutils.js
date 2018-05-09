@@ -297,7 +297,7 @@ function getUserID(inp) {
 }
 
 function generateRandomId() {
-    return Math.random().toString(36).slice(-5);
+    return (Date.now().toString(36).substr(2, 3) + Math.random().toString(36).substr(2, 5));
 }
 
 function getFullCard(card) {
