@@ -146,6 +146,14 @@ async function bid(user, args, callback) {
         else msg += "To remain in the auction, you should bid more than **" + getNextBid(auc) + "**🍅\nUse `->auc bid " + auc.id + " [new bid]`\n";
         msg += "This auction will end in **" + getTime(auc) + "**";
         bot.sendMessage({to: auc.lastbidder, embed: utils.formatWarning(null, "Oh no!", msg)});
+    } else {
+        auc.price = price;
+        let strprice = hidebid? "???" : price;
+        let msg = "A player has bid on your card **" + utils.getFullCard(auc.card)  + "** with a bid of **" + strprice + "**🍅\n";
+
+        if(hidebid) msg += "The bid is hidden by hero effect.\n";
+        msg += "This auction will end in **" + getTime(auc) + "**";
+        bot.sendMessage({to: auc.author, embed: utils.formatInfo(null, "Yay!", msg)});
     }
 
     await acollection.update({_id: auc._id}, {$set: {
@@ -285,6 +293,7 @@ async function checkAuctionList() {
     let dbuser = await ucollection.findOne({discord_id: auc.author});
     let transaction = {
         id: auc.id,
+        price: auc.price,
         from: dbuser.username,
         from_id: dbuser.discord_id,
         status: "auction",
@@ -342,7 +351,9 @@ function auctionToString(auc, userID) {
 
     if(auc.hidebid) auc.price = "???";
 
-    if(userID == auc.author) resp += "🔹";
+    if(userID == auc.author) 
+        if(auc.lastbidder == null) resp += "🔹";
+        else resp += "🔷";
     else if(userID == auc.lastbidder) resp += "🔸";
     else resp += "▪️";
     resp += "`[" + getTime(auc) + "] ";
