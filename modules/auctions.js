@@ -264,7 +264,7 @@ async function info(user, args, channelID, callback) {
         let resp = "";
         resp += "Seller: **" + author.username + "**\n";
         resp += "Last bid: **" + auc.price + "**`🍅`\n";
-        resp += "Next minimum bid: **" + (getNextBid(auc) + 1) + "**`🍅`\n"
+        resp += "Next minimum bid: **" + (auc.hidebid ? "???" : getNextBid(auc) + 1) + "**`🍅`\n"
         resp += "Card: **" + utils.getFullCard(auc.card) + "**\n";
         resp += "Card value: **" + Math.floor(eval) + "**`🍅`\n";
         if(user.id == auc.lastbidder && !auc.finished) 
