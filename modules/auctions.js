@@ -11,7 +11,7 @@ const forge = require('./forge.js');
 const heroes = require('./heroes.js');
 const quests = require('./quest.js');
 const settings = require('../settings/general.json');
-const aucTime = 1;
+const aucTime = 5;
 const idlock = new AsyncLock();
 
 function connect(db, client) {
