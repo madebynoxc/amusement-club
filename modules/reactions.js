@@ -62,7 +62,7 @@ function addNewConfirmation(userID, embed, channelID, onConfirm, onDecline) {
             mes.id = resp.id;
             mes.message = resp;
             reactConfirm(resp);
-            setTimeout(()=> removeExisting(mes.userID), 300000);
+            setTimeout(()=> removeExisting(mes.userID), 60000);
         }
         else console.log(err);
     });

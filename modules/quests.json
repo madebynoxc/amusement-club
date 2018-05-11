@@ -27,6 +27,6 @@
     {
         "name" : "auc2",
         "description" : "Bid on auction (`->help auction`)",
-        "award" : 400
+        "award" : 650
     }
 ]

@@ -3,6 +3,7 @@ module.exports = {
 }
 
 var mongodb, acollection, ucollection, bot;
+const AsyncLock = require('async-lock');
 const dbManager = require('./dbmanager.js');
 const reactions = require('./reactions');
 const utils = require('./localutils');
@@ -11,6 +12,7 @@ const heroes = require('./heroes.js');
 const quests = require('./quest.js');
 const settings = require('../settings/general.json');
 const aucTime = 5;
+const idlock = new AsyncLock();
 
 function connect(db, client) {
     mongodb = db;
@@ -43,6 +45,7 @@ function processRequest(user, args, channelID, callback) {
 async function list(user, args, channelID, callback) {
     let match = {finished: false};
     let title = "Current auctions";
+    let useDiff = false;
 
     args.map(a => {
         if(a[0] === '!' || a[0] === '-') {
@@ -59,17 +62,28 @@ async function list(user, args, channelID, callback) {
                     title = "Your bids";
                     args = args.filter(arg => arg != a);
                     break;
+                case 'diff':
+                    useDiff = true;
+                    title = "Auctions with unique cards";
+                    args = args.filter(arg => arg != a);
+                    break;
             }
         }
     });
 
-    let pages = getPages(await acollection.aggregate([
-        {"$match": match},
-        {"$match": utils.getRequestFromFiltersWithPrefix(args, "card.")},
-        {"$sort": {date: 1}},
-        {"$limit": 200}
-    ]).toArray(), user.id);
+    let auctionList = await acollection.aggregate([
+            {"$match": match},
+            {"$match": utils.getRequestFromFiltersWithPrefix(args, "card.")},
+            {"$sort": {date: 1}},
+            {"$limit": 200}
+        ]).toArray();
 
+    if(useDiff) {
+        let userCards = await ucollection.findOne({discord_id: user.id}, {cards: 1});
+        auctionList = auctionList.filter(a => userCards.cards.filter(c => utils.cardsMatch(a.card, c)) == 0);
+    }
+
+    let pages = getPages(auctionList, user.id);
     if(pages.length == 0) return callback(utils.formatError(user, null, 
         "no auctions with that request found"));
 
@@ -94,9 +108,17 @@ async function bid(user, args, callback) {
     if(auc.finished)
         return callback(utils.formatError(user, null, "auction `" + args[0] + "` already finished"));
 
-    if(price <= auc.price)  {
-        let bidresp = "your bid for this auction should be more than **" + auc.price + "**🍅";
-        if(auc.hidebid) bidresp = "your bid is too low! Bid amount is hidden by hero effect.";
+    let aucPrice = getNextBid(auc);
+    if(price <= aucPrice)  {
+        let bidresp = "your bid for this auction should be more than **" + aucPrice + "**🍅";
+        if(auc.hidebid) bidresp = "your bid is **too low!** Bid amount is hidden by hero effect.";
+        return callback(utils.formatError(user, null, bidresp));
+    }
+
+    aucPrice = Math.floor(aucPrice * 1.5);
+    if(price > aucPrice)  {
+        let bidresp = "your bid for this auction can't be higher than **" + aucPrice + "**🍅";
+        if(auc.hidebid) bidresp = "your bid is **too high**! Bid amount is hidden by hero effect.";
         return callback(utils.formatError(user, null, bidresp));
     }
 
@@ -111,22 +133,51 @@ async function bid(user, args, callback) {
         return callback(utils.formatError(user, null, "you already bidded on that auction"));
 
     let hidebid = heroes.getHeroEffect(dbUser, 'auc', false);
-    await acollection.update({id: auc.id}, {$set: {price: price, lastbidder: user.id, hidebid: hidebid}});
+    addExtraTime(auc);
+
     await ucollection.update({discord_id: user.id}, {$inc: {exp: -price}});
     if(auc.lastbidder) {
         await ucollection.update({discord_id: auc.lastbidder}, {$inc: {exp: auc.price}});
+        auc.price = price;
         let strprice = hidebid? "???" : price;
-        bot.sendMessage({to: auc.lastbidder, embed: utils.formatWarning(null, "Oh no!", 
-            "Another player has outbid you on card **" + utils.getFullCard(auc.card)  + "** with a bid of **" + strprice + "**🍅\n"
-            + "To remain in the auction, you should increase your bid. Use `->auc bid " + auc.id + " [new bid]`\n"
-            + "This auction will end in **" + getTime(auc) + "**")});
+        let msg = "Another player has outbid you on card **" + utils.getFullCard(auc.card)  + "** with a bid of **" + strprice + "**🍅\n";
+
+        if(hidebid) msg += "Next required bid is hidden by hero effect.\n";
+        else msg += "To remain in the auction, you should bid more than **" + getNextBid(auc) + "**🍅\nUse `->auc bid " + auc.id + " [new bid]`\n";
+        msg += "This auction will end in **" + getTime(auc) + "**";
+        bot.sendMessage({to: auc.lastbidder, embed: utils.formatWarning(null, "Oh no!", msg)});
     }
+
+    await acollection.update({_id: auc._id}, {$set: {
+        price: price, 
+        lastbidder: user.id, 
+        hidebid: hidebid, 
+        timeshift: auc.timeshift,
+        date: auc.date
+    }});
 
     let p = utils.formatConfirm(user, "Bid placed", "you are now leading in auction for **" + utils.getFullCard(auc.card) + "**!");
     p.footer = {text: "Auction ID: " + auc.id}
     callback(p);
 
     quests.checkAuction(dbUser, "bid", callback);
+}
+
+function addExtraTime(auc) {
+    if(!auc.timeshift) 
+        auc.timeshift = 0;
+
+    if(aucTime - utils.getHoursDifference(auc.date) <= 1 &&
+        60 - utils.getMinutesDifference(auc.date) <= 5) {
+        switch(auc.timeshift){
+            case 0: auc.date.setMinutes(auc.date.getMinutes() + 5); break;
+            case 1: auc.date.setMinutes(auc.date.getMinutes() + 2); break;
+            case 2: case 3:
+                auc.date.setMinutes(auc.date.getMinutes() + 1); break;
+        }
+        auc.timeshift++;
+    }
+    return auc;
 }
 
 async function sell(user, incArgs, channelID, callback) {
@@ -150,40 +201,43 @@ async function sell(user, incArgs, channelID, callback) {
                 + " To remove from favorites use `->fav remove [card query]`"));
 
         dbManager.getCardValue(match, async (eval) => {
-            let p = Math.round(eval * .5);
+            let min = Math.round(eval * .5);
             let dbUser = await ucollection.findOne({discord_id: user.id});
+            let fee = Math.round(price * .1);
 
             if(!dbUser.hero)
                 return callback(utils.formatError(user, null, "you have to have a hero in order to take part in auction"));
 
-            if(price < p)
-                return callback(utils.formatError(user, null, "you can't set price less than **" + Math.round(p) + "**🍅 for this card"));
+            if(price < min)
+                return callback(utils.formatError(user, null, "you can't set price less than **" + min + "**🍅 for this card"));
 
             if(price > eval * 4)
                 return callback(utils.formatError(user, null, "you can't set price more than **" + Math.round(eval * 4) + "**🍅 for this card"));
 
-            if(dbUser.exp - 100 < 0)
-                return callback(utils.formatError(user, null, "you have to have at least **100**🍅 to use auction"));
+            if(dbUser.exp - fee < 0)
+                return callback(utils.formatError(user, null, "you have to have at least **" + fee + "**🍅 to auction for that price"));
 
-            reactions.addNewConfirmation(user.id, formatSell(user, match, price), channelID, async () => {
-                let aucID = await generateBetterID();
-                dbUser.cards = dbManager.removeCardFromUser(dbUser.cards, match);
+            reactions.addNewConfirmation(user.id, formatSell(user, match, price, fee), channelID, async () => {
+                await idlock.acquire("createauction", async () => {
+                    let aucID = await generateBetterID();
+                    dbUser.cards = dbManager.removeCardFromUser(dbUser.cards, match);
 
-                await ucollection.update({discord_id: user.id}, {$set: {cards: dbUser.cards}, $inc: {exp: -100}});
-                await acollection.insert({
-                    id: aucID, finished: false, date: new Date(), price: price, author: user.id, card: match
+                    await ucollection.update({discord_id: user.id}, {$set: {cards: dbUser.cards}, $inc: {exp: -fee}});
+                    await acollection.insert({
+                        id: aucID, finished: false, date: new Date(), price: price, author: user.id, card: match
+                    });
+
+                    callback(utils.formatConfirm(user, null, "you successfully put **" + utils.getFullCard(match) + "** on auction.\nYour auction ID `" + aucID + "`"));
+                    quests.checkAuction(dbUser, "sell", callback);
                 });
-
-                callback(utils.formatConfirm(user, null, "you successfully put **" + utils.getFullCard(match) + "** on auction.\nYour auction ID `" + aucID + "`"));
-                quests.checkAuction(dbUser, "sell", callback);
             });
         });
     });
 }
 
-function formatSell(user, card, price) {
+function formatSell(user, card, price, fee) {
     let w = utils.formatWarning(user, null, "do you want to sell \n**" + utils.getFullCard(card) + "** on auction for **" + price + "**🍅?");
-    w.footer = { text: "This will cost you 100 tomatoes" }
+    w.footer = { text: "This will cost you " + fee + " tomatoes" }
     return w;
 }
 
@@ -201,9 +255,10 @@ async function info(user, args, channelID, callback) {
     dbManager.getCardValue(auc.card, (eval) => {
         let resp = "";
         resp += "Seller: **" + author.username + "**\n";
-        resp += "Last bid: **" + auc.price + "**🍅\n";
+        resp += "Last bid: **" + auc.price + "**`🍅`\n";
+        resp += "Next minimum bid: **" + (getNextBid(auc) + 1) + "**`🍅`\n"
         resp += "Card: **" + utils.getFullCard(auc.card) + "**\n";
-        resp += "Card value: **" + Math.floor(eval) + "**🍅\n";
+        resp += "Card value: **" + Math.floor(eval) + "**`🍅`\n";
         if(user.id == auc.lastbidder && !auc.finished) 
             resp += "You are currently leading in this auction\n";
         if(auc.finished) resp += "This auction finished**\n";
@@ -240,7 +295,7 @@ async function checkAuctionList() {
         let bidder = await ucollection.findOne({discord_id: auc.lastbidder});
         bidder.cards = dbManager.addCardToUser(bidder.cards, auc.card);
         let tomatoback = Math.floor(forge.getCardEffect(bidder, 'auc', auc.price)[0]);
-        await ucollection.update({discord_id: auc.lastbidder}, {$set: {cards: bidder.cards}}, {$inc : {exp: tomatoback}});
+        await ucollection.update({discord_id: auc.lastbidder}, {$set: {cards: bidder.cards}, $inc: {exp: tomatoback}});
         await ucollection.update({discord_id: auc.author}, {$inc: {exp: auc.price}});
 
         transaction.to = bidder.username;
@@ -292,7 +347,7 @@ function auctionToString(auc, userID) {
     else resp += "▪️";
     resp += "`[" + getTime(auc) + "] ";
     resp += "[" + auc.id + "] ";
-    resp += "[" + auc.price + "🍅]`  ";
+    resp += "[" + getNextBid(auc) + "🍅]`  ";
     resp += "**" + utils.getFullCard(auc.card) + "**\n";
     return resp;
 }
@@ -301,22 +356,27 @@ function getTime(auc) {
     let hours = aucTime - utils.getHoursDifference(auc.date);
     if(hours <= 1){
         let mins = 60 - (utils.getMinutesDifference(auc.date) % 60);
+        if(mins < 1)
+            return "<1m";
         return mins + "m";
     } else 
         return hours + "h";
 }
 
 async function generateBetterID() {
-    let ids = await acollection.find({}, {id: 1}).toArray();
-    let newID = "";
-    do {
-        let lastAuction = await acollection.aggregate([
-            {"$match": {'finished': false}},
-            {"$sort": {date: 1}}
-        ]).toArray();
-        let auc = lastAuction[lastAuction.length-1];
-        newID = utils.generateNextId(auc ? auc.id : "start");
-    } while(ids.filter(i => i.id === newID).length > 0);
-    return newID;
+    let lastAuction = (await acollection.find({}).sort({$natural: -1}).limit(1).toArray())[0];
+    return utils.generateNextId(lastAuction? lastAuction.id : "start");
+}
+
+function getNextBid(auc) {
+    if(!utils.isInt(auc.price)) return "???";
+    let newPrice = auc.price + auc.price * .02;
+    let hours = aucTime - utils.getHoursDifference(auc.date);
+    if(hours <= 1){
+        let mins = 60 - utils.getMinutesDifference(auc.date);
+        newPrice += newPrice * (1/mins) * .2;
+    }
+    return Math.floor(newPrice);
+    //return auc.price + 25;
 }
 
