@@ -42,9 +42,12 @@ async function processRequest(user, args, guild, channelID, callback) {
         from: dbUser.username,
         from_id: dbUser.discord_id,
         status: "pending",
-        guild: guild.name,
-        guild_id: guild.id,
         time: new Date()
+    }
+
+    if(guild) {
+        transaction.guild = guild.name;
+        transaction.guild_id = guild.id;
     }
 
     let query = utils.getRequestFromFilters(parse.input);

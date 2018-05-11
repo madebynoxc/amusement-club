@@ -9,7 +9,8 @@
   "author": "NoxCaos",
   "license": "MIT",
   "dependencies": {
-    "discord.io": "github:woor/discord.io#gateway_v6",
+    "async-lock": "^1.1.2",
+    "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
     "discord.js": "^11.2.1",
     "forever-monitor": "^1.7.1",
     "js-levenshtein": "^1.1.2",
