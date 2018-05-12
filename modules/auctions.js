@@ -97,6 +97,7 @@ async function bid(user, args, callback) {
     if(!utils.isInt(args[1]))
         return callback(utils.formatError(user, null, "price should be a number"));
 
+    args[0] = args[0].replace(",", "");
     let price = parseInt(args[1]);
     let auc = await acollection.findOne({id: args[0]});
     if(!auc)
@@ -355,7 +356,7 @@ function auctionToString(auc, userID) {
         if(auc.lastbidder == null) resp += "🔹";
         else resp += "🔷";
     else if(userID == auc.lastbidder) resp += "🔸";
-    else resp += "▪️";
+    else resp += "▪";
     resp += "`[" + getTime(auc) + "] ";
     resp += "[" + auc.id + "] ";
     resp += "[" + getNextBid(auc) + "🍅]`  ";
