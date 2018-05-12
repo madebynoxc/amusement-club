@@ -366,10 +366,16 @@ function auctionToString(auc, userID) {
 
 function getTime(auc) {
     let hours = aucTime - utils.getHoursDifference(auc.date);
+    if (hours == 0)
+        return "0s";
     if(hours <= 1){
         let mins = 60 - (utils.getMinutesDifference(auc.date) % 60);
-        if(mins < 1)
-            return "<1m";
+        if(mins <= 1){
+            let secs = 60 - (utils.getSecondsDifference(auc.date) % 60 % 60);
+            if(secs <= 1)
+                return "1s";
+            return secs + "s";
+        }
         return mins + "m";
     } else 
         return hours + "h";
