@@ -36,7 +36,7 @@ function processRequest(user, args, channelID, callback) {
             info(user, args, channelID, callback);
             break;
         default:
-            if(command) args.push(command);
+            if(command) args.unshift(command);
             list(user, args, channelID, callback);
             break;
     }
