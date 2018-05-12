@@ -97,6 +97,7 @@ async function bid(user, args, callback) {
     if(!utils.isInt(args[1]))
         return callback(utils.formatError(user, null, "price should be a number"));
 
+    args[0] = args[0].replace(",", "");
     let price = parseInt(args[1]);
     let auc = await acollection.findOne({id: args[0]});
     if(!auc)
@@ -146,6 +147,14 @@ async function bid(user, args, callback) {
         else msg += "To remain in the auction, you should bid more than **" + getNextBid(auc) + "**🍅\nUse `->auc bid " + auc.id + " [new bid]`\n";
         msg += "This auction will end in **" + getTime(auc) + "**";
         bot.sendMessage({to: auc.lastbidder, embed: utils.formatWarning(null, "Oh no!", msg)});
+    } else {
+        auc.price = price;
+        let strprice = hidebid? "???" : price;
+        let msg = "A player has bid on your card **" + utils.getFullCard(auc.card)  + "** with a bid of **" + strprice + "**🍅\n";
+
+        if(hidebid) msg += "The bid is hidden by hero effect.\n";
+        msg += "This auction will end in **" + getTime(auc) + "**";
+        bot.sendMessage({to: auc.author, embed: utils.formatInfo(null, "Yay!", msg)});
     }
 
     await acollection.update({_id: auc._id}, {$set: {
@@ -256,7 +265,7 @@ async function info(user, args, channelID, callback) {
         let resp = "";
         resp += "Seller: **" + author.username + "**\n";
         resp += "Last bid: **" + auc.price + "**`🍅`\n";
-        resp += "Next minimum bid: **" + (getNextBid(auc) + 1) + "**`🍅`\n"
+        resp += "Next minimum bid: **" + (auc.hidebid ? "???" : getNextBid(auc) + 1) + "**`🍅`\n"
         resp += "Card: **" + utils.getFullCard(auc.card) + "**\n";
         resp += "Card value: **" + Math.floor(eval) + "**`🍅`\n";
         if(user.id == auc.lastbidder && !auc.finished) 
@@ -285,6 +294,7 @@ async function checkAuctionList() {
     let dbuser = await ucollection.findOne({discord_id: auc.author});
     let transaction = {
         id: auc.id,
+        price: auc.price,
         from: dbuser.username,
         from_id: dbuser.discord_id,
         status: "auction",
@@ -342,9 +352,11 @@ function auctionToString(auc, userID) {
 
     if(auc.hidebid) auc.price = "???";
 
-    if(userID == auc.author) resp += "🔹";
+    if(userID == auc.author) 
+        if(auc.lastbidder == null) resp += "🔹";
+        else resp += "🔷";
     else if(userID == auc.lastbidder) resp += "🔸";
-    else resp += "▪️";
+    else resp += "▪";
     resp += "`[" + getTime(auc) + "] ";
     resp += "[" + auc.id + "] ";
     resp += "[" + getNextBid(auc) + "🍅]`  ";
@@ -354,10 +366,16 @@ function auctionToString(auc, userID) {
 
 function getTime(auc) {
     let hours = aucTime - utils.getHoursDifference(auc.date);
+    if (hours == 0)
+        return "0s";
     if(hours <= 1){
         let mins = 60 - (utils.getMinutesDifference(auc.date) % 60);
-        if(mins < 1)
-            return "<1m";
+        if(mins <= 1){
+            let secs = 60 - (utils.getSecondsDifference(auc.date) % 60 % 60);
+            if(secs <= 1)
+                return "1s";
+            return secs + "s";
+        }
         return mins + "m";
     } else 
         return hours + "h";
