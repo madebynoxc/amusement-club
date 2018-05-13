@@ -5,6 +5,7 @@ module.exports = {
     HEXToVBColor,
     getSourceFormat,
     toTitleCase,
+    getSecondsDifference,
     getMinutesDifference,
     getHoursDifference,
     getFullTimeDifference,
@@ -100,6 +101,11 @@ function getHoursDifference(tg) {
 function getMinutesDifference(tg) {
     let mil = new Date() - tg;
     return Math.floor(mil / (1000*60));
+}
+
+function getSecondsDifference(tg) {
+    let mil = new Date() - tg;
+    return Math.floor(mil / (1000));
 }
 
 function getFullTimeDifference(tg) {
