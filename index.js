@@ -179,7 +179,7 @@ function getCommand(user, channel, guild, message, event, callback) {
                         else {
                             let chanID = channel? channel.id : user.id;
                             react.addNewPagination(user.id, 
-                                user.username + ", your card difference with " + found, 
+                                user.username + ", your card difference with " + found + " (" + data.length + " results):", 
                                 cardList.getPages(data), chanID);
                         }
                     });
@@ -269,7 +269,7 @@ function getCommand(user, channel, guild, message, event, callback) {
                         else {
                             let chanID = channel? channel.id : user.id;
                             react.addNewPagination(user.id, 
-                                user.username + ", your cards:", 
+                                user.username + ", your cards (" + data.length + " results):", 
                                 cardList.getPages(data), chanID);
                         }
                   });
@@ -380,7 +380,7 @@ function getCommand(user, channel, guild, message, event, callback) {
                         else {
                             let chanID = channel? channel.id : user.id;
                             react.addNewPagination(user.id, 
-                                "You miss these cards:", 
+                                "You are missing these cards (" + data.length + " results):", 
                                 cardList.getPages(data), chanID);
                         }
                     });

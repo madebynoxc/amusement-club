@@ -1145,8 +1145,7 @@ function getUserCards(userID, query) {
                 sends: "$sends"
             }, 
             cards: {"$push": "$cards"}}
-        },
-        {"$limit": 200}
+        }
     ]);
 }
 
