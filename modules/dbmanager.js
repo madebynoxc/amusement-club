@@ -3,7 +3,7 @@ module.exports = {
     getCards, summon, transfer, sell, award, getUserName,
     pay, daily, getQuests, getBestCardSorted, getUserCards,
     leaderboard, difference, dynamicSort, countCardLevels, getCardValue,
-    getCardFile, getDefaultChannel, isAdmin, needsCards, 
+    getCardFile, getDefaultChannel, isAdmin, needsCards, getCardURL,
     removeCardFromUser, addCardToUser, eval, whohas, block, fav, track
 }
 
@@ -212,7 +212,10 @@ function claim(user, guildID, arg, callback) {
                         $inc: incr
                     }
                 ).then(() => {
-                    callback(phrase, ((amount == 1)? getCardFile(res[0]) : null));
+                    let emb = utils.formatInfo(null, null, phrase);
+                    if(amount == 1) emb.image = { "url": getCardURL(res[0]) };
+                    callback(emb);
+                    //callback(phrase, ((amount == 1)? getCardFile(res[0]) : null));
                     quest.checkClaim(dbUser, callback);
                 }).catch(e => console.log(e));
             });
@@ -283,7 +286,10 @@ function claimPromotion(user, dbUser, amount, callback) {
                 $inc: {promoexp: -claimCost}
             }
         ).then(() => {
-            callback(phrase, ((amount == 1)? getCardFile(res[0]) : null));
+            let emb = utils.formatInfo(null, null, phrase);
+            if(amount == 1) emb.image = { "url": getCardURL(res[0]) };
+            callback(emb);
+            //callback(phrase, ((amount == 1)? getCardFile(res[0]) : null));
         }).catch(e => console.log(e));
     });
 }
@@ -410,7 +416,10 @@ function summon(user, args, callback) {
         let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : getRandomCard(cards);
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
-        callback("**" + user.username + "** summons **" + utils.toTitleCase(match.name.replace(/_/g, " ")) + "!**", getCardFile(match));
+        let emb = utils.formatInfo(null, "**" + user.username + "** summons **" 
+            + utils.toTitleCase(match.name.replace(/_/g, " ")) + "!**");
+        emb.image = { "url": getCardURL(match) }
+        callback(emb);
 
         if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, get: 0, quests: 0};
         dbUser.dailystats.summon++;
@@ -1259,7 +1268,6 @@ function getBestCardSorted(cards, n) {
 }
 
 function getCardFile(card) {
-    let name = utils.toTitleCase(card.name.replace(/_/g, " "));
     let ext = card.animated? '.gif' : (card.compressed? '.jpg' : '.png');
     let prefix = card.craft? card.level + 'cr' : card.level;
     let col = collections.filter(c => c.includes(card.collection))[0];
@@ -1269,8 +1277,9 @@ function getCardFile(card) {
 function getCardURL(card) {
     let ext = card.animated? '.gif' : (card.compressed? '.jpg' : '.png');
     let prefix = card.craft? card.level + 'cr' : card.level;
+    let col = collections.filter(c => c.includes(card.collection))[0];
     return "https://amusementclub.nyc3.digitaloceanspaces.com" 
-        + '/cards/' + card.collection 
+        + '/cards/' + col 
         + '/' + prefix + "_" + card.name + ext;
 }
 

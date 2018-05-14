@@ -4,16 +4,8 @@ module.exports = {
 
 var mongodb;
 const fs = require('fs');
-const s3 = require('s3');
 const logger = require('./log.js');
-
-/*var client = s3.createClient({
-  s3Options: {
-    accessKeyId: "your s3 key",
-    secretAccessKey: "your s3 secret",
-    region: "your region",
-  },
-});*/
+const url = "https://amusementclub.nyc3.digitaloceanspaces.com/";
 
 function updateCards(connection, callback) {
     logger.message("[CardManager 2.3] NOW: Updating cards..."); 
@@ -57,20 +49,45 @@ function updateCards(connection, callback) {
     });
 }
 
-function updateCardsS3(connection) {
-    logger.message("Launched module [CardManager S3.1]"); 
-    logger.message("Updating cards..."); 
+async function updateCardsS3(connection, callback) {
+    logger.message("[CardManager S3.0] NOW: Updating cards..."); 
     mongodb = connection;
 
+    let items = await getRemoteCardList();
+    let allCards = (await mongodb.collection('cards').find({}).toArray())
+        .concat((await mongodb.collection('promocards').find({}).toArray()));
 
+    let collected = [];
+    items.forEach(item => {
+        let newCards = [];
+        let path = './cards/' + item;
+        let files = fs.readdirSync(path);
 
-    /*let collection = mongodb.collection('cards');
-    let collection2 = mongodb.collection('promocards');
-    collection.find({}).toArray((err, res) => {
-        collection2.find({}).toArray((err2, res2) => {
-            
-        });
-    });*/
+        for (let i in files) {
+            let ext = files[i].split('.')[1];
+
+            if(ext == 'png' || ext == 'jpg' || ext == 'gif') {
+                var card = getCardObject(files[i], item);
+                if (allCards.filter((e) => {
+                    return e.name == card.name && e.collection === item.replace('=', '');
+                }).length == 0){
+                    newCards.push(card);
+                }
+            } else  logger.error("Can't parse card: " + files[i]);
+        }
+        
+        if(item[0] == '=') 
+            insertCrads(newCards, mongodb.collection('promocards'));
+        else insertCrads(newCards, mongodb.collection('cards'));
+
+        if(newCards.length > 0) collected.push({name: item, count: newCards.length});
+    });
+    logger.message("[CardManager S3.1] Card update finished"); 
+    if(callback) callback(collected);
+}
+
+async function getRemoteCardList() {
+    
 }
 
 function getCardObject(name, collection) {

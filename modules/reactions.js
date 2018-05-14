@@ -9,7 +9,6 @@ const fs = require('fs');
 const dbManager = require("./dbmanager.js");
 const utils = require('./localutils.js');
 const logger = require('./log.js');
-const discord = require("discord.js");
 
 fs.readdir('./cards', (err, items) => {
     if(err) console.log(err);
