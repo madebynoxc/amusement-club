@@ -150,29 +150,20 @@ bot.on("ready", (event) => {
 });
 
 function formError(title, desc) {
-    let e = new djs.RichEmbed();
-    e.setColor('#DB1111');
-    e.setTitle(title);
-    e.setDescription(desc);
-    e.setFooter("Ayano: Amusement Club monitoring | Restartcount: " + restarts);
+    let e = utils.formatError(null, title, desc);
+    e.footer = { text: "Ayano: Amusement Club monitoring | Restartcount: " + restarts };
     return e;
 }
 
 function formConfirm(title, desc) {
-    let e = new djs.RichEmbed();
-    e.setColor('#0FBA4D');
-    e.setTitle(title);
-    e.setDescription(desc);
-    e.setFooter("Ayano: Amusement Club monitoring");
+    let e = utils.formatConfirm(null, title, desc);
+    e.footer = { text: "Ayano: Amusement Club monitoring" };
     return e;
 }
 
 function formWarn(title, desc) {
-    let e = new djs.RichEmbed();
-    e.setColor('#ffc711');
-    e.setTitle(title);
-    e.setDescription(desc);
-    e.setFooter("Ayano: Amusement Club monitoring");
+    let e = utils.formatWarning(null, title, desc);
+    e.footer = { text: "Ayano: Amusement Club monitoring" };
     return e;
 }
 
@@ -249,38 +240,28 @@ function updateCards() {
     } 
 
     cardmanager.updateCards(mongodb, cards => {
-        let e = new djs.RichEmbed();
-        e.setColor('#0FBA4D');
-        e.setTitle("Finished updating cards");
-        if(cards.length == 0) e.setDescription("No cards were added");
+        var emb = "";
+
+        if(cards.length == 0) emb = "No cards were added";
         else {
-            var emb = "";
+            
             cards.map(c => {
                 emb += "**" + c.name.replace('=', '') + "** collection got **" + c.count + "** new cards\n";
             });
-            e.setDescription(emb);
         }
 
         bot.sendMessage({
             to: settings.reportchannel, 
-            embed: e
+            embed: utils.formatConfirm(null, "Finished updating cards", emb);
         });
     });
-}
-
-function askDB(args) {
-    var split = args.split('(');
-    var col = split[0].substring(3);
-    var query = split[1].substring(0, 1);
 }
 
 function other(args) {
     console.log("[Ayano] Executing: " + args);
 
-    if(args.startsWith('db.')) {
-        return askDB(args);
-    }
     args = args.split(' ');
+    if(args[0] != 'git') return;
 
     try {
         stdout = "";

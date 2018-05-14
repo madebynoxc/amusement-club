@@ -5,6 +5,8 @@ module.exports = {
 var mongodb;
 const fs = require('fs');
 const logger = require('./log.js');
+const https = require('https');
+const validExts = ['.png', '.gif', '.jpg'];
 const url = "https://amusementclub.nyc3.digitaloceanspaces.com/";
 
 function updateCards(connection, callback) {
@@ -49,53 +51,66 @@ function updateCards(connection, callback) {
     });
 }
 
-async function updateCardsS3(connection, callback) {
+async function updateCardsS3(connection) {
     logger.message("[CardManager S3.0] NOW: Updating cards..."); 
     mongodb = connection;
 
-    let items = await getRemoteCardList();
+    let items = await getRemoteCardList(); //cards/dragonmaid/1_Chinese_Dragon.png
     let allCards = (await mongodb.collection('cards').find({}).toArray())
         .concat((await mongodb.collection('promocards').find({}).toArray()));
 
-    let collected = [];
+    let collected = [], warnings = [], newCards = [];
     items.forEach(item => {
-        let newCards = [];
-        let path = './cards/' + item;
-        let files = fs.readdirSync(path);
+        let collection = item.split('/')[1];
+        let name = item.split('/')[2];
+        let card = getCardObject(name, collection);
 
-        for (let i in files) {
-            let ext = files[i].split('.')[1];
+        if(card.name !== name.split('.')[0])
+            warnings.push(card.name + " : " + name.split('.')[0]);
 
-            if(ext == 'png' || ext == 'jpg' || ext == 'gif') {
-                var card = getCardObject(files[i], item);
-                if (allCards.filter((e) => {
-                    return e.name == card.name && e.collection === item.replace('=', '');
-                }).length == 0){
-                    newCards.push(card);
-                }
-            } else  logger.error("Can't parse card: " + files[i]);
+        if(!collected[collection]) collected[collection] = [];
+
+        if(allCards.filter(c => utils.cardsMatch(c, card)) == 0) {
+            newCards.push(card);
+            collected[collection].push(card);
         }
-        
-        if(item[0] == '=') 
-            insertCrads(newCards, mongodb.collection('promocards'));
-        else insertCrads(newCards, mongodb.collection('cards'));
-
-        if(newCards.length > 0) collected.push({name: item, count: newCards.length});
     });
+
+    await insertCrads(newCards, mongodb.collection(item.split('/')[0] == 'promo'? 'promocards' : 'cards');
     logger.message("[CardManager S3.1] Card update finished"); 
-    if(callback) callback(collected);
+
+    return { collected: collected, warnings: warnings };
 }
 
 async function getRemoteCardList() {
-    
+    https.get(url, (resp) => {
+        let data = '';
+
+        resp.on('data', (chunk) => {
+            data += chunk;
+        });
+
+        resp.on('end', () => {
+            return data
+                .split('<Key>')
+                .slice(1)
+                .map(e => e.split('</Key>')[0])
+                .filter(e => validExts
+                    .map(ext => e.indexOf(ext) !== -1)
+                    .reduce((a, b) => a || b));
+        });
+
+    }).on("error", err => {
+        console.log("HTTP Error: " + err.message);
+    });  
 }
 
 function getCardObject(name, collection) {
-    name = name.replace(/ /g, '_');
+    name = name.replace(/ /g, '_').trim().toLower();
     let split = name.split('.');
     let craft = name.substr(1, 2) === "cr";
 
-    collection = collection.replace('=', '');
+    collection = collection.replace(/=/g, '');
 
     return {
         "name": craft? split[0].substr(4) : split[0].substr(2),
@@ -107,12 +122,11 @@ function getCardObject(name, collection) {
     }
 }
 
-function insertCrads(cards, collection) {
+async function insertCrads(cards, collection) {
     if(cards.length == 0) return;
 
     var col = cards[0].collection;
-    collection.insert(cards, (err, res) => {
-        logger.message("> Inserted -- " + cards.length + " -- new cards from ["+ col +"] to DB");
-    });
-    logger.message("> [" + col + "] update finished");
+    await collection.insert(cards);
+
+    logger.message("> Inserted -- " + cards.length + " -- new cards from ["+ col +"] to DB");
 }
