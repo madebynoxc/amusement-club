@@ -257,6 +257,32 @@ function updateCards() {
     });
 }
 
+async function updateCardsRemote() {
+    if(!mongodb){
+        bot.sendMessage({
+            to: settings.reportchannel, 
+            embed: formError("Can't update cards", "The connection to database is invalid")
+        });
+        return;
+    } 
+
+    await cardmanager.updateCards(mongodb, res => {
+    var emb = "";
+
+    if(cards.length == 0) emb = "No cards were added";
+    else {
+        
+        cards.map(c => {
+            emb += "**" + c.name.replace('=', '') + "** collection got **" + c.count + "** new cards\n";
+        });
+    }
+
+    bot.sendMessage({
+        to: settings.reportchannel, 
+        embed: utils.formatConfirm(null, "Finished updating cards", emb);
+    });
+}
+
 function other(args) {
     console.log("[Ayano] Executing: " + args);
 
