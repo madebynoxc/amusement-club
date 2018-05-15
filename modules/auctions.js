@@ -191,8 +191,9 @@ function addExtraTime(auc) {
 
 async function sell(user, incArgs, channelID, callback) {
     let args = incArgs.join(' ').split(',');
-    if(!args || args.length < 2) 
-        return callback("**" + user.username + "**, please specify card query and price seperated by `,`");
+    if(!args || args.length < 1) 
+        return callback("**" + user.username + "**, please specify card query and price seperated by `,`\n"
+            + "Or do not specify price to use eval");
 
     let query = utils.getRequestFromFilters(args[0].split(' '));
     dbManager.getUserCards(user.id, query).toArray((err, objs) => {
