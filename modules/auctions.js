@@ -144,7 +144,8 @@ async function bid(user, args, callback) {
         let msg = "Another player has outbid you on card **" + utils.getFullCard(auc.card)  + "** with a bid of **" + strprice + "**🍅\n";
 
         if(hidebid) msg += "Next required bid is hidden by hero effect.\n";
-        else msg += "To remain in the auction, you should bid more than **" + getNextBid(auc) + "**🍅\nUse `->auc bid " + auc.id + " [new bid]`\n";
+        else msg += "To remain in the auction, you should bid more than **" + getNextBid(auc) + "**🍅\n"
+        msg += "Use `->auc bid " + auc.id + " [new bid]`\n";
         msg += "This auction will end in **" + getTime(auc) + "**";
         bot.sendMessage({to: auc.lastbidder, embed: utils.formatWarning(null, "Oh no!", msg)});
     } else {
@@ -180,7 +181,7 @@ function addExtraTime(auc) {
         switch(auc.timeshift){
             case 0: auc.date.setMinutes(auc.date.getMinutes() + 5); break;
             case 1: auc.date.setMinutes(auc.date.getMinutes() + 2); break;
-            case 2: case 3:
+            default:
                 auc.date.setMinutes(auc.date.getMinutes() + 1); break;
         }
         auc.timeshift++;
@@ -197,11 +198,7 @@ async function sell(user, incArgs, channelID, callback) {
     dbManager.getUserCards(user.id, query).toArray((err, objs) => {
         if(!objs[0]) 
             return callback(utils.formatError(user, null, "no cards found that match your request"));
-        
-        if(!utils.isInt(args[1]))
-            return callback(utils.formatError(user, null, "price should be a number"));
 
-        let price = parseInt(args[1]);
         let match = query['cards.name']? dbManager.getBestCardSorted(objs[0].cards, query['cards.name'])[0] : objs[0].cards[0];
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
         if (match.fav && match.amount == 1) 
@@ -209,6 +206,14 @@ async function sell(user, incArgs, channelID, callback) {
                 + " To remove from favorites use `->fav remove [card query]`"));
 
         dbManager.getCardValue(match, async (eval) => {
+            let price;
+
+            if(!args[1])
+                price = eval;
+            else if(!utils.isInt(args[1]))
+                return callback(utils.formatError(user, null, "price should be a number"));
+            else price = parseInt(args[1]);
+
             let min = Math.round(eval * .5);
             let dbUser = await ucollection.findOne({discord_id: user.id});
             let fee = Math.round(price * .1);
