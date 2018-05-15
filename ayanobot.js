@@ -266,10 +266,10 @@ async function updateCardsRemote() {
         return;
     } 
 
-    await cardmanager.updateCards(mongodb, res => {
+    let res = await cardmanager.updateCards(mongodb);
     var emb = "";
 
-    if(cards.length == 0) emb = "No cards were added";
+    if(res.collected.length == 0) emb = "No cards were added";
     else {
         
         cards.map(c => {
