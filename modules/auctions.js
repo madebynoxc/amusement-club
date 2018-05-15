@@ -176,8 +176,7 @@ function addExtraTime(auc) {
     if(!auc.timeshift) 
         auc.timeshift = 0;
 
-    if(aucTime - utils.getHoursDifference(auc.date) <= 1 &&
-        60 - utils.getMinutesDifference(auc.date) <= 5) {
+    if(60*aucTime - utils.getMinutesDifference(auc.date) <= 5) {
         switch(auc.timeshift){
             case 0: auc.date.setMinutes(auc.date.getMinutes() + 5); break;
             case 1: auc.date.setMinutes(auc.date.getMinutes() + 2); break;
@@ -391,7 +390,7 @@ function getNextBid(auc) {
     let newPrice = auc.price + auc.price * .02;
     let hours = aucTime - utils.getHoursDifference(auc.date);
     if(hours <= 1){
-        let mins = 60 - utils.getMinutesDifference(auc.date);
+        let mins = 60 - (utils.getMinutesDifference(auc.date) % 60);
         newPrice += newPrice * (1/mins) * .2;
     }
     return Math.floor(newPrice);
