@@ -384,10 +384,6 @@ function getCommand(user, channel, guild, message, event, callback) {
                                 cardList.getPages(data), chanID);
                         }
                     });
-
-                    dbManager.needsCards(user, cnt, (text) => {
-                        callback(text);
-                    });
                 }
                 return;
             case 'fav':

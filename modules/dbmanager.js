@@ -864,7 +864,7 @@ function difference(discUser, parse, callback) {
             if(dif.length > 0) 
                 callback(dif, dbUser2.username);
             else
-                callback("**" + dbUser2.username + "** has no any unique cards for you\n");
+                callback("**" + dbUser2.username + "** has no unique cards for you\n");
         });
     });
 }
