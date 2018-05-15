@@ -69,7 +69,7 @@ function connect(bot, callback) {
         auctions.connect(db, client);
 
         let date = new Date();
-        let deletDate = new Date(date.setDate(date.getDate() - 7));
+        let deletDate = new Date(date.setDate(date.getDate() - 5));
         db.collection('transactions').remove({time: {$lt: deletDate}}).then(res => {
             console.log(res.result);
         });

@@ -210,7 +210,7 @@ async function sell(user, incArgs, channelID, callback) {
             let price;
 
             if(!args[1])
-                price = eval;
+                price = Math.floor(eval);
             else if(!utils.isInt(args[1]))
                 return callback(utils.formatError(user, null, "price should be a number"));
             else price = parseInt(args[1]);
