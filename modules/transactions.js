@@ -194,6 +194,9 @@ async function confirm(user, args, callback) {
 
         transaction.card.fav = false;
         fromUser.cards = dbmanager.removeCardFromUser(fromUser.cards, transaction.card);
+        if(!fromUser.cards || fromUser.cards.length == 0) 
+            return callback("**" + user.username + "**, something went wrong!");
+
         fromUser.exp += transaction.price;
         toUser.cards = dbmanager.addCardToUser(toUser.cards, transaction.card);
         toUser.exp -= transaction.price;

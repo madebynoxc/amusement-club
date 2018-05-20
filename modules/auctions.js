@@ -236,6 +236,8 @@ async function sell(user, incArgs, channelID, callback) {
                     let aucID = await generateBetterID();
                     dbUser.cards = dbManager.removeCardFromUser(dbUser.cards, match);
 
+                    if(!dbUser.cards || dbUser.cards.length == 0) return; 
+
                     await ucollection.update({discord_id: user.id}, {$set: {cards: dbUser.cards}, $inc: {exp: -fee}});
                     await acollection.insert({
                         id: aucID, finished: false, date: new Date(), price: price, author: user.id, card: match

@@ -162,6 +162,7 @@ function craftCard(user, args, callback) {
                 let match = user.cards.filter(c => c.name.toLowerCase() == cardNames[j])[0];
                 if(match) {
                     user.cards = dbManager.removeCardFromUser(user.cards, match);
+                    if(!user.cards || user.cards.length == 0) return callback("**" + user.username + "**, something went wrong!");
                 } else {
                     callback("**" + user.username + "**, can't find needed card among yours");
                     return;
@@ -244,6 +245,7 @@ function craftOrdinary(user, cards, callback) {
     for(j in cards) {
         let match = utils.containsCard(user.cards, cards[j]);
         if(match) user.cards = dbManager.removeCardFromUser(user.cards, match);
+        if(!user.cards || user.cards.length == 0) return callback("**" + user.username + "**, something went wrong!");
     }
 
     let req = {level: level};
