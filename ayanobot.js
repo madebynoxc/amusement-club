@@ -3,7 +3,6 @@ const forever = require('forever-monitor');
 const settings = require('./settings/ayano.json');
 const acsettings = require('./settings/general.json');
 const Discord = require("discord.io");
-const djs = require("discord.js");
 const cardmanager = require('./modules/cardmanager.js');
 const dbmanager = require('./modules/dbmanager.js');
 const utils = require("./modules/localutils.js");
@@ -125,7 +124,7 @@ bot.on("ready", (event) => {
                     showCommands(); break;
                 case 'update': 
                     console.log('[Ayano] Trying to update cards...'); 
-                    updateCards(); break;
+                    updateCardsRemote(); break;
                 case 'start': 
                     console.log('[Ayano] Starting Amusement Club process...'); 
                     child.start(); break;
@@ -195,6 +194,9 @@ function rename(argument) {
     let result = "";
     let query = utils.getRequestFromFiltersNoPrefix(getstr);
 
+//     db.getCollection('users').updateMany({cards: {"$elemMatch": {name: "fallen_angel", collection: "lovelive"}}},
+// {$set: {"cards.$.name": "fallen_angel_bomb"}})
+
     mongodb.collection('cards').findOne(query).then(card => {
         if(!card)
             return bot.sendMessage({
@@ -252,7 +254,7 @@ function updateCards() {
 
         bot.sendMessage({
             to: settings.reportchannel, 
-            embed: utils.formatConfirm(null, "Finished updating cards", emb);
+            embed: utils.formatConfirm(null, "Finished updating cards", emb)
         });
     });
 }
@@ -271,15 +273,14 @@ async function updateCardsRemote() {
 
     if(res.collected.length == 0) emb = "No cards were added";
     else {
-        
         cards.map(c => {
-            emb += "**" + c.name.replace('=', '') + "** collection got **" + c.count + "** new cards\n";
+            emb += "**" + c.name + "** collection got **" + c.count + "** new cards\n";
         });
     }
 
     bot.sendMessage({
         to: settings.reportchannel, 
-        embed: utils.formatConfirm(null, "Finished updating cards", emb);
+        embed: utils.formatConfirm(null, "Finished updating cards", emb)
     });
 }
 

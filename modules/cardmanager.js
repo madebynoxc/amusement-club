@@ -59,8 +59,9 @@ async function updateCardsS3(connection) {
     let allCards = (await mongodb.collection('cards').find({}).toArray())
         .concat((await mongodb.collection('promocards').find({}).toArray()));
 
-    let collected = [], warnings = [], newCards = [];
+    let collected = [], warnings = [], newCards = [], newPromoCards = [];
     items.forEach(item => {
+        let type = item.split('/')[0];
         let collection = item.split('/')[1];
         let name = item.split('/')[2];
         let card = getCardObject(name, collection);
@@ -71,12 +72,16 @@ async function updateCardsS3(connection) {
         if(!collected[collection]) collected[collection] = [];
 
         if(allCards.filter(c => utils.cardsMatch(c, card)) == 0) {
-            newCards.push(card);
+            if(type == 'promo') newPromoCards.push(card);
+            else if(type == 'cards') newCards.push(card);
             collected[collection].push(card);
         }
     });
 
-    await insertCrads(newCards, mongodb.collection(item.split('/')[0] == 'promo'? 'promocards' : 'cards');
+    if(newCards.length > 0) 
+        await insertCrads(newCards, mongodb.collection('cards'));
+    if(newPromoCards.length > 0) 
+        await insertCrads(newPromoCards, mongodb.collection('promocards'));
     logger.message("[CardManager S3.1] Card update finished"); 
 
     return { collected: collected, warnings: warnings };
@@ -106,7 +111,7 @@ async function getRemoteCardList() {
 }
 
 function getCardObject(name, collection) {
-    name = name.replace(/ /g, '_').trim().toLower();
+    name = name.replace(/ /g, '_').trim().toLowerCase();
     let split = name.split('.');
     let craft = name.substr(1, 2) === "cr";
 
