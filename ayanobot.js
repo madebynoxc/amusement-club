@@ -268,13 +268,13 @@ async function updateCardsRemote() {
         return;
     } 
 
-    let res = await cardmanager.updateCards(mongodb);
+    let res = await cardmanager.updateCardsS3(mongodb);
     var emb = "";
 
-    if(res.collected.length == 0) emb = "No cards were added";
+    if(Object.keys(res.collected).length == 0) emb = "No cards were added";
     else {
-        cards.map(c => {
-            emb += "**" + c.name + "** collection got **" + c.count + "** new cards\n";
+        Object.keys(res.collected).map((key, index) => {
+            emb += "**" + key + "** collection got **" + res.collected[key].length + "** new cards\n";
         });
     }
 

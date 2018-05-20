@@ -213,6 +213,7 @@ function claim(user, guildID, arg, callback) {
                     }
                 ).then(() => {
                     let emb = utils.formatInfo(null, null, phrase);
+                    console.log(getCardURL(res[0]));
                     if(amount == 1) emb.image = { "url": getCardURL(res[0]) };
                     callback(emb);
                     //callback(phrase, ((amount == 1)? getCardFile(res[0]) : null));
@@ -418,6 +419,7 @@ function summon(user, args, callback) {
 
         let emb = utils.formatInfo(null, "**" + user.username + "** summons **" 
             + utils.toTitleCase(match.name.replace(/_/g, " ")) + "!**");
+        console.log(getCardURL(match));
         emb.image = { "url": getCardURL(match) }
         callback(emb);
 
@@ -1277,9 +1279,9 @@ function getCardFile(card) {
 function getCardURL(card) {
     let ext = card.animated? '.gif' : (card.compressed? '.jpg' : '.png');
     let prefix = card.craft? card.level + 'cr' : card.level;
-    let col = collections.filter(c => c.includes(card.collection))[0];
+    //let col = collections.filter(c => c.includes(card.collection))[0];
     return "https://amusementclub.nyc3.digitaloceanspaces.com" 
-        + '/cards/' + col 
+        + '/cards/' + card.collection 
         + '/' + prefix + "_" + card.name + ext;
 }
 

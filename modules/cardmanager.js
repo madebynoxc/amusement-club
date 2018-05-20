@@ -1,5 +1,5 @@
 module.exports = {
-    updateCards
+    updateCards, updateCardsS3
 }
 
 var mongodb;
@@ -7,7 +7,7 @@ const fs = require('fs');
 const logger = require('./log.js');
 const https = require('https');
 const validExts = ['.png', '.gif', '.jpg'];
-const url = "https://amusementclub.nyc3.digitaloceanspaces.com/";
+const url = "https://amusementclub.nyc3.digitaloceanspaces.com";
 
 function updateCards(connection, callback) {
     logger.message("[CardManager 2.3] NOW: Updating cards..."); 
@@ -51,63 +51,71 @@ function updateCards(connection, callback) {
     });
 }
 
-async function updateCardsS3(connection) {
-    logger.message("[CardManager S3.0] NOW: Updating cards..."); 
-    mongodb = connection;
+function updateCardsS3(connection) {
+    return new Promise(async (resolve) => {
+        logger.message("[CardManager S3.0] NOW: Updating cards..."); 
+        mongodb = connection;
 
-    let items = await getRemoteCardList(); //cards/dragonmaid/1_Chinese_Dragon.png
-    let allCards = (await mongodb.collection('cards').find({}).toArray())
-        .concat((await mongodb.collection('promocards').find({}).toArray()));
+        let items = await getRemoteCardList(); //cards/dragonmaid/1_Chinese_Dragon.png
+        let allCards = (await mongodb.collection('cards').find({}).toArray())
+            .concat((await mongodb.collection('promocards').find({}).toArray()));
 
-    let collected = [], warnings = [], newCards = [], newPromoCards = [];
-    items.forEach(item => {
-        let type = item.split('/')[0];
-        let collection = item.split('/')[1];
-        let name = item.split('/')[2];
-        let card = getCardObject(name, collection);
+        let collected = [], warnings = [], newCards = [], newPromoCards = [];
+        items.forEach(item => {
+            let type = item.split('/')[0];
+            let collection = item.split('/')[1];
+            let name = item.split('/')[2];
 
-        if(card.name !== name.split('.')[0])
-            warnings.push(card.name + " : " + name.split('.')[0]);
+            if(name && collection) {
+                let card = getCardObject(name, collection);
 
-        if(!collected[collection]) collected[collection] = [];
+                if(card.name !== name.split('.')[0])
+                    warnings.push(card.name + " : " + name.split('.')[0]);
 
-        if(allCards.filter(c => utils.cardsMatch(c, card)) == 0) {
-            if(type == 'promo') newPromoCards.push(card);
-            else if(type == 'cards') newCards.push(card);
-            collected[collection].push(card);
-        }
+                if(!collected[collection]) collected[collection] = [];
+
+                if(allCards.filter(c => utils.cardsMatch(c, card)) == 0) {
+                    if(type == 'promo') newPromoCards.push(card);
+                    else if(type == 'cards') newCards.push(card);
+                    collected[collection].push(card);
+                }
+            }
+        });
+
+        if(newCards.length > 0) 
+            await insertCrads(newCards, mongodb.collection('cards'));
+        if(newPromoCards.length > 0) 
+            await insertCrads(newPromoCards, mongodb.collection('promocards'));
+        logger.message("[CardManager S3.1] Card update finished"); 
+
+        resolve({ collected: collected, warnings: warnings });
     });
-
-    if(newCards.length > 0) 
-        await insertCrads(newCards, mongodb.collection('cards'));
-    if(newPromoCards.length > 0) 
-        await insertCrads(newPromoCards, mongodb.collection('promocards'));
-    logger.message("[CardManager S3.1] Card update finished"); 
-
-    return { collected: collected, warnings: warnings };
 }
 
 async function getRemoteCardList() {
-    https.get(url, (resp) => {
-        let data = '';
+    return new Promise((resolve) => {
 
-        resp.on('data', (chunk) => {
-            data += chunk;
-        });
+        https.get(url + '?max-keys=100000', (resp) => {
+            let data = '';
 
-        resp.on('end', () => {
-            return data
-                .split('<Key>')
-                .slice(1)
-                .map(e => e.split('</Key>')[0])
-                .filter(e => validExts
-                    .map(ext => e.indexOf(ext) !== -1)
-                    .reduce((a, b) => a || b));
-        });
+            resp.on('data', (chunk) => {
+                data += chunk;
+            });
 
-    }).on("error", err => {
-        console.log("HTTP Error: " + err.message);
-    });  
+            resp.on('end', () => {
+                resolve(data
+                    .split('<Key>')
+                    .slice(1)
+                    .map(e => e.split('</Key>')[0])
+                    .filter(e => validExts
+                        .map(ext => e.indexOf(ext) !== -1)
+                        .reduce((a, b) => a || b)));
+            });
+
+        }).on("error", err => {
+            console.log("HTTP Error: " + err.message);
+        });  
+    });
 }
 
 function getCardObject(name, collection) {
