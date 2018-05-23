@@ -2,7 +2,8 @@ const colors = {
     red: 14356753,
     yellow: 16756480,
     green: 1030733,
-    blue: 1420012
+    blue: 1420012,
+    grey: 3553598
 }
 
 module.exports = {
@@ -35,18 +36,12 @@ module.exports = {
     getCardQuery,
     generateRandomId,
     generateNextId,
-    getFullCard
+    getFullCard,
+    formatImage
 }
 
 const fs = require('fs');
-
-let collections = [];
-fs.readdir('./cards', (err, items) => {
-    if(err) console.log(err);
-    for (let i = 0; i < items.length; i++) {
-        collections.push(items[i].replace('=', ''));
-    }
-});
+let collections = require('./collections.js');
 
 function getSourceFormat(str) {
     return str.replace(' ', '');
@@ -168,8 +163,8 @@ function getRequestFromFiltersWithPrefix(args, prefix) {
                 query[prefix + 'frozen'] = {$gte: yesterday};
             }
             else {
-                col = collections.filter(c => c.includes(el))[0];
-                if(col) collectionInclude.push(col);
+                col = collections.parseCollection(el);
+                col.map(c => collectionInclude.push(c.id));
             }
         }
         else if(element[0] == '!') {
@@ -186,8 +181,8 @@ function getRequestFromFiltersWithPrefix(args, prefix) {
                 query[prefix + 'frozen'] = {$lte: yesterday};
             }
             else {
-                col = collections.filter(c => c.includes(el))[0];
-                if(col) collectionExclude.push(col);
+                col = collections.parseCollection(el);
+                col.map(c => collectionExclude.push(c.id));
             }
 
         } else keywords.push(element.trim());
@@ -278,6 +273,12 @@ function formatInfo(user, title, body) {
 
 function formatWarning(user, title, body) {
     return getEmbed(user, title, body, colors.yellow); //#ffc711
+}
+
+function formatImage(user, title, body, link) {
+    let e = getEmbed(user, title, body, colors.grey);
+    e.image = { "url": link };
+    return e;
 }
 
 function getEmbed(user, title, body, color) {

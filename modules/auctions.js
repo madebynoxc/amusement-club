@@ -273,8 +273,9 @@ async function info(user, args, channelID, callback) {
         if(auc.finished) resp += "This auction finished**\n";
         else resp += "Finishes in: **" + getTime(auc) + "**\n";
 
-        bot.uploadFile({to: channelID, file: dbManager.getCardFile(auc.card)});
-        callback(utils.formatInfo(null, "Information about auction", resp));
+        let emb = utils.formatInfo(null, "Information about auction", resp);
+        emb.image = {url: dbManager.getCardURL(auc.card)};
+        callback(emb);
     });
 }
 

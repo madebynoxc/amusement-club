@@ -13,15 +13,7 @@ const quest = require('./quest.js');
 const dbManager = require("./dbmanager.js");
 const inv = require("./inventory.js");
 const cryst = require("./crystal.js");
-
-var collections = [];
-fs.readdir('./cards', (err, items) => {
-    if(err) console.log(err);
-    for (var i = 0; i < items.length; i++) {
-        if(items[i][0] != '=' && items[i] != "special")
-            collections.push(items[i]);
-    }
-});
+const collections = require("./collections.js");
 
 function connect(db) {
     mongodb = db;
@@ -222,9 +214,12 @@ function craftOrdinary(user, cards, callback) {
             return;
         }
 
-        if(cards[i].fav && cards[i].amount == 1) return callback(utils.formatError(dbUser, null, "you can't forge favorite card **" 
+        if(cards[i].fav && cards[i].amount == 1) {  
+            callback(utils.formatError(user, null, "you can't forge favorite card **" 
             + utils.toTitleCase(cards[i].name.replace(/_/g, " ")) 
             + "**. To remove from favorites use `->fav remove [card query]`"));
+            return;
+        }
 
         if(cards[i].collection != collection) collection = null;
         passed.push(cards[i].name);
@@ -249,7 +244,7 @@ function craftOrdinary(user, cards, callback) {
     let req = {level: level};
     if(collection) req.collection = collection;
     heroes.addXP(user, .2);
-    requestCard(user, req, (m, o, c) => {
+    requestCard(user, req, (m, c) => {
         quest.checkForge(user, level, callback);
         user.cards = dbManager.addCardToUser(user.cards, c);
         ucollection.update( 
@@ -260,7 +255,7 @@ function craftOrdinary(user, cards, callback) {
             }
         ).then(u => { 
             //if(bonus[0] > 0) m += "\nAdded " + bonus[0] + "🍅 Tomatoes from card effect";
-            callback(m, o);
+            callback(m);
         }).catch(e => {logger.error(e)});
     });
 }
@@ -405,9 +400,9 @@ function completeQuest(user, fullName, callback) {
 function getClaimedCard(user, fullName, args, callback) {
     if(args) {
         var foundarg =  args.substr(args.indexOf('-') + 1);
-        var col = collections.filter(c => c.includes(foundarg))[0];
+        var col = collections.parseCollection(foundarg, false)[0];
         if(col) {
-            ccollection.find({ collection: col }).toArray((err, i) => {
+            ccollection.find({ collection: col.id }).toArray((err, i) => {
                 if(err){ logger.error(err); return; }
 
                 let res = _.sample(i);
@@ -419,8 +414,7 @@ function getClaimedCard(user, fullName, args, callback) {
                     { discord_id: user.discord_id },
                     { $set: {cards: user.cards } }
                 ).then(u => {
-                    callback("**" + user.username + "**, you got **" + name + "**!",
-                        dbManager.getCardFile(res));
+                    callback(utils.formatImage(user, null, "you got **" + name + "**!", dbManager.getCardURL(res)));
                 }).catch(e => logger.error(e));
             });
             return true;
@@ -433,8 +427,8 @@ function getClaimedCard(user, fullName, args, callback) {
 
     let resp = "**" + user.username + "**, this card requires collection name to be passed.\n" 
     resp += "Use `->inv use " + fullName.toLowerCase() + ", -collection`\n";
-    resp +=  "You can use collections: ";
-    for(i in collections) resp += collections[i] + ', ';
+    // resp +=  "You can use collections: ";
+    // for(i in collections) resp += collections[i] + ', ';
     callback(resp);
     return false;
 }
@@ -443,10 +437,14 @@ function requestCard(user, findObj, callback) {
     if(!findObj) findObj = {};
     let col = mongodb.collection('cards');
 
-    if(findObj.collection == "valentine" || findObj.collection == "halloween" || findObj.collection == "christmas") {
-        col = mongodb.collection('promocards');
-        findObj.level = findObj.level - 1;
-        if(findObj.level == 3) findObj.level = 3;
+    if(findObj.collection) {
+        let cardcol = collections.getByID(findObj.collection);
+
+        if(cardcol.special) {
+            col = mongodb.collection('promocards');
+            findObj.level = findObj.level - 1;
+            if(findObj.level == 3) findObj.level = 3;
+        }
     }
 
     col.find(findObj).toArray((err, i) => {
@@ -456,6 +454,7 @@ function requestCard(user, findObj, callback) {
         if(!res) return;
         
         let name = utils.toTitleCase(res.name.replace(/_/g, " "));
-        callback("**" + user.username + "**, you got **" + name + "**!", dbManager.getCardFile(res), res);   
+        callback(utils.formatImage(user, null, "you got **" + name + "**!", dbManager.getCardURL(res)), res);
+        //callback("**" + user.username + "**, you got **" + name + "**!", dbManager.getCardFile(res), res);   
     });
 }

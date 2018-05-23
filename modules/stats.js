@@ -7,12 +7,7 @@ const fs = require('fs');
 const logger = require('./log.js');
 const utils = require('./localutils.js');
 const os = require('os');
-
-var collections = [];
-fs.readdir('./cards', (err, items) => {
-    if(err) console.log(err);
-    collections = items;
-});
+const collections = require('./collections.js');
 
 function connect(db) {
     mongodb = db;
@@ -37,19 +32,20 @@ function processRequest(args, callback) {
 }
 
 function general(callback) {
-    ucollection.count().then(ucc => {
+    let date = new Date();
+    let lastWeek = new Date(date.setDate(date.getDate() - 7));
+    ucollection.count({'cards.1': {$exists: true}}).then(ucc => {
         ccollection.count().then(ccc => {
-            ucollection.find({lastdaily: {$exists:true}}).count().then(aucc => {
-                res = "__**General bot statistics**__\n";
-                res += "Overall users: **" + ucc + "**\n"; 
-                res += "Active users: **" + aucc + "**\n";
-                res += "Overall cards: **" + ccc + "**\n"; 
-                res += "Used fandoms/collections: ["; 
-                for(i in collections) res += collections[i].replace('=', '') + ', ';
-                res += "]\n";
-                res += "OS Uptime: **" + Math.floor(os.uptime()/3600) + "** hours\n"; 
-                res += "Running **Ubuntu 16.04 | MongoDB 3.4.5 | NodeJS 7.10.0**";
-                callback(res);
+            ccollection.count().then(pcc => {
+                ucollection.count({lastdaily: {$gt: lastWeek}}).then(aucc => {
+                    res = "__**General bot statistics**__\n";
+                    res += "Overall users: **" + ucc + "**\n"; 
+                    res += "Active users (7d): **" + aucc + "**\n";
+                    res += "Overall cards: **" + (ccc + pcc) + "**\n"; 
+                    res += "OS Uptime: **" + Math.floor(os.uptime()/3600) + "** hours\n"; 
+                    res += "Running **Ubuntu 16.04 | MongoDB 3.4.5 | NodeJS 7.10.0**";
+                    callback(res);
+                });
             });
         });
     });
@@ -59,35 +55,38 @@ function general(callback) {
 function cards(callback) {
     let promises = [];
     promises.push(ccollection.count());
+    promises.push(pcollection.count());
     promises.push(ccollection.find({animated: true}).count());
     promises.push(ccollection.find({craft: true}).count());
-    for(i=0; i<collections.length; i++) {
-        let col = collections[i];
-        if(col[0] == '=') 
-            promises.push(pcollection.find({collection: col.replace('=', '')}).count());
-        else promises.push(ccollection.find({collection: col}).count());
-    }
-    for(i=0; i<=5; i++) 
-        promises.push(ccollection.find({level: i}).count());
+    collections.getCollections().then(list => {
+        for(i=0; i<list.length; i++) {
+            let col = list[i];
+            if(col.special) 
+                promises.push(pcollection.find({collection: col.id}).count());
+            else promises.push(ccollection.find({collection: col.id}).count());
+        }
+        for(i=0; i<=5; i++) 
+            promises.push(ccollection.find({level: i}).count());
 
-    Promise.all(promises).then(v => {
-        res = "__**General cards statistics**__\n";
-        res += "Overall cards: **" + v[0] + "**\n"; 
-        res += "By collection:\n";
-        for(i=0; i<collections.length; i++) { 
-            res += collections[i].replace('=', '') + ' -- **';
-            res += v[i + 3] + "**";
-            res += '\n';
-        }
-        res += "\nBy level: ";
-        for(i=1; i<=5; i++) { 
-            res += i.toString() + ' -- **';
-            res += v[3 + collections.length + i] + "**";
-            if(i < 5) res += ' | ';
-        }
-        res += "\nAnimated: **" + v[1] + "**";
-        res += "\nCraft: **" + v[2] + "**";
-        callback(res);
+        Promise.all(promises).then(v => {
+            res = "__**General cards statistics**__\n";
+            res += "Overall cards: **" + (v[0] + v[1]) + "**\n"; 
+            res += "By collection:\n";
+            for(i=0; i<list.length; i++) { 
+                res += list[i].name + ' -- **';
+                res += v[i + 4] + "**";
+                res += '\n';
+            }
+            res += "\nBy level: ";
+            for(i=1; i<=5; i++) { 
+                res += i.toString() + ' -- **';
+                res += v[4 + list.length + i] + "**";
+                if(i < 5) res += ' | ';
+            }
+            res += "\nAnimated: **" + v[2] + "**";
+            res += "\nCraft: **" + v[3] + "**";
+            callback(res);
+        });
     });
 }
 

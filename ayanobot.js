@@ -4,8 +4,8 @@ const settings = require('./settings/ayano.json');
 const acsettings = require('./settings/general.json');
 const Discord = require("discord.io");
 const cardmanager = require('./modules/cardmanager.js');
-const dbmanager = require('./modules/dbmanager.js');
 const utils = require("./modules/localutils.js");
+const collections = require('./modules/collections.js');
 var MongoClient = require('mongodb').MongoClient;
 
 var restarts = 0;
@@ -94,6 +94,7 @@ bot.on("ready", (event) => {
         if(err) return console.log("[Ayano ERROR] DB connect error: " + err);
         console.log('[Ayano] Connected to DB'); 
         mongodb = db;
+        collections.connect(db);
     });
 
     //child.start();
@@ -193,9 +194,7 @@ function rename(argument) {
     let setstr = argument[1].toLowerCase();
     let result = "";
     let query = utils.getRequestFromFiltersNoPrefix(getstr);
-
-//     db.getCollection('users').updateMany({cards: {"$elemMatch": {name: "fallen_angel", collection: "lovelive"}}},
-// {$set: {"cards.$.name": "fallen_angel_bomb"}})
+    console.log(query);
 
     mongodb.collection('cards').findOne(query).then(card => {
         if(!card)
@@ -205,22 +204,16 @@ function rename(argument) {
             });
 
         let newname = setstr.trim().replace(/ /gi, '_');
+        query = utils.getCardQuery(card);
+
         mongodb.collection('cards').update(query, {$set: {name: newname}}).then(res => {
-            result += "Card is updated in database\n";
+            result += "Card **" + utils.getFullCard(card) + "** is updated in database\n";
             mongodb.collection('users').updateMany(
-                utils.getRequestFromFilters(getstr), {$set: {"cards.$.name": newname}}, false, true).then(res => {
+                {cards: {"$elemMatch": query}}, 
+                {$set: {"cards.$.name": newname}}).then(res => {
 
                 result += "Found **" + res.matchedCount + "** users with this card\n";
                 result += "Modified **" + res.modifiedCount + "** user cards\n";
-
-                let oldPath = dbmanager.getCardFile(card);
-                if(fs.existsSync(oldPath)) {
-                    card.name = newname;
-                    fs.renameSync(oldPath, dbmanager.getCardFile(card));
-                    result += "Card file **renamed**\n";
-                } else {
-                    result += "Card file **not renamed**\n";
-                }
 
                 result += "Card update finished\n";
                 return bot.sendMessage({
@@ -271,10 +264,17 @@ async function updateCardsRemote() {
     let res = await cardmanager.updateCardsS3(mongodb);
     var emb = "";
 
-    if(Object.keys(res.collected).length == 0) emb = "No cards were added";
+    if(res.collected.length == 0) emb = "No cards were added";
     else {
-        Object.keys(res.collected).map((key, index) => {
-            emb += "**" + key + "** collection got **" + res.collected[key].length + "** new cards\n";
+        res.collected.map(o => {
+            emb += "**" + o.name + "** collection got **" + o.count + "** new cards\n";
+        });
+    }
+
+    if(res.warnings.length > 0) {
+        bot.sendMessage({
+            to: settings.reportchannel, 
+            embed: utils.formatConfirm(null, "Warning!", res.warnings.join('\n'))
         });
     }
 

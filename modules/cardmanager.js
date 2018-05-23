@@ -5,6 +5,7 @@ module.exports = {
 var mongodb;
 const fs = require('fs');
 const logger = require('./log.js');
+const utils = require("./localutils.js");
 const https = require('https');
 const validExts = ['.png', '.gif', '.jpg'];
 const url = "https://amusementclub.nyc3.digitaloceanspaces.com";
@@ -72,12 +73,13 @@ function updateCardsS3(connection) {
                 if(card.name !== name.split('.')[0])
                     warnings.push(card.name + " : " + name.split('.')[0]);
 
-                if(!collected[collection]) collected[collection] = [];
-
                 if(allCards.filter(c => utils.cardsMatch(c, card)) == 0) {
                     if(type == 'promo') newPromoCards.push(card);
                     else if(type == 'cards') newCards.push(card);
-                    collected[collection].push(card);
+
+                    let col = collected.filter(c => c.name == collection)[0];
+                    if(!col) collected.push({name: collection, count: 1});
+                    else col.count++;
                 }
             }
         });
@@ -119,7 +121,12 @@ async function getRemoteCardList() {
 }
 
 function getCardObject(name, collection) {
-    name = name.replace(/ /g, '_').trim().toLowerCase();
+    name = name
+        .replace(/ /g, '_')
+        .trim()
+        .toLowerCase()
+        .replace(/&apos;/g, "'");
+
     let split = name.split('.');
     let craft = name.substr(1, 2) === "cr";
 
@@ -130,7 +137,6 @@ function getCardObject(name, collection) {
         "collection": collection,
         "level": parseInt(name[0]),
         "animated": split[1] === 'gif',
-        "compressed": split[1] === 'jpg',
         "craft": craft
     }
 }
