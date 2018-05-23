@@ -1,21 +1,15 @@
 module.exports = {
-    processRequest, connect, getStatus, checkStatus, checkOnJoin
+    processRequest, connect, getStatus, checkStatus, checkOnJoin, getLink
 }
 
 var mongodb, ucollection, icollection, bot;
-const Discord = require('discord.js');
+//const Discord = require('discord.js');
 const logger = require('./log.js');
 const utils = require('./localutils.js');
 const settings = require('../settings/general.json');
 const changelog = require('../help/updates.json');
 const dbManager = require("./dbmanager.js");
-const link = "https://discordapp.com/oauth2/authorize?client_id=340988108222758934&scope=bot&permissions=125952";
-
-const col = {
-    red: "#DB1111",
-    yellow: "#FFAF00",
-    green: "#0FBA4D"
-}
+const link = "https://discordapp.com/oauth2/authorize?client_id=340988108222758934&scope=bot&permissions=379969";
 
 function connect(db, client) {
     mongodb = db;
@@ -24,6 +18,13 @@ function connect(db, client) {
     icollection = db.collection('invites');
 }
 
+function getLink(user, callback) {
+    return callback(utils.formatInfo(null, "Invite Amusement Club", "**BEFORE YOU INVITE**\n"
+        + "Please, read terms and conditions of using bot on your server by running \n`->help invite`\n"
+        + "After that [click here](" + link + ") to invite the bot."));
+}
+
+//ALL CODE BELOW IS NOT USED ANYMORE
 function processRequest(user, message, args, callback) {
     var req = args.shift();
     switch(req) {
@@ -58,7 +59,7 @@ function setInvited(srvID, callback) {
 function checkOnJoin(guild) {
     let def = dbManager.getDefaultChannel(guild);
     let resp = new Discord.RichEmbed();
-    resp.setColor(col.red);
+    resp.setColor(utils.colors.red);
 
     if(guild.member_count < 10) {
         resp.setTitle("Server is invalid");
@@ -80,7 +81,7 @@ function checkOnJoin(guild) {
                     if(guild.channels[key].name.includes('bot')) return;
                 }
 
-                resp.setColor(col.yellow);
+                resp.setColor(utils.colors.yellow);
                 resp.setTitle("Notice");
                 resp.setDescription("This server has no any **bot** channel.\n"
                     + "In order to **Amusement Club** function properly, you need to have special channel "
@@ -114,7 +115,7 @@ function checkStatus(message, guild, callback) {
 
     icollection.findOne({server_id: guild.id}).then(s => {
         let resp = new Discord.RichEmbed();
-        resp.setColor(col.red);
+        resp.setColor(utils.colors.red);
         resp.setTitle("Bot can't function on this server");
 
         if(s && s.status == "banned") {
@@ -146,7 +147,7 @@ function checkStatus(message, guild, callback) {
 function tryAdd(author, srvID, callback) {
     let resp = new Discord.RichEmbed();
     if(!srvID) {
-        resp.setColor(col.red);
+        resp.setColor(utils.colors.red);
         resp.setTitle("Usage");
         resp.setDescription("`->invite [server_id]`");
         callback(resp);
@@ -154,7 +155,7 @@ function tryAdd(author, srvID, callback) {
     }
 
     if(isNaN(srvID)) {
-        resp.setColor(col.red);
+        resp.setColor(utils.colors.red);
         resp.setTitle("The [server_id] should be a number");
         resp.setDescription("To get it fast:\n"
             + "1. Go to Discord settings\n"
@@ -168,7 +169,7 @@ function tryAdd(author, srvID, callback) {
     icollection.findOne({server_id: srvID}).then(s => {
         if(s && s.status == "pending") {
             let expHours = 20 - utils.getHoursDifference(s.created);
-            resp.setColor(col.yellow);
+            resp.setColor(utils.colors.yellow);
             resp.setTitle("Can't add this server");
 
             if(expHours > 0) {
@@ -183,13 +184,13 @@ function tryAdd(author, srvID, callback) {
                 return;
             }
         } else if(s && s.status == "active")  {
-            resp.setColor(col.red);
+            resp.setColor(utils.colors.red);
             resp.setTitle("Can't add this server");
             resp.setDescription("Bot is already on this server. Click [here](" + link +") if you need to invite it again");
             callback(resp);
             return;
         } else if(s && s.status == "banned")  {
-            resp.setColor(col.red);
+            resp.setColor(utils.colors.red);
             resp.setTitle("Can't add this server");
             resp.setDescription("This server is marked as banned");
             callback(resp);
@@ -205,7 +206,7 @@ function tryAdd(author, srvID, callback) {
         };
 
         icollection.insert(srv).then(() => {
-            resp.setColor(col.green);
+            resp.setColor(utils.colors.green);
             resp.setTitle("Successfully added!");
             resp.setDescription("This server was added to the list. Bot invite will be active for next **20 hours**\n"
                 + "To get invite status use `->server status [server_id]`\n"
@@ -215,14 +216,14 @@ function tryAdd(author, srvID, callback) {
             callback(resp);
 
         }).catch(() => {
-            resp.setColor(col.red);
+            resp.setColor(utils.colors.red);
             resp.setTitle("Internal error");
             resp.setDescription("Can't add invite right now. Please try again later");
             callback(resp);
         });
 
     }).catch(e => {
-        resp.setColor(col.red);
+        resp.setColor(utils.colors.red);
         resp.setTitle("Internal error");
         resp.setDescription(e);
         callback(resp);
@@ -236,31 +237,31 @@ function getStatus(srvID, callback) {
             let expHours = 20 - utils.getHoursDifference(s.created);
             if(s.status == "pending") {
                 if(expHours > 0) {
-                    resp.setColor(col.yellow);
+                    resp.setColor(utils.colors.yellow);
                     resp.setTitle("Invite pending");
                     resp.setDescription("Server is in database and can be added within next **" + expHours + "** hours");
                 } else {
-                    resp.setColor(col.red);
+                    resp.setColor(utils.colors.red);
                     resp.setTitle("Invite expired");
                     resp.setDescription("Invite to this server has expired. Create a new one");
                 }
             } else if(s.status == "banned") {
-                resp.setColor(col.red);
+                resp.setColor(utils.colors.red);
                 resp.setTitle("Invite banned");
                 resp.setDescription("This server is marked as banned. Bot can't be used on that server");
             } else {
-                resp.setColor(col.green);
+                resp.setColor(utils.colors.green);
                 resp.setTitle("Invite used");
                 resp.setDescription("Everything set up! Bot is already on server");
             }
         } else {
-            resp.setColor(col.green);
+            resp.setColor(utils.colors.green);
             resp.setTitle("Can't find server");
             resp.setDescription("Seems like bot was not invited to this server yet. Go ahead and invite it!");
         }
         callback(resp);
     }).catch(e => {
-        resp.setColor(col.red);
+        resp.setColor(utils.colors.red);
         resp.setTitle("Internal error");
         resp.setDescription(e);
         callback(resp);

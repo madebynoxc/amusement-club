@@ -3,10 +3,9 @@ const forever = require('forever-monitor');
 const settings = require('./settings/ayano.json');
 const acsettings = require('./settings/general.json');
 const Discord = require("discord.io");
-const djs = require("discord.js");
 const cardmanager = require('./modules/cardmanager.js');
-const dbmanager = require('./modules/dbmanager.js');
 const utils = require("./modules/localutils.js");
+const collections = require('./modules/collections.js');
 var MongoClient = require('mongodb').MongoClient;
 
 var restarts = 0;
@@ -95,6 +94,7 @@ bot.on("ready", (event) => {
         if(err) return console.log("[Ayano ERROR] DB connect error: " + err);
         console.log('[Ayano] Connected to DB'); 
         mongodb = db;
+        collections.connect(db);
     });
 
     //child.start();
@@ -125,7 +125,7 @@ bot.on("ready", (event) => {
                     showCommands(); break;
                 case 'update': 
                     console.log('[Ayano] Trying to update cards...'); 
-                    updateCards(); break;
+                    updateCardsRemote(); break;
                 case 'start': 
                     console.log('[Ayano] Starting Amusement Club process...'); 
                     child.start(); break;
@@ -150,29 +150,20 @@ bot.on("ready", (event) => {
 });
 
 function formError(title, desc) {
-    let e = new djs.RichEmbed();
-    e.setColor('#DB1111');
-    e.setTitle(title);
-    e.setDescription(desc);
-    e.setFooter("Ayano: Amusement Club monitoring | Restartcount: " + restarts);
+    let e = utils.formatError(null, title, desc);
+    e.footer = { text: "Ayano: Amusement Club monitoring | Restartcount: " + restarts };
     return e;
 }
 
 function formConfirm(title, desc) {
-    let e = new djs.RichEmbed();
-    e.setColor('#0FBA4D');
-    e.setTitle(title);
-    e.setDescription(desc);
-    e.setFooter("Ayano: Amusement Club monitoring");
+    let e = utils.formatConfirm(null, title, desc);
+    e.footer = { text: "Ayano: Amusement Club monitoring" };
     return e;
 }
 
 function formWarn(title, desc) {
-    let e = new djs.RichEmbed();
-    e.setColor('#ffc711');
-    e.setTitle(title);
-    e.setDescription(desc);
-    e.setFooter("Ayano: Amusement Club monitoring");
+    let e = utils.formatWarning(null, title, desc);
+    e.footer = { text: "Ayano: Amusement Club monitoring" };
     return e;
 }
 
@@ -203,6 +194,7 @@ function rename(argument) {
     let setstr = argument[1].toLowerCase();
     let result = "";
     let query = utils.getRequestFromFiltersNoPrefix(getstr);
+    console.log(query);
 
     mongodb.collection('cards').findOne(query).then(card => {
         if(!card)
@@ -212,22 +204,16 @@ function rename(argument) {
             });
 
         let newname = setstr.trim().replace(/ /gi, '_');
+        query = utils.getCardQuery(card);
+
         mongodb.collection('cards').update(query, {$set: {name: newname}}).then(res => {
-            result += "Card is updated in database\n";
+            result += "Card **" + utils.getFullCard(card) + "** is updated in database\n";
             mongodb.collection('users').updateMany(
-                utils.getRequestFromFilters(getstr), {$set: {"cards.$.name": newname}}, false, true).then(res => {
+                {cards: {"$elemMatch": query}}, 
+                {$set: {"cards.$.name": newname}}).then(res => {
 
                 result += "Found **" + res.matchedCount + "** users with this card\n";
                 result += "Modified **" + res.modifiedCount + "** user cards\n";
-
-                let oldPath = dbmanager.getCardFile(card);
-                if(fs.existsSync(oldPath)) {
-                    card.name = newname;
-                    fs.renameSync(oldPath, dbmanager.getCardFile(card));
-                    result += "Card file **renamed**\n";
-                } else {
-                    result += "Card file **not renamed**\n";
-                }
 
                 result += "Card update finished\n";
                 return bot.sendMessage({
@@ -249,38 +235,60 @@ function updateCards() {
     } 
 
     cardmanager.updateCards(mongodb, cards => {
-        let e = new djs.RichEmbed();
-        e.setColor('#0FBA4D');
-        e.setTitle("Finished updating cards");
-        if(cards.length == 0) e.setDescription("No cards were added");
+        var emb = "";
+
+        if(cards.length == 0) emb = "No cards were added";
         else {
-            var emb = "";
+            
             cards.map(c => {
                 emb += "**" + c.name.replace('=', '') + "** collection got **" + c.count + "** new cards\n";
             });
-            e.setDescription(emb);
         }
 
         bot.sendMessage({
             to: settings.reportchannel, 
-            embed: e
+            embed: utils.formatConfirm(null, "Finished updating cards", emb)
         });
     });
 }
 
-function askDB(args) {
-    var split = args.split('(');
-    var col = split[0].substring(3);
-    var query = split[1].substring(0, 1);
+async function updateCardsRemote() {
+    if(!mongodb){
+        bot.sendMessage({
+            to: settings.reportchannel, 
+            embed: formError("Can't update cards", "The connection to database is invalid")
+        });
+        return;
+    } 
+
+    let res = await cardmanager.updateCardsS3(mongodb);
+    var emb = "";
+
+    if(res.collected.length == 0) emb = "No cards were added";
+    else {
+        res.collected.map(o => {
+            emb += "**" + o.name + "** collection got **" + o.count + "** new cards\n";
+        });
+    }
+
+    if(res.warnings.length > 0) {
+        bot.sendMessage({
+            to: settings.reportchannel, 
+            embed: utils.formatConfirm(null, "Warning!", res.warnings.join('\n'))
+        });
+    }
+
+    bot.sendMessage({
+        to: settings.reportchannel, 
+        embed: utils.formatConfirm(null, "Finished updating cards", emb)
+    });
 }
 
 function other(args) {
     console.log("[Ayano] Executing: " + args);
 
-    if(args.startsWith('db.')) {
-        return askDB(args);
-    }
     args = args.split(' ');
+    if(args[0] != 'git') return;
 
     try {
         stdout = "";

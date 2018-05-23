@@ -24,8 +24,6 @@ var bot, curgame = 0;
 var cooldownList = [];
 var restartChannelID;
 
-//https://discordapp.com/oauth2/authorize?client_id=340988108222758934&scope=bot&permissions=125952
-
 bot = new Discord.Client({
     token: settings.token
 });
@@ -57,7 +55,7 @@ function _init() {
 
     bot.on("guildCreate", g => {
         console.log("Registered guild: " + g.name);
-        invite.checkOnJoin(g);
+        //invite.checkOnJoin(g);
     });
 
     bot.on("message", (username, userID, channelID, message, event) => {
@@ -68,10 +66,9 @@ function _init() {
         if(!user) return;
         user.username = username;
 
-        if(!user.bot) {
-            invite.checkStatus(message, guild, t => {
-                if(!t){
-                    if(cooldownList.includes(userID)) return;
+        if(user.bot || cooldownList.includes(userID)) return;
+            //invite.checkStatus(message, guild, t => {
+                //if(!t){
                     cooldownList.push(userID);
                     setTimeout(() => removeFromCooldown(userID), 1000);
 
@@ -83,10 +80,9 @@ function _init() {
                             else bot.sendMessage({to: channelID, embed: res});
                         } 
                     });
-                }
-                else bot.sendMessage({to: channelID, embed: t});
-            });
-        }
+                //}
+                //else bot.sendMessage({to: channelID, embed: t});
+            //});
     });
 
     bot.on("any", (message) => {
@@ -420,12 +416,12 @@ function getCommand(user, channel, guild, message, event, callback) {
                 }
                 return;
             case 'invite':
-                if(channelType !== 0) {
-                    bot.createDMChannel(user.id, (err, res) => {
-                        bot.sendMessage({to: res.id, message: "You should use this command here in Direct Messages to bot"});
-                    });
-                }
-                else invite.processRequest(user, message, cnt, callback);
+                // if(channelType !== 0) {
+                //     bot.createDMChannel(user.id, (err, res) => {
+                //         bot.sendMessage({to: res.id, message: "You should use this command here in Direct Messages to bot"});
+                //     });
+                // }
+                invite.getLink(user, callback);
                 return;
             case 'res':
                 if(channelType == 1) callback('This command is available only in bot channel');

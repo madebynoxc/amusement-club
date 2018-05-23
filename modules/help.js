@@ -2,7 +2,6 @@ module.exports = {
     processRequest, processUserInput, connect
 }
 
-const Discord = require("discord.js");
 const logger = require('./log.js');
 const utils = require('./localutils.js');
 const _ = require("lodash");
@@ -26,30 +25,20 @@ function processRequest(user, channel, args, callback) {
     if(!req) help = helpAll[0];
     else help = helpAll.filter(h => h.type.includes(req))[0];
 
-    //bot.createDMChannel(user.id, (err, res) => {
-        // if(err && channel) {
-        //     callback("**" + user.username 
-        //         + "**, can't send you a message. Please, allow direct messages from server members in privacy settings");
-        // }
-        //else if(!err) {
-            if(help) bot.sendMessage({to: user.id, embed: getEmbed(help)});
-            else bot.sendMessage({to: user.id, message: "Can't find module/command **" + req  + "**. Run `->help` to see the list" });
+    if(help) bot.sendMessage({to: user.id, embed: getEmbed(help)});
+    else bot.sendMessage({to: user.id, message: "Can't find module/command **" + req  + "**. Run `->help` to see the list" });
 
-            if(channel) callback("**" + user.username + "**, help was sent to you"); 
-        //}
-    //});
+    if(channel) callback("**" + user.username + "**, help was sent to you"); 
 }
 
 function getEmbed(o) {
-    let e = new Discord.RichEmbed();
-    e.setColor('#E37787');
-    e.setTitle(o.title);
-    e.setThumbnail("https://i.imgur.com/gIJ4LYm.jpg");
-    e.setDescription(o.description);
-    o.fields.forEach((element) => {
-       e.addField(element.title, element.description, false); 
+    let e = utils.formatInfo(null, o.title, o.description);
+    e.thumbnail = { url: "https://i.imgur.com/zCsJQVm.jpg" };
+    e.fields = [];
+    o.fields.map((element) => {
+       e.fields.push({ name: element.title, value: element.description }); 
     }, this);
-    e.setFooter("Amusement Club | kqgAvdX | v" + changelog[0].version + " | by NoxCaos#4905");
+    e.footer = { text: "Amusement Club | kqgAvdX | v" + changelog[0].version + " | by NoxCaos#4905" };
     return e;
 }
 

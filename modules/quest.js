@@ -4,10 +4,10 @@ module.exports = {
 }
 
 var mongodb, col;
-const Discord = require('discord.js');
 const _ = require("lodash");
 const questList = require('./quests.json');
 const heroes = require('./heroes.js');
+const utils = require('./localutils.js');
 const promotions = require('../settings/promotions.json');
 
 function getRandomQuests() {
@@ -149,18 +149,6 @@ function removeQuest(user, quest, callback) {
 }
 
 function completeMsg(user, q) {
-    var embed = new Discord.RichEmbed();
-    embed.setColor('#77B520');
-
-    var award = heroes.getHeroEffect(user, 'questReward', q.award);
-    let title = "**" + user.username + "**, you completed '" + q.description + "'";
-    let desc =  "**" + award + "**🍅 Tomatoes were added to your account!";
-
-    /*if(promotions.current > -1) {
-        let promo = promotions.list[promotions.current];
-        msg += "\nYou also got extra **" + Math.floor(award/2) + "** " + promo.currency;
-    }*/
-    embed.setTitle(title);
-    embed.setDescription(desc);
-    return embed;
+    let name = q.description.split('(')[0];
+    return utils.formatConfirm(user, null, "you completed **" + name + "**\nYou got **" + q.award + "**`🍅`!");
 }

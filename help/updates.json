@@ -1,6 +1,18 @@
 [
     {
-        "version": "1.10",
+        "version": "1.11.0",
+        "changes": [
+            "Cards are now hosted on object storage",
+            "Improved speed for claim/summon",
+            "Added new card manager", 
+            "Improved collection filter",
+            "Fixed card statistics",
+            "Added support for compressed cards",
+            "Changed most cards to compressed"
+        ]
+    },
+    {
+        "version": "1.10.0",
         "changes": [
             "Completely reworked trading (`->help sell`)",
             "Removed ratio",

@@ -3,7 +3,7 @@ module.exports = {
     getCards, summon, transfer, sell, award, getUserName,
     pay, daily, getQuests, getBestCardSorted, getUserCards,
     leaderboard, difference, dynamicSort, countCardLevels, getCardValue,
-    getCardFile, getDefaultChannel, isAdmin, needsCards, 
+    getCardFile, getDefaultChannel, isAdmin, needsCards, getCardURL,
     removeCardFromUser, addCardToUser, eval, whohas, block, fav, track
 }
 
@@ -36,12 +36,7 @@ const ratioInc = require('./ratioincrease.json');
 const lev = require('js-levenshtein');
 const sellManager = require('./sell.js');
 const auctions = require('./auctions.js');
-
-var collections = [];
-fs.readdir('./cards', (err, items) => {
-    if(err) console.log(err);
-    collections = items;
-});
+const collections = require('./collections.js');
 
 function disconnect() {
     isConnected = false;
@@ -67,15 +62,16 @@ function connect(bot, callback) {
         vote.connect(db, client);
         sellManager.connect(db);
         auctions.connect(db, client);
+        collections.connect(db);
 
         let date = new Date();
         let deletDate = new Date(date.setDate(date.getDate() - 5));
         db.collection('transactions').remove({time: {$lt: deletDate}}).then(res => {
-            console.log(res.result);
+            console.log("Removed old transactions: " + res.result.n);
         });
 
         db.collection('auctions').remove({date: {$lt: deletDate}}).then(res => {
-            console.log(res.result);
+            console.log("Removed old auctions: " + res.result.n);
         });
 
         db.collection('users').count({'cards.1': {$exists: true}}).then(uc => {
@@ -212,7 +208,11 @@ function claim(user, guildID, arg, callback) {
                         $inc: incr
                     }
                 ).then(() => {
-                    callback(phrase, ((amount == 1)? getCardFile(res[0]) : null));
+                    let emb = utils.formatInfo(null, null, phrase);
+                    console.log(getCardURL(res[0]));
+                    if(amount == 1) emb.image = { "url": getCardURL(res[0]) };
+                    callback(emb);
+                    //callback(phrase, ((amount == 1)? getCardFile(res[0]) : null));
                     quest.checkClaim(dbUser, callback);
                 }).catch(e => console.log(e));
             });
@@ -283,7 +283,10 @@ function claimPromotion(user, dbUser, amount, callback) {
                 $inc: {promoexp: -claimCost}
             }
         ).then(() => {
-            callback(phrase, ((amount == 1)? getCardFile(res[0]) : null));
+            let emb = utils.formatInfo(null, null, phrase);
+            if(amount == 1) emb.image = { "url": getCardURL(res[0]) };
+            callback(emb);
+            //callback(phrase, ((amount == 1)? getCardFile(res[0]) : null));
         }).catch(e => console.log(e));
     });
 }
@@ -410,7 +413,12 @@ function summon(user, args, callback) {
         let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : getRandomCard(cards);
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
-        callback("**" + user.username + "** summons **" + utils.toTitleCase(match.name.replace(/_/g, " ")) + "!**", getCardFile(match));
+        let alert = "**" + user.username + "** summons **" + utils.toTitleCase(match.name.replace(/_/g, " ")) + "!**"
+        if(match.animated && match.imgur) {
+            callback(alert + "\nhttps://i.imgur.com/" + match.imgur + ".gifv");
+        } else {
+            callback(utils.formatImage(null, null, alert, getCardURL(match)));
+        }
 
         if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, get: 0, quests: 0};
         dbUser.dailystats.summon++;
@@ -1259,7 +1267,6 @@ function getBestCardSorted(cards, n) {
 }
 
 function getCardFile(card) {
-    let name = utils.toTitleCase(card.name.replace(/_/g, " "));
     let ext = card.animated? '.gif' : (card.compressed? '.jpg' : '.png');
     let prefix = card.craft? card.level + 'cr' : card.level;
     let col = collections.filter(c => c.includes(card.collection))[0];
@@ -1267,11 +1274,19 @@ function getCardFile(card) {
 }
 
 function getCardURL(card) {
-    let ext = card.animated? '.gif' : (card.compressed? '.jpg' : '.png');
+    // if(card.animated && card.imgur) 
+    //     return "https://i.imgur.com/" + card.imgur + ".gifv";
+
+    let ext = card.animated? '.gif' : '.png';
     let prefix = card.craft? card.level + 'cr' : card.level;
+    let col = collections.getByID(card.collection);
+    if(!col) return "";
+
+    let path = col.special? '/promo/' : '/cards/';
+    if(!card.animated && col.compressed) ext = '.jpg';
+
     return "https://amusementclub.nyc3.digitaloceanspaces.com" 
-        + '/cards/' + card.collection 
-        + '/' + prefix + "_" + card.name + ext;
+        + path + col.id + '/' + prefix + "_" + card.name.toLowerCase() + ext;
 }
 
 function getDefaultChannel(g) {

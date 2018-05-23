@@ -3,19 +3,11 @@ module.exports = {
 }
 
 var reactMessages = [];
-var collections = [];
 var bot;
 const fs = require('fs');
 const dbManager = require("./dbmanager.js");
 const utils = require('./localutils.js');
 const logger = require('./log.js');
-const discord = require("discord.js");
-
-fs.readdir('./cards', (err, items) => {
-    if(err) console.log(err);
-    for (var i = 0; i < items.length; i++) 
-        collections.push(items[i].replace('=', ''));
-});
 
 function setBot(b) {
     bot = b;

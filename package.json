@@ -1,23 +1,24 @@
 {
   "name": "amusement_club",
-  "version": "1.0.0",
-  "description": "Yuru Yuri card Discord bot",
+  "version": "1.10.0",
+  "description": "Discord Gacha Bot",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "NoxCaos",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "dependencies": {
     "async-lock": "^1.1.2",
     "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
-    "discord.js": "^11.2.1",
     "forever-monitor": "^1.7.1",
     "js-levenshtein": "^1.1.2",
     "lodash": "^4.17.4",
     "mkdirp": "^0.5.1",
-    "mongodb": "^2.2.30",
-    "s3": "^4.4.0"
+    "mongodb": "^2.2.30"
   },
-  "repository": "https://github.com/NoxCaos/amusement-club.git"
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/NoxCaos/amusement-club.git"
+  }
 }
