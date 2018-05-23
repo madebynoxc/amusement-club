@@ -236,7 +236,7 @@ function containsCard(array, card) {
 }
 
 function cardsMatch(card1, card2) {
-    return (card1.name === card2.name && 
+    return (card1.name.toLowerCase() === card2.name.toLowerCase() && 
             card1.collection === card2.collection && 
             card1.level === card2.level);
 }
