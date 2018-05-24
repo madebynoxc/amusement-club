@@ -281,6 +281,14 @@ function formatImage(user, title, body, link) {
     return e;
 }
 
+// function formatImage(user, title, body, link) {
+//     let resp = "";
+//     if(user) resp += "**" + user.username + "**, " + body;
+//     else resp += body;
+//     resp += "\n" + link;
+//     return resp;
+// }
+
 function getEmbed(user, title, body, color) {
     let emb = { };
     if(title) emb.title = title;

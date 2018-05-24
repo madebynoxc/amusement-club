@@ -168,11 +168,11 @@ function claim(user, guildID, arg, callback) {
 
                 if(amount == 1) {
                     let names = [];
-                    phrase += " **" + utils.toTitleCase(res[0].name.replace(/_/g, " ")) + " [" + res[0].collection + "]**\n";
+                    phrase += " [" + utils.getFullCard(res[0]) + "](" + getCardURL(res[0]) + ")\n";
                     if(res[0].craft) phrase += "This is a **craft card**. Find pair and `->forge` special card of them!\n";
                     if(dbUser.cards && dbUser.cards.filter(
                         c => c.name == res[0].name && c.collection == res[0].collection).length > 0)
-                        phrase += "(*you already have this card*)\n";
+                        phrase += "*you already have this card*\n";
                 } else {
                     phrase += " (new cards are bold):\n"
                     for (var i = 0; i < res.length; i++) {
@@ -208,11 +208,10 @@ function claim(user, guildID, arg, callback) {
                         $inc: incr
                     }
                 ).then(() => {
-                    let emb = utils.formatInfo(null, null, phrase);
-                    console.log(getCardURL(res[0]));
-                    if(amount == 1) emb.image = { "url": getCardURL(res[0]) };
-                    callback(emb);
-                    //callback(phrase, ((amount == 1)? getCardFile(res[0]) : null));
+                    // let emb = utils.formatInfo(null, null, phrase);
+                    // if(amount == 1) emb.image = { "url": getCardURL(res[0]) };
+                    // callback(emb);
+                    callback(utils.formatImage(null, null, phrase, getCardURL(res[0])));
                     quest.checkClaim(dbUser, callback);
                 }).catch(e => console.log(e));
             });
@@ -414,7 +413,10 @@ function summon(user, args, callback) {
         let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : getRandomCard(cards);
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
-        let alert = "**" + user.username + "** summons **" + utils.toTitleCase(match.name.replace(/_/g, " ")) + "!**"
+        let alert = "**" + user.username + "** summons [" 
+            + utils.toTitleCase(match.name.replace(/_/g, " ")) + "]("
+            + getCardURL(match) + ")\n";
+
         if(match.animated && match.imgur) {
             callback(alert + "\nhttps://i.imgur.com/" + match.imgur + ".gifv");
         } else {
