@@ -225,7 +225,7 @@ function getRequestFromFiltersNoPrefix(args) {
 
 function getCardQuery(card) {
     return {
-        name: card.name,
+        name: new RegExp('^' + card.name + '$', 'i'),
         collection: card.collection,
         level: card.level
     }
