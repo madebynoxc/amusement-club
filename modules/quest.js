@@ -150,5 +150,5 @@ function removeQuest(user, quest, callback) {
 
 function completeMsg(user, q) {
     let name = q.description.split('(')[0];
-    return utils.formatConfirm(user, null, "you completed **" + name + "**\nYou got **" + q.award + "**`🍅`!");
+    return utils.formatConfirm(user, null, "you completed **" + name + "**\nYou got **" + heroes.getHeroEffect(user, 'questReward', q.award) + "**`🍅`!");
 }

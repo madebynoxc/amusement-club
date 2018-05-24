@@ -375,15 +375,16 @@ function getQuests(user, callback) {
     collection.findOne({ discord_id: user.id }).then((u) => {
         if(u) {
             let res = "";
-            if(!u.quests || u.quests.length <= 0){
+            if(!u.quests || u.quests.length <= 0) {
                 if(u.hero) res += "you don't have any quests. \n"
                     + "New quests will appear after `->daily`";
                 else res += "you will start getting quests once you get a hero";
                 return callback(utils.formatError(user, null, res));
             } else {
                 for(let i=0; i<u.quests.length; i++) {
+                    let award = heroes.getHeroEffect(u, 'questReward', u.quests[i].award);
                     res += (i+1).toString() + ". " + u.quests[i].description;
-                    res += " [" + u.quests[i].award + "`🍅`] \n";
+                    res += " [" + award + "`🍅`] \n";
                 }
                 return callback(utils.formatInfo(null, u.username + ", your quests for today:", res));
             }
