@@ -24,7 +24,8 @@ bot.on("ready", (event) => {
         max: 100,
         silent: false,
         killTree: true,
-        minUptime: 4000
+        minUptime: 2000,
+        spinSleepTime: 10000,
     });
 
     child.on('exit', function () {
@@ -151,7 +152,7 @@ bot.on("ready", (event) => {
 
 function formError(title, desc) {
     let e = utils.formatError(null, title, desc);
-    e.footer = { text: "Ayano: Amusement Club monitoring | Restartcount: " + restarts };
+    e.footer = { text: "Ayano: Amusement Club monitoring" };
     return e;
 }
 
@@ -194,7 +195,6 @@ function rename(argument) {
     let setstr = argument[1].toLowerCase();
     let result = "";
     let query = utils.getRequestFromFiltersNoPrefix(getstr);
-    console.log(query);
 
     mongodb.collection('cards').findOne(query).then(card => {
         if(!card)
@@ -287,8 +287,7 @@ async function updateCardsRemote() {
 function other(args) {
     console.log("[Ayano] Executing: " + args);
 
-    args = args.split(' ');
-    if(args[0] != 'git') return;
+    if(!args.startsWith('git')) return;
 
     try {
         stdout = "";

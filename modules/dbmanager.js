@@ -170,14 +170,13 @@ function claim(user, guildID, arg, callback) {
                     let names = [];
                     phrase += " [" + utils.getFullCard(res[0]) + "](" + getCardURL(res[0]) + ")\n";
                     if(res[0].craft) phrase += "This is a **craft card**. Find pair and `->forge` special card of them!\n";
-                    if(dbUser.cards && dbUser.cards.filter(
-                        c => c.name == res[0].name && c.collection == res[0].collection).length > 0)
+                    if(dbUser.cards && dbUser.cards.filter(c => utils.cardsMatch(c, res[0])).length > 0)
                         phrase += "*you already have this card*\n";
                 } else {
                     phrase += " (new cards are bold):\n"
                     for (var i = 0; i < res.length; i++) {
                         if(dbUser.cards 
-                            && dbUser.cards.filter(c => c.name == res[i].name && c.collection == res[i].collection).length > 0)
+                            && dbUser.cards.filter(c => utils.cardsMatch(c, res[i])).length > 0)
                             phrase += (i + 1) + ". " + utils.getFullCard(res[i]);
                         else phrase += (i + 1) + ". **" + utils.getFullCard(res[i]) + "**";
                         phrase += "\n";
