@@ -560,15 +560,19 @@
     {
         "type": ["inv", "invite"],
         "title": "About bot invitation",
-        "description": "You can add Amusement Club on any other server, but you have to register this server in bot database first. Type `->invite [your server id]` and it will be added for 20 hours. If you won't invite bot within that time, link will not be active.",
+        "description": "You can add Amusement Club on any other server. Type `->invite` to get an invite link with all permissions set up.",
         "fields": [
             {
-                "title": "READ THIS",
-                "description": "Bot constantly reads and **logs** all the messages on server in order to give Tomatoes and debug purposes. Feel free to exclude bot from ANY channels, that you want to secure contents of. However, keep in mind, that bot **won't read** messages in those channels, so you won't get Tomatoes from them.\n**Messages in Logs** can be used by **bot administration** to find bugs/errors and cheaters. Make sure that bot is **not** present in channels, that may contain any **confidential** information"
+                "title": "Setting up ypur server",
+                "description": "Make sure that your server has 'bot channel' where Amusement Club can post messages. This is simply a text channel with word `bot` in it (can also contain any other words). Don't remove 'send messages' permission from channels where you want `->summon` to work.\nIf you want to exclude Amusement Club from other bot channel, make sure you remove **both** 'read' and 'send' permissions. If you leave 'read messages' permission on, bot will still read commands, but won't be able to respond"
             },
             {
-                "title": "Bot administration and disclaimers",
-                "description": "Administration will **never** use information in logs for personal purposes. However, [disclaimer] administration is **NOT RESPONSIBLE** for consequences of you or any Member of server/guild including sensible/confidential information.\nAdministration will **never ask** you about your *discord password* or *administrative permissions* for your server.\n[disclaimer] All information used by bot is in **public chat** and can be accessed by **any** member of the guild/server. If you invite bot to private server, consider that **administration** can see and read the messages"
+                "title": "Channel Privacy (28.05.18)",
+                "description": "Bot constantly reads all the messages, however it logs only messages that start with `->`. Feel free to exclude bot from ANY channels, that you want to secure contents of.\n**Messages in Logs** can be used by **bot administration** to find bugs/errors and cheaters. In order to secure your channels completely from any bot, make sure that it is **not** present in channels, that may contain any **confidential** information"
+            },
+            {
+                "title": "Bot administration and disclaimers (28.05.18)",
+                "description": "Administration will **never** use information in logs for personal purposes. However, administration is **NOT RESPONSIBLE** for consequences of you or any Member of server/guild including sensible/confidential information.\nAdministration will **never ask** you about your *discord password* or *administrative permissions* for your server.\nAll information used by bot is in **public chat**, always starts with bot prefix (`->`) and can be accessed by **any** member of the guild/server."
             },
             {
                 "title": "Server administration",
@@ -580,11 +584,7 @@
             },
             {
                 "title": "Ready to invite?",
-                "description": "Please, run `->invite [server id]` to register your server. If you won't register your server, bot **will not** work!\n**PLEASE NOTE**: After you run this command, your *discord name* will be visible to anyone else, who decides to invite this bot to the same server"
-            },
-            {
-                "title": "To check invite status",
-                "description": "->invite status [server id]"
+                "description": "Please, run `->invite` to get a link."
             }
         ]
     }
