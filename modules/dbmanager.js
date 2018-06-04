@@ -885,7 +885,6 @@ function eval(user, args, callback, isPromo) {
     if(args.includes('-multi'))
         return callback(utils.formatError(user, "Request error", "flag `-multi` is not valid for this request"));
 
-    isPromo = isPromo || args.filter(a => a.includes('-h')).length > 0;
     let ccollection = isPromo ? mongodb.collection('promocards') : mongodb.collection('cards');
 
     let query = utils.getRequestFromFiltersNoPrefix(args);
