@@ -20,7 +20,8 @@ function addNewPagination(userID, title, data, channelID) {
         "title": title,
         "page": 1,
         "userID": userID,
-        "data": data
+        "data": data,
+        "removeID": Math.random()
     };
 
     reactMessages.push(mes);
@@ -31,7 +32,7 @@ function addNewPagination(userID, title, data, channelID) {
             mes.id = resp.id;
             mes.message = resp;
             reactPages(resp);
-            setTimeout(()=> removeExisting(mes.userID), 300000);
+            setTimeout(()=> removeExisting(mes.userID, false, mes.removeID), 300000);
         } else
             removeExisting(mes.userID);
     });
@@ -44,7 +45,8 @@ function addNewConfirmation(userID, embed, channelID, onConfirm, onDecline) {
         "userID": userID, 
         "embed": embed,
         "onConfirm": onConfirm,
-        "onDecline": onDecline
+        "onDecline": onDecline,
+        "removeID": Math.random()
     };
 
     reactMessages.push(mes);
@@ -54,7 +56,7 @@ function addNewConfirmation(userID, embed, channelID, onConfirm, onDecline) {
             mes.id = resp.id;
             mes.message = resp;
             reactConfirm(resp);
-            setTimeout(()=> removeExisting(mes.userID), 60000);
+            setTimeout(()=> removeExisting(mes.userID, false, mes.removeID), 60000);
         }
         else console.log(err);
     });
@@ -103,19 +105,39 @@ function editMessage(channelID, messageID, embedContent) {
     bot.editMessage({channelID: channelID, messageID: messageID, embed: embedContent});
 }
 
+function addReactions(reactions, index = 0) {
+    if (index >= reactions.length) { return; }
+    bot.addReaction(reactions[index], (err) => {
+        if (err) {
+            // Too many requests, Discord.io should handle the resend for us
+            // but it's stupid and doesn't
+            if (err.statusCode === 429) {
+                setTimeout(() => addReactions(reactions, index), 500);
+            }
+        }
+        else {
+            setTimeout(() => addReactions(reactions, index + 1), 250);
+        }
+    });
+}
+
 function reactPages(message) {
-    setTimeout(()=> bot.addReaction({ channelID: message.channel_id, messageID: message.id, reaction: "⬅" }), 200);
-    setTimeout(()=> bot.addReaction({ channelID: message.channel_id, messageID: message.id, reaction: "➡" }), 800);
+    addReactions([
+        { channelID: message.channel_id, messageID: message.id, reaction: "⬅" },
+        { channelID: message.channel_id, messageID: message.id, reaction: "➡" }
+    ]);
 }
 
 function reactConfirm(message) {
-    setTimeout(()=> bot.addReaction({ channelID: message.channel_id, messageID: message.id, reaction: "✅" }), 200);
-    setTimeout(()=> bot.addReaction({ channelID: message.channel_id, messageID: message.id, reaction: "❌" }), 800);
+    addReactions([
+        { channelID: message.channel_id, messageID: message.id, reaction: "✅" },
+        { channelID: message.channel_id, messageID: message.id, reaction: "❌" }
+    ]);
 }
 
-function removeExisting(userID, del = false) {
+function removeExisting(userID, del = false, removeID = null) {
     var pgn = reactMessages.filter((o)=> o.userID == userID)[0];
-    if(pgn){
+    if(pgn && (removeID === null || removeID === pgn.removeID)){
         if(pgn.message) {
             let mesObj = { 
                 channelID: pgn.message.channel_id, 
