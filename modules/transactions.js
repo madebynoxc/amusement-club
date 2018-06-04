@@ -3,6 +3,7 @@
 }
 
 var mongodb, collection, ucollection;
+var userHandlingList = [];
 const fs = require('fs');
 const utils = require('./localutils.js');
 const dbmanager = require('./dbmanager.js');
@@ -148,6 +149,27 @@ async function confirm(user, args, callback) {
     let transactionId = args[0];
     let transaction = await collection.findOne({ id: transactionId, status: "pending", $or: [{from_id: user.id}, {to_id: user.id}] });
     if(!transaction) return callback(utils.formatError(user, null, "can't find transaction with ID '" + transactionId + "'"));
+    
+    if(userHandlingList.includes(user.id)) return callback(utils.formatError(user, "Busy", "another transaction is being handled, try again."));
+    
+    userHandlingList.push(user.id);
+    if(transaction.to_id && transaction.to_id == user.id) {
+        userHandlingList.push(transaction.from_id);
+    }
+
+    try {
+        await _confirm(user, transaction, callback);
+    } finally {
+        let i = userHandlingList.indexOf(user.id);
+        if(i > -1) userHandlingList.splice(i, 1);
+        if(transaction.to_id && transaction.to_id == user.id) {
+            let i = userHandlingList.indexOf(transaction.from_id);
+            if(i > -1) userHandlingList.splice(i, 1);
+        }
+    }
+}
+
+async function _confirm(user, transaction, callback) {
     let name = utils.getFullCard(transaction.card);
 
     //Sell to bot
@@ -238,5 +260,5 @@ async function decline(user, args, callback) {
             "transaction **[" + transaction.id + "]** was declined"));
     }
 
-    return callback(utils.formatError(user, null, "you have no rights to confirm this transaction"));
+    return callback(utils.formatError(user, null, "you have no rights to decline this transaction"));
 }
