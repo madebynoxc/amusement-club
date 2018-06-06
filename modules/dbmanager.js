@@ -1041,7 +1041,11 @@ function fav(user, args, callback) {
 
         query = {};
         query.discord_id = user.id;
-        query["cards._id"] = match._id;
+
+        let tmpq = utils.getCardQuery(match);
+        query["cards.name"] = tmpq.name;
+        query["cards.collection"] = tmpq.collection;
+        query["cards.level"] = tmpq.level;
         
         mongodb.collection('users').update(
             query,

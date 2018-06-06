@@ -291,9 +291,10 @@ function other(args) {
 
     try {
         stdout = "";
-        let child = forever.start(args, {
+        let child = forever.start(args.substring(4), {
             max : 0,
             silent : false,
+            command : 'git'
         });
 
         child.on('stdout', function (data) {
