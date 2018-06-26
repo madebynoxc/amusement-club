@@ -63,6 +63,7 @@ async function list(user, args, channelID, callback) {
                     args = args.filter(arg => arg != a);
                     break;
                 case 'diff':
+                case 'miss':
                     useDiff = true;
                     title = "Auctions with unique cards";
                     args = args.filter(arg => arg != a);

@@ -948,14 +948,15 @@ function doesUserHave(user, tgID, args, callback) {
             return callback(utils.formatError(user, null, "no cards found that match your request"));
         
         let cards = objs[0].cards;
-        if(query['cards.fav'] != true) {
-            cards = cards.filter(c => !(c.amount == 1 && c.fav == true));
-        }
         let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
         let cardname = utils.toTitleCase(match.name.replace(/_/g, " "));
-        callback(utils.formatConfirm(user, null, "matched card **" + cardname + "**"));
+        if(match.fav == true) {
+            callback(utils.formatWarning(user, null, "matched card **" + cardname + "** but is a fav'ed"));
+        } else {
+            callback(utils.formatConfirm(user, null, "matched card **" + cardname + "**"));
+        }
     });
 }
 
