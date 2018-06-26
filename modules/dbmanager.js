@@ -952,11 +952,10 @@ function doesUserHave(user, tgID, args, callback) {
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
         let cardname = utils.toTitleCase(match.name.replace(/_/g, " "));
-        if(match.fav == true) {
-            callback(utils.formatWarning(user, null, "matched card **" + cardname + "** but is a fav'ed"));
-        } else {
+        if(match.fav == true)
+            callback(utils.formatWarning(user, null, "matched card **" + cardname + "** but it is marked as favorite"));
+        else 
             callback(utils.formatConfirm(user, null, "matched card **" + cardname + "**"));
-        }
     });
 }
 
