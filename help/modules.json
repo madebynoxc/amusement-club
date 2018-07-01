@@ -128,7 +128,7 @@
     {
         "type": ["hero"],
         "title": "About hero",
-        "description": "Hero is a character with certain set of abilities that help you in the game. You can get hero for free after you get more than 50 \u2B50. You can get your amount of stars by running `->bal`.\nHero change costs 2000 🍅 Tomatoes and resets hero level. To change hero without losing your level, purchase a hero change ticket from `->store` (from v2.0).\nHero gets XP if you are active. Hero level unlocks certain effect cards",
+        "description": "Hero is a character with certain set of abilities that help you in the game. You can get hero for free after you get more than 50 \u2B50. You can get your amount of stars by running `->bal`.\nHero change costs 2500 🍅 Tomatoes and can be done only once a week.\nHero gets XP if you are active. Hero level unlocks certain effect cards",
         "fields": [
             {
                 "title": "Get your hero info",

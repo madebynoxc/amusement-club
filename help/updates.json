@@ -1,5 +1,16 @@
 [
     {
+        "version": "1.11.2",
+        "changes": [
+            "Added pagination for Hazardous Duo",
+            "Heroes now don't lose level on change",
+            "Fixed fav card matching", 
+            "Improved some error messages to be more clear",
+            "Forge now informs if player got a dupe",
+            "Removed bug with putting favs on auction"
+        ]
+    },
+    {
         "version": "1.11.0",
         "changes": [
             "Cards are now hosted on object storage",

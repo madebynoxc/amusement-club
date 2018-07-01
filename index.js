@@ -296,6 +296,11 @@ function getCommand(user, channel, guild, message, event, callback) {
                     callback("**" + name + "** is now baka! ( ` ω ´ )"));
                 else callback(user.username + ", **you** baka! (￣^￣ﾒ) in **" + time + "ms**");
                 return;
+            case 'pat': 
+                var u = utils.getUserID(cnt).id;
+                if(u) dbManager.getUserName(u, name => 
+                    callback("**" + user.username + "** pats **" + name + "** (；^＿^)ッ☆(　゜o゜)"));
+                return;
             case 'quest':
             case 'quests':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
