@@ -9,13 +9,15 @@ const dbManager = require('./dbmanager.js');
 const heroDB = require('../heroes/heroes.json');
 const quests = require('./quest.js');
 const forge = require('./forge.js');
+const react = require('./reactions.js');
+const utils = require('./localutils.js');
 
 function connect(db) {
     mongodb = db;
     ucollection = db.collection('users');
 }
 
-function processRequest(userID, args, guild, callback) {
+function processRequest(userID, args, guild, channelID, callback) {
     ucollection.findOne({ discord_id: userID }).then((dbUser) => {
         if(!dbUser) return;
 
@@ -31,7 +33,7 @@ function processRequest(userID, args, guild, callback) {
                 getInfo(dbUser, args, callback);
                 break;
             case "get":
-                assign(dbUser, args, callback);
+                assign(dbUser, args, channelID, callback);
                 break;
             case "lead":
                 getRating(guild, args[0], callback);
@@ -84,38 +86,51 @@ function getInfo(dbUser, args, callback) {
     }
 }
 
-function assign(dbUser, args, callback) {
+function assign(dbUser, args, channelID, callback) {
     var hasHero = dbUser.hero != undefined;
     if(hasHero) {
-        if(dbUser.exp < 2000) {
-            callback("**" + dbUser.username + "**, hero change requires 2000 Tomatoes!\n");
-            return;
+        if(dbUser.exp < 2500)
+            return callback(utils.formatError(dbUser, null, "hero change requires 2000 Tomatoes!\n"));
+
+        if(dbUser.lastHeroChange) {
+            let hours = 168 - utils.getHoursDifference(dbUser.lastHeroChange);
+            let days = Math.floor(hours/24);
+            if(hours > 0)
+                return callback(utils.formatError(dbUser, "Can't change hero", 
+                    "you can get new hero in **" + days + " days " + (hours - days*24) + " hours**"));
         }
     }
 
     var stars = dbManager.countCardLevels(dbUser.cards);
-    if(stars < 50) {
-        callback("You can get one once you have more than 50 \u2B50 stars (you have now " + stars + "\u2B50 stars)");
-        return;
-    }
+    if(stars < 50)
+        return callback(utils.formatError(dbUser, null, 
+            "you can get one once you have more than 50 \u2B50 stars (you have " + stars + "\u2B50 stars)"));
 
     var req = args.join(' ');
     if(req == '' || req == ' ') return;
 
     var h = heroDB.filter(h => h.name.toLowerCase().includes(req))[0];
     if(h) {
-        var upd = hasHero? {$set: {hero: h}, $inc: {exp: -2000}} : {$set: {hero: h}};
-        ucollection.update(
-            { discord_id: dbUser.discord_id },
-            upd
-        ).then(() => {
-            callback("**" + dbUser.username + "** and **" 
-                + h.name + "** made a contract! Congratulations! \u{1F389}");
-        });
+        if(hasHero)
+            react.addNewConfirmation(dbUser.discord_id, 
+                utils.formatWarning(dbUser, "You want to change your hero?", "hero change will cost you **2500** Tomatoes\nYou can change hero once a week"), 
+                channelID, () => switchHero(h, dbUser, callback));
+        else switchHero(h, dbUser, callback);
         
-    } else {
-        callback("Can't find hero named '" + req + "'");
-    }
+    } else
+        callback(utils.formatError(null, null, "Can't find hero `" + req + "`"));
+}
+
+function switchHero(newHero, dbUser, callback) {
+    var upd = dbUser.hero? {$set: {"hero.name": newHero.name, lastHeroChange: new Date()}, $inc: {exp: -2500}} 
+        : {$set: {hero: newHero, lastHeroChange: new Date()}};
+
+    ucollection.update(
+        { discord_id: dbUser.discord_id }, upd
+    ).then(() => {
+        callback(utils.formatConfirm(dbUser, "Yaaay!", "you made contract with **" 
+            + newHero.name + "**! Congratulations! \u{1F389} \nUse `->hero` to summon your new companion and view her level"));
+    });
 }
 
 function getHeroLevel(exp) {

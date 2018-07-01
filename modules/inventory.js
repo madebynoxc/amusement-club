@@ -14,7 +14,7 @@ function connect(db) {
     ucollection = db.collection('users');
 }
 
-function processRequest(userID, args, callback) {
+function processRequest(userID, args, channelID, callback) {
     ucollection.findOne({ discord_id: userID }).then((dbUser) => {
         if(!dbUser) return;
 
@@ -28,7 +28,7 @@ function processRequest(userID, args, callback) {
                 break;
             case "use":
                 if(args.length > 0)
-                    useItem(dbUser, args, callback);
+                    useItem(dbUser, args, channelID, callback);
                 break;
         }
     }).catch(e => logger.error(e));
@@ -95,7 +95,7 @@ function showInventory(user, callback) {
     callback(resp);
 }
 
-function useItem (user, args, callback) {
+function useItem (user, args, channelID, callback) {
     if(!user.inventory || user.inventory.length == 0) {
         callback("**" + user.username + "**, your inventory is **empty**");
         return;
@@ -119,7 +119,7 @@ function useItem (user, args, callback) {
         passArgs.shift();
         switch(item.type) {
             case 'craft':
-                isComplete = forge.useCard(user, item.name, passArgs? passArgs.join(','):null, callback);
+                isComplete = forge.useCard(user, item.name, passArgs? passArgs.join(','):null, channelID, callback);
                 break;
         }
 

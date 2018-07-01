@@ -13,6 +13,7 @@ const quest = require('./quest.js');
 const dbManager = require("./dbmanager.js");
 const inv = require("./inventory.js");
 const cryst = require("./crystal.js");
+const react = require("./reactions.js");
 const collections = require("./collections.js");
 
 function connect(db) {
@@ -69,46 +70,27 @@ function getInfo(user, name, callback, image = false) {
 
 function craftCard(user, args, callback) {
     var cards = args.join('_').split(',');
-    if(!cards || cards.length < 2) {
-        callback("Minimum **2** cards or items required for forge\nDon't forget to put `,` between names"
+    if(!cards || cards.length < 2)
+        return callback("Minimum **2** cards or items required for forge\nDon't forget to put `,` between names"
             + "\nInclude only card/item **name**");
-        return;
-    }
 
     let cardNames = [];
     let cardObjects = [];
     var mode = "";
     for(i in cards) {
         let name = cards[i];
-        if(name.includes("*")){ 
-            if(mode == "card")
-                return callback("**" + user.username 
-                    + "**, you can't combine cards and items in forge request");
-            mode = "cryst";
-        } else {
-            if(mode == "cryst")
-                return callback("**" + user.username 
-                    + "**, you can't combine cards and items in forge request");
-            mode = "card";
+        if(cards[i][0] == "_") 
+            name = cards[i].substr(1); 
 
-            if(cards[i][0] == "_") 
-                name = cards[i].substr(1); 
+        let card = dbManager.getBestCardSorted(user.cards, name)[0];
+        if(!card) 
+            return callback("**" + user.username 
+                + "**, card with name **" + name.replace(/_/g, " ")
+                + "** was not found, or you don't have it");
 
-            let card = dbManager.getBestCardSorted(user.cards, name)[0];
-            if(!card) {
-                callback("**" + user.username 
-                    + "**, card with name **" + name.replace(/_/g, " ")
-                    + "** was not found, or you don't have it");
-                return;
-            }
-            cardNames.push(card.name.toLowerCase());
-            cardObjects.push(card);
-        }
+        cardNames.push(card.name.toLowerCase());
+        cardObjects.push(card);
     }
-
-    if(mode == "cryst")
-        return callback("**" + user.username 
-                    + "**, crystal forging was removed in v1.9.10");
 
     let isCraft = cardObjects[0].craft;
     if(!isCraft) isCraft = false;
@@ -293,7 +275,7 @@ function getCardEffect(user, action, ...params) {
 }
 
 // For cards that are used
-function useCard(user, name, args, callback) {
+function useCard(user, name, args, channelID, callback) {
     let fullName = utils.toTitleCase(name.replace(/_/g, " "));
     let isComplete = false;
 
@@ -311,31 +293,33 @@ function useCard(user, name, args, callback) {
             isComplete = useAny(user, fullName, args, callback);
             break;
         case 'hazardous_duo':
-            isComplete = whohas(user, fullName, args, callback);
+            isComplete = whohas(user, fullName, args, channelID, callback);
             break;
     }
 
     return isComplete;
 }
 
-function whohas(user, fullName, args, callback) {
+function whohas(user, fullName, args, channelID, callback) {
     if(args) {
         let query = utils.getRequestFromFiltersNoPrefix(args.substr(1).split('_'));
-            ucollection.aggregate([{$match: {"cards":{"$elemMatch":query}}}, {$sort: {"exp": 1}}, {$limit: 100}]
+            ucollection.aggregate([{$match: {"cards":{"$elemMatch":query}}}, {$limit: 300}]
         ).toArray((err, arr) => {
             if(!arr || arr.length == 0) return callback(utils.formatError(user, null, "nobody has this card or it doesn't exist"));
             
-            let msg = "";
-            let count = 1;
-            for (var i = 0; i < arr.length; i++) {
-                msg += count + ". **" + arr[i].username + "**\n"; count++;
-                if(count == 11) {
-                    msg += "And **" + (arr.length - 10) + "** more";
-                    break;
-                };
-            }
+            let data = [];
+            let count = 0;
 
-            callback(utils.formatConfirm(null, "List of users, who have matching cards:", msg));
+            _.shuffle(arr).map(c => {
+                if(count % 15 == 0)
+                    data.push("");
+
+                data[Math.floor(count/15)] += (count + 1) + ". **" + c.username + "**\n";
+                count++;
+            });
+
+            react.addNewPagination(user.discord_id, 
+                "List of users, who have matching cards (" + arr.length + " results):", data, channelID);
         });
         return true;
     }

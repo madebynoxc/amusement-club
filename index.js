@@ -341,18 +341,17 @@ function getCommand(user, channel, guild, message, event, callback) {
                 }
                 break;
             case 'hero':
-                if(channelType == 0) callback("Hero commands are possible on server only");
-                else if(channelType == 1) callback('Hero commands available only in bot channel');
+                if(channelType == 1) callback('Hero commands available only in bot channel');
                 else {
-                    heroDB.processRequest(user.id, cnt, guild, (text, file) => {
+                    let chanID = channel? channel.id : user.id;
+                    heroDB.processRequest(user.id, cnt, guild, chanID, (text, file) => {
                         callback(text, file);
                     });
                 }
                 return;
             case 'craft':
             case 'forge':
-                if(channelType == 0) callback("You forge cards in DM");
-                else if(channelType == 1) callback('This operation is possible in bot channel only');
+                if(channelType == 1 || channelType == 0) callback("This operation is possible in bot channel only");
                 else {
                     forge.processRequest(user.id, cnt, (text, file) => {
                         callback(text, file);
@@ -363,7 +362,8 @@ function getCommand(user, channel, guild, message, event, callback) {
             case 'inventory':
                 if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
-                    inventory.processRequest(user.id, cnt, (text, file) => {
+                    let chanID = channel? channel.id : user.id;
+                    inventory.processRequest(user.id, cnt, chanID, (text, file) => {
                         callback(text, file);
                     });
                 }

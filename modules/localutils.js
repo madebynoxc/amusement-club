@@ -17,6 +17,7 @@ module.exports = {
     getSecondsDifference,
     getMinutesDifference,
     getHoursDifference,
+    getDaysDifference,
     getFullTimeDifference,
     isInt,
     sortByStars,
@@ -93,6 +94,11 @@ function msToTime(s) {
   var hrs = (s - mins) / 60;
 
   return pad(hrs) + ':' + pad(mins) + ':' + pad(secs) + '.' + pad(ms, 3);
+}
+
+function getDaysDifference(tg) {
+    let mil = new Date() - tg;
+    return Math.floor(mil / (1000*60*60*24));
 }
 
 function getHoursDifference(tg) {
