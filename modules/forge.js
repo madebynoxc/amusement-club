@@ -433,14 +433,23 @@ function requestCard(user, findObj, callback) {
         }
     }
 
-    col.find(findObj).toArray((err, i) => {
-        if(err){ return logger.error(err) }
+    let req = [ 
+        { $match: findObj },
+        { $sample: { size: 1 } } 
+    ];
 
-        let res = _.sample(i);
+    col.aggregate(req).toArray((err, i) => {
+        if(err) { return logger.error(err) }
+
+        let res = i[0];
         if(!res) return;
         
         let name = utils.toTitleCase(res.name.replace(/_/g, " "));
-        callback(utils.formatImage(user, null, "you got **" + name + "**!", dbManager.getCardURL(res)), res);
+        let phrase = "you got **" + name + "**!\n";
+        if(user.cards && user.cards.filter(c => utils.cardsMatch(c, res)).length > 0)
+                        phrase += "*you already have this card*";
+
+        callback(utils.formatImage(user, null, phrase, dbManager.getCardURL(res)), res);
         //callback("**" + user.username + "**, you got **" + name + "**!", dbManager.getCardFile(res), res);   
     });
 }

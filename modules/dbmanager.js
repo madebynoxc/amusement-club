@@ -852,18 +852,16 @@ function difference(discUser, parse, callback) {
 
     let query = utils.getRequestFromFilters(args);
     getUserCards(discUser.id, {}).toArray((err, objs) => {
-        if(!objs[0]) 
-            return callback(utils.formatError(discUser, null, "no cards found that match your request"));
-
-        let cardsU1 = objs[0].cards;
+        let cardsU1 = objs[0]? objs[0].cards : [];
         let includeFavorite = false;
         if(query['cards.fav'] == true) {
             includeFavorite = true;
             delete query['cards.fav'];
         }
+
         getUserCards(targetID, query).toArray((err, objs2) => {
             if(!objs2[0]) 
-                return callback(utils.formatError(discUser, null, "no cards found that match your request"));
+                return callback(utils.formatError(discUser, null, "has no unique cards for you"));
 
             let cardsU2 = objs2[0].cards;
             let dbUser2 = objs2[0]._id;
@@ -874,12 +872,11 @@ function difference(discUser, parse, callback) {
             if(dif.length > 0) 
                 callback(dif, dbUser2.username);
             else
-                callback("**" + dbUser2.username + "** has no unique cards for you\n");
+                return callback(utils.formatError(discUser, null, "has no unique cards for you"));
         });
     });
 }
 
-// If isPromo is not given, the args will be checked for `-h` and promo cards will be chosen based on that
 function eval(user, args, callback, isPromo) {
     if(!args[0]) return;
     if(args.includes('-multi'))
@@ -1035,9 +1032,14 @@ function fav(user, args, callback) {
 
         let cards = objs[0].cards;
         let dbUser = objs[0]._id;
+        let matchCount = cards.length;
+
         if(!remove) cards = cards.filter(c => !c.fav);
         let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
-        if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
+        if(!match) 
+            if(matchCount != cards.length)
+                return callback(utils.formatError(user, null, "card is already favorited. Use `->fav remove [card]` to unfavorite"));
+            else return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
         query = {};
         query.discord_id = user.id;

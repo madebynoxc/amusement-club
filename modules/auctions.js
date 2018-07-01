@@ -236,6 +236,7 @@ async function sell(user, incArgs, channelID, callback) {
                 await idlock.acquire("createauction", async () => {
                     let aucID = await generateBetterID();
                     dbUser.cards = dbManager.removeCardFromUser(dbUser.cards, match);
+                    match.fav = false;
 
                     if(!dbUser.cards || dbUser.cards.length == 0) return; 
 
