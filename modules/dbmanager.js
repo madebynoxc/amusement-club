@@ -1041,17 +1041,11 @@ function fav(user, args, callback) {
 
         query = {};
         query.discord_id = user.id;
-
-        let tmpq = utils.getCardQuery(match);
-        query["cards.name"] = tmpq.name;
-        query["cards.collection"] = tmpq.collection;
-        query["cards.level"] = tmpq.level;
+        query.cards = { $elemMatch: utils.getCardQuery(match) };
         
         mongodb.collection('users').update(
             query,
-            {
-                $set: {"cards.$.fav": !remove }
-            }
+            { $set: { "cards.$.fav": !remove }}
         ).then(e => {
             let name = utils.toTitleCase(match.name.replace(/_/g, " "));
             if(remove) callback(utils.formatConfirm(user, "Removed from favorites", "you removed **" + name + " [" + match.collection + "]** from favorites"));
@@ -1333,7 +1327,7 @@ function removeCardFromUser(usercards, card) {
 }
 
 function getRandomCard(cards) {
-    return cards[Math.floor(Math.random()*cards.length)];
+    return _.sample(cards);
 }
 
 function getRandomJoke(user, callback) {
