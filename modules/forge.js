@@ -290,7 +290,7 @@ function useCard(user, name, args, channelID, callback) {
             isComplete = getClaimedCard(user, fullName, args, callback);
             break;
         case 'the_judgment_day':
-            isComplete = useAny(user, fullName, args, callback);
+            isComplete = useAny(user, fullName, args, channelID, callback);
             break;
         case 'hazardous_duo':
             isComplete = whohas(user, fullName, args, channelID, callback);
@@ -329,14 +329,14 @@ function whohas(user, fullName, args, channelID, callback) {
     callback(resp);
 }
 
-function useAny(user, fullName, args, callback) {
+function useAny(user, fullName, args, channelID, callback) {
     if(args) {
         let newArgs = args.split(',');
         let tgName = newArgs[0].substring(1);
         let card = crafted.filter(c => c.name.includes(tgName))[0];
 
         if(card && card.name === 'the_judgment_day') return false;
-        if(card && useCard(user, card.name, newArgs[1], callback)) return true;
+        if(card && useCard(user, card.name, newArgs[1], channelID, callback)) return true;
 
         let resp = "**" + user.username + "**, failed to use **" 
             + (card? utils.toTitleCase(card.name.replace(/_/g, " ")) : tgName) + "**\n";
