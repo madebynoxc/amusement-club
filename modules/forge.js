@@ -400,7 +400,7 @@ function getClaimedCard(user, fullName, args, callback) {
                     { discord_id: user.discord_id },
                     { $set: {cards: user.cards } }
                 ).then(u => {
-                    callback(utils.formatImage(user, null, "you got **" + name + "**!", dbManager.getCardURL(res)));
+                    callback(utils.formatImage(user, null, "you got **" + name + "** [" + res.collection + "]!", dbManager.getCardURL(res)));
                 }).catch(e => logger.error(e));
             });
             return true;
@@ -445,7 +445,7 @@ function requestCard(user, findObj, callback) {
         if(!res) return;
         
         let name = utils.toTitleCase(res.name.replace(/_/g, " "));
-        let phrase = "you got **" + name + "**!\n";
+        let phrase = "you got **" + name + "** [" + res.collection + "] !\n";
         if(user.cards && user.cards.filter(c => utils.cardsMatch(c, res)).length > 0)
                         phrase += "*you already have this card*";
 
