@@ -3,7 +3,7 @@
         "version": "1.11.3",
         "changes": [
             "Birthday event",
-            "Added collections module"
+            "Added collections module `->help col`"
         ]
     },
     {

@@ -527,7 +527,7 @@
     {
         "type": ["trans", "transactions"],
         "title": "About transaction history",
-        "description": "Tou can review your transaction history; this includes sells and auctions. Transactions older than a week will be erased.\nIf transaction was done via auction, you can also get auction details using TransactionID `->auc info [transaction_id]`",
+        "description": "You can review your transaction history; this includes sells and auctions. Transactions older than a week will be erased.\nIf transaction was done via auction, you can also get auction details using TransactionID `->auc info [transaction_id]`",
         "fields": [
             {
                 "title": "->trans",
@@ -552,6 +552,25 @@
         ]
     },
     {
+        "type": ["col", "collection", "collections"],
+        "title": "About collections",
+        "description": "Collections or 'fandoms' are sets of cards that have same template and somehow belong to the same origin. Collections can be used for card filtering like [-collectionname]. Collections have name aliases that can be used for search.\nYou can see the list of all collections or information about certain one using `->col` command",
+        "fields": [
+            {
+                "title": "->col",
+                "description": "List of all collections"
+            },
+            {
+                "title": "->col [name]",
+                "description": "List collections that match name"
+            },
+            {
+                "title": "->col info [name]",
+                "description": "Information about collection"
+            }
+        ]
+    },
+    {
         "type": ["tag"],
         "title": "About tagging",
         "description": "Command is not available.\nThis function will be available after v2018.0",
@@ -563,7 +582,7 @@
         "description": "You can add Amusement Club on any other server. Type `->invite` to get an invite link with all permissions set up.",
         "fields": [
             {
-                "title": "Setting up ypur server",
+                "title": "Setting up your server",
                 "description": "Make sure that your server has 'bot channel' where Amusement Club can post messages. This is simply a text channel with word `bot` in it (can also contain any other words). Don't remove 'send messages' permission from channels where you want `->summon` to work.\nIf you want to exclude Amusement Club from other bot channel, make sure you remove **both** 'read' and 'send' permissions. If you leave 'read messages' permission on, bot will still read commands, but won't be able to respond"
             },
             {
