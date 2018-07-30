@@ -280,7 +280,7 @@ async function info(user, args, channelID, callback) {
         resp += "[Card link](" + dbManager.getCardURL(auc.card) + ")\n";
         if(user.id == auc.lastbidder && !auc.finished) 
             resp += "You are currently leading in this auction\n";
-        if(auc.finished) resp += "This auction finished**\n";
+        if(auc.finished) resp += "**This auction has finished**\n";
         else resp += "Finishes in: **" + getTime(auc) + "**\n";
 
         let emb = utils.formatInfo(null, "Information about auction", resp);

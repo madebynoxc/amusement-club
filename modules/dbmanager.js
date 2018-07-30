@@ -117,12 +117,12 @@ function claim(user, guildID, arg, callback) {
 
         if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, get: 0, quests: 0};
 
-        amount = Math.min(Math.max(parseInt(amount), 1), 20 - dbUser.dailystats.claim);
-
         if(promo) {
-            claimPromotion(user, dbUser, amount, callback);
+            claimPromotion(user, dbUser, Math.max(parseInt(amount), 1), callback);
             return;
         }
+
+        amount = Math.min(Math.max(parseInt(amount), 1), 20 - dbUser.dailystats.claim);
 
         let claimCost = getClaimsCost(dbUser, amount);
         let nextClaim = 50 * (dbUser.dailystats.claim + amount + 1);
@@ -268,7 +268,7 @@ function claimPromotion(user, dbUser, amount, callback) {
             phrase += "\nUse `->sum [card name]` to summon a card\n";
             //phrase += "Use `->forge [card 1], [card 2], ...` to combine cards into crystals\n";
         }
-        phrase += "You have now **" + (dbUser.promoexp - claimCost) + "** " + promo.currency;
+        phrase += "You now have **" + (dbUser.promoexp - claimCost) + "** " + promo.currency;
 
         res.map(r => dbUser.cards = addCardToUser(dbUser.cards, r));
 

@@ -18,6 +18,7 @@ const transactions = require('./modules/transactions.js');
 const sellManager = require('./modules/sell.js');
 const cardList = require('./modules/list.js');
 const auctions = require('./modules/auctions.js');
+const collections = require('./modules/collections.js');
 
 var bot, curgame = 0;
 
@@ -419,6 +420,14 @@ function getCommand(user, channel, guild, message, event, callback) {
                         callback(text, file);
                     });
                 }
+                return;
+            case 'col':
+            case 'collection':
+            case 'collections':
+                let chanID = channel? channel.id : user.id;
+                collections.processRequest(user.id, cnt, chanID, (text, file) => {
+                    callback(text, file);
+                });
                 return;
             case 'invite':
                 // if(channelType !== 0) {

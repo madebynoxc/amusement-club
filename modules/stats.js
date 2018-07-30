@@ -38,13 +38,13 @@ function general(callback) {
         ccollection.count().then(ccc => {
             ccollection.count().then(pcc => {
                 ucollection.count({lastdaily: {$gt: lastWeek}}).then(aucc => {
-                    res = "__**General bot statistics**__\n";
+                    let res = "";
                     res += "Overall users: **" + ucc + "**\n"; 
                     res += "Active users (7d): **" + aucc + "**\n";
                     res += "Overall cards: **" + (ccc + pcc) + "**\n"; 
                     res += "OS Uptime: **" + Math.floor(os.uptime()/3600) + "** hours\n"; 
                     res += "Running **Ubuntu 16.04 | MongoDB 3.4.5 | NodeJS 7.10.0**";
-                    callback(res);
+                    callback(utils.formatInfo(null, "General bot statistics", res));
                 });
             });
         });
@@ -59,47 +59,42 @@ function cards(callback) {
     promises.push(ccollection.find({animated: true}).count());
     promises.push(ccollection.find({craft: true}).count());
     collections.getCollections().then(list => {
-        for(i=0; i<list.length; i++) {
+        /*for(i=0; i<list.length; i++) {
             let col = list[i];
             if(col.special) 
                 promises.push(pcollection.find({collection: col.id}).count());
             else promises.push(ccollection.find({collection: col.id}).count());
-        }
+        }*/
         for(i=0; i<=5; i++) 
             promises.push(ccollection.find({level: i}).count());
 
         Promise.all(promises).then(v => {
-            res = "__**General cards statistics**__\n";
+            let res = "";
+            //res = "__**General cards statistics**__\n";
             res += "Overall cards: **" + (v[0] + v[1]) + "**\n"; 
-            res += "By collection:\n";
-            for(i=0; i<list.length; i++) { 
-                res += list[i].name + ' -- **';
-                res += v[i + 4] + "**";
-                res += '\n';
-            }
-            res += "\nBy level: ";
+            res += "Overall collections: **" + list.length + "**\n\n";
             for(i=1; i<=5; i++) { 
-                res += i.toString() + ' -- **';
-                res += v[4 + list.length + i] + "**";
-                if(i < 5) res += ' | ';
+                res += i.toString() + '-star: **';
+                res += v[i + 4] + "**\n";
             }
+
             res += "\nAnimated: **" + v[2] + "**";
             res += "\nCraft: **" + v[3] + "**";
-            callback(res);
+            callback(utils.formatInfo(null, "General cards statistics", res));
         });
     });
 }
 
 function hero(callback) {
     let promises = [];
-    promises.push(ucollection.count());
-    promises.push(ucollection.find({hero: {$exists:true}}).count());
-    promises.push(ucollection.find({'hero.name': 'Toshino Kyoko'}).count());
-    promises.push(ucollection.find({'hero.name': 'Funami Yui'}).count());
-    promises.push(ucollection.find({'hero.name': 'Akaza Akari'}).count());
-    promises.push(ucollection.find({'hero.name': 'Yoshikawa Chinatsu'}).count());
+    promises.push(ucollection.count({'cards.1': {$exists: true}}));
+    promises.push(ucollection.count({hero: {$exists: true}}));
+    promises.push(ucollection.count({'hero.name': 'Toshino Kyoko'}));
+    promises.push(ucollection.count({'hero.name': 'Funami Yui'}));
+    promises.push(ucollection.count({'hero.name': 'Akaza Akari'}));
+    promises.push(ucollection.count({'hero.name': 'Yoshikawa Chinatsu'}));
     Promise.all(promises).then(v => {
-        res = "__**General hero statistics**__\n";
+        let res = "";
         res += "Heroes have: **" + v[1] + "** (";
         res += Math.floor((v[1]/v[0]) * 100) + "% of users)\n";
         res += "Toshino Kyoko: **" 
@@ -110,6 +105,6 @@ function hero(callback) {
         res += v[4] + " users**\n";
         res += "Yoshikawa Chinatsu: **" 
         res += v[5] + " users**\n";
-        callback(res);
+        callback(utils.formatInfo(null, "General hero statistics", res));
     });
 }
