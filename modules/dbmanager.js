@@ -957,12 +957,18 @@ function doesUserHave(user, tgID, args, callback) {
 }
 
 function needsCards(user, args, callback) {
-    if(args.includes('-multi'))
-        return callback(utils.formatError(user, "Request error", "flag `-multi` is not valid for this request"));
-
-    let ccollection = args.filter(a => (a.includes('-halloween') || a.includes('-christmas') || a.includes('-valentine'))).length > 0? 
-        mongodb.collection('promocards') : mongodb.collection('cards');
-
+    let usePromo = false;
+    args.map(a => {
+        if(a == '-multi')
+            return callback(utils.formatError(user, "Request error", "flag `-multi` is not valid for this request"));
+        if(a[0] == '-') {
+            var col = collections.parseCollection(a.substr(1))[0];
+            if(col && col.special)
+                usePromo = true;
+        }
+    });
+    
+    let ccollection = usePromo? mongodb.collection('promocards') : mongodb.collection('cards');
     let query = utils.getRequestFromFilters(args);
     getUserCards(user.id, query).toArray((err, objs) => {
 
@@ -977,9 +983,9 @@ function needsCards(user, args, callback) {
             if(dif.length > 0) 
                 callback(dif, true);
             else if (cards.length == 0)
-                callback(utils.formatError(user, null, "No cards were found that match your request"));
+                callback(utils.formatError(user, null, "no cards were found that match your request"));
             else
-                callback(utils.formatError(user, null, "You aren't missing any cards that match your request"));
+                callback(utils.formatError(user, null, "you aren't missing any cards that match your request"));
         });
     });
 }

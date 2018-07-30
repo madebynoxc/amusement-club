@@ -341,6 +341,7 @@ function getFullCard(card) {
 
     if(card.collection == "halloween") res += "H";
     else if(card.collection == "valentine") res += "V";
+    else if(card.collection == "birthday") res += "`🍰`";
     else {
         for(let i=0; i<parseInt(card.level); i++)
             res += "★"; 
