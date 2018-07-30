@@ -772,7 +772,7 @@ function daily(u, callback) {
 
         if(promotions.current > -1) {
             let promo = promotions.list[promotions.current];
-            let tgexp = (user.dailystats? user.dailystats.claim * 80 : 0) + 500;
+            let tgexp = (user.dailystats? user.dailystats.claim * 60 : 0) + 400;
             incr.promoexp = tgexp;
             msg += "A special promotion is now going until **" + promo.ends + "**!\n"
                 + "You got **" + tgexp + "** " + promo.currency + "\n"

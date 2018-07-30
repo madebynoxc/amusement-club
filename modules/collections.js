@@ -9,6 +9,26 @@ function connect(db) {
     getCollections();
 }
 
+function processRequest(userID, args, channelID, callback) {
+    var req = args.shift();
+    switch(req) {
+        case undefined:
+            showInventory(dbUser, callback);
+        case "info":
+            if(args.length > 0)
+                getInfo(dbUser, args.join('_'), callback);
+            break;
+        case "use":
+            if(args.length > 0)
+                useItem(dbUser, args, channelID, callback);
+            break;
+        case "update":
+            getCollections().then(c => {
+                callback("Updated collection list. Found **" + c.length + "**");
+            });
+    }
+}
+
 function getCollections() {
     return new Promise((resolve) => {
         mongodb.collection('collections').find({}).toArray().then(c => {

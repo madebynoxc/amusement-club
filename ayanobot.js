@@ -39,17 +39,15 @@ bot.on("ready", (event) => {
     child.on('error', function (err) {
         bot.sendMessage({
             to: settings.reportchannel, 
-            embed: formError("Process exited with code 1!", err)
+            embed: formError("Process exited with code 1!", err.toString())
         });
-        console.log('[Ayano ERROR] ' + err);
     });
 
     child.on('stderr', function (err) {
         bot.sendMessage({
             to: settings.reportchannel, 
-            embed: formError("Unhalded promise rejection", err)
+            embed: formError("Bot process error", err.toString())
         });
-        console.log('[Ayano ERROR] ' + err);
     });
 
     child.on('stop', function (data) {
@@ -84,7 +82,7 @@ bot.on("ready", (event) => {
         setTimeout(() => {
             bot.sendMessage({
                 to: settings.reportchannel, 
-                embed: formConfirm("Restarted", "Amusement Club was restarted and now online again!")
+                embed: formConfirm("Restarted", "Amusement Club was restarted successfully")
             });
         }, 4000);
         console.log('[Ayano] Bot restarted');
@@ -171,7 +169,7 @@ function formWarn(title, desc) {
 function showCommands(argument) {
     bot.sendMessage({
         to: settings.reportchannel, 
-        embed: formConfirm("Command list", "update [cards]\nstart [bot]\nstop [bot]\nrestart [bot]")
+        embed: formConfirm("Command list", "update [cards]\nstart [bot]\nstop [bot]\nrestart [bot]\nrename [card query], [new name]")
     });
 }
 
