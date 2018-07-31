@@ -18,6 +18,14 @@ var bot = new Discord.Client({
 
 bot.on("ready", (event) => {
     console.log('[Ayano.bot] Logged in as %s - %s\n', bot.username, bot.id);
+
+    bot.setPresence({ 
+        game: { 
+            type: 3, 
+            name: "over Amusement Club"
+        } 
+    });
+
     if(child) return;
 
     child = new (forever.Monitor)(settings.startpoint, {
