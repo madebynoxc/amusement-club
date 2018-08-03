@@ -4,7 +4,7 @@ module.exports = {
     pay, daily, getQuests, getBestCardSorted, getUserCards,
     leaderboard, difference, dynamicSort, countCardLevels, getCardValue,
     getCardFile, getDefaultChannel, isAdmin, needsCards, getCardURL,
-    removeCardFromUser, addCardToUser, eval, whohas, block, fav, track
+    removeCardFromUser, addCardToUser, eval, whohas, block, fav, track, getDB
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -54,15 +54,15 @@ function connect(bot, callback) {
         heroes.connect(db);
         forge.connect(db);
         inv.connect(db);
-        stats.connect(db);
+        stats.connect(db, client);
         transactions.connect(db);
-        //cardmanager.updateCards(db);
         invite.connect(db, client);
         helpMod.connect(db, client);
         vote.connect(db, client);
         sellManager.connect(db);
         auctions.connect(db, client);
         collections.connect(db);
+        //cardmanager.updateCards(db);
 
         let date = new Date();
         let deletDate = new Date(date.setDate(date.getDate() - 5));
@@ -1292,7 +1292,8 @@ function getCardURL(card) {
     let path = col.special? '/promo/' : '/cards/';
     if(!card.animated && col.compressed) ext = '.jpg';
 
-    return "https://amusementclub.nyc3.digitaloceanspaces.com" 
+    //return "https://amusementclub.nyc3.digitaloceanspaces.com" 
+    return "http://amusementclubspaces-cbe9.kxcdn.com" 
         + path + col.id + '/' + prefix + "_" + card.name.toLowerCase() + ext;
 }
 
@@ -1347,4 +1348,8 @@ function getRandomJoke(user, callback) {
         let name = item.split('.')[0].replace(/_/g, " ");
         callback("**" + user.username + "** you got **" + name + "**!", './april/' + item);
     });
+}
+
+function getDB() {
+    return mongodb;
 }

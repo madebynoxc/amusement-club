@@ -57,6 +57,7 @@ async function processRequest(user, args, guild, channelID, callback) {
 
     let cards = objs[0].cards;
     let match = query['cards.name'] ? dbmanager.getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
+    if(!match) return callback(utils.formatError(user, "Can't find cards", "can't find any card matching that request"));
 
     if (match.fav && match.amount == 1) 
         return callback(utils.formatError(user, null, "you can't sell favorite card."

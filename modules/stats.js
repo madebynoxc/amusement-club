@@ -2,15 +2,16 @@ module.exports = {
     processRequest, connect
 }
 
-var mongodb, ucollection, ccollection;
+var mongodb, ucollection, ccollection, client;
 const fs = require('fs');
 const logger = require('./log.js');
 const utils = require('./localutils.js');
 const os = require('os');
 const collections = require('./collections.js');
 
-function connect(db) {
+function connect(db, bot) {
     mongodb = db;
+    client = bot;
     ucollection = db.collection('users');
     ccollection = db.collection('cards');
     pcollection = db.collection('promocards');
@@ -40,6 +41,7 @@ function general(callback) {
                 ucollection.count({lastdaily: {$gt: lastWeek}}).then(aucc => {
                     let res = "";
                     res += "Overall users: **" + ucc + "**\n"; 
+                    res += "Overall servers: **" + Object.keys(client.servers).length + "**\n";
                     res += "Active users (7d): **" + aucc + "**\n";
                     res += "Overall cards: **" + (ccc + pcc) + "**\n"; 
                     res += "OS Uptime: **" + Math.floor(os.uptime()/3600) + "** hours\n"; 
