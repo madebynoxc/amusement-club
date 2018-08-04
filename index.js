@@ -21,7 +21,7 @@ const auctions = require('./modules/auctions.js');
 const collections = require('./modules/collections.js');
 const dblapi = require('./modules/dblapi.js');
 
-var bot;
+var bot, guildcount = 0;
 var cooldownList = [];
 var restartChannelID;
 
@@ -37,6 +37,7 @@ function _init() {
     react.setBot(bot);
 
     bot.on("ready", (event) => {
+        console.log('Found ' + guildcount + ' guilds')
         console.log('[Discord.IO] Logged in as %s - %s\n', bot.username, bot.id);
         bot.getAllUsers();
         bot.setPresence({game: {name: "->help"}});
@@ -57,8 +58,8 @@ function _init() {
     });
 
     bot.on("guildCreate", g => {
-        console.log("Registered guild: " + g.name);
-        //invite.checkOnJoin(g);
+        //console.log("Registered guild: " + g.name);
+        guildcount++;
     });
 
     bot.on("message", (username, userID, channelID, message, event) => {
