@@ -1293,7 +1293,7 @@ function getCardURL(card) {
     if(!card.animated && col.compressed) ext = '.jpg';
 
     //return "https://amusementclub.nyc3.digitaloceanspaces.com" 
-    return "http://amusementclubspaces-cbe9.kxcdn.com" 
+    return "https://cdn.amusementclub.xyz" 
         + path + col.id + '/' + prefix + "_" + card.name.toLowerCase() + ext;
 }
 
