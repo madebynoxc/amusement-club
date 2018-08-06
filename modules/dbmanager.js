@@ -1,7 +1,7 @@
 module.exports = {
     connect, disconnect, claim, addXP, getXP, doesUserHave,
-    getCards, summon, transfer, sell, award, getUserName,
-    pay, daily, getQuests, getBestCardSorted, getUserCards,
+    getCards, summon, sell, award, getUserName, getCardInfo,
+    daily, getQuests, getBestCardSorted, getUserCards,
     leaderboard, difference, dynamicSort, countCardLevels, getCardValue,
     getCardFile, getDefaultChannel, isAdmin, needsCards, getCardURL,
     removeCardFromUser, addCardToUser, eval, whohas, block, fav, track, getDB
@@ -402,7 +402,7 @@ function getCards(user, args, callback) {
 }
 
 function summon(user, args, callback) {
-    if(!args) return callback("**" + user.username + "**, please specify name/collection/level");
+    if(!args) return callback("**" + user.username + "**, please specify card query");
     let query = utils.getRequestFromFilters(args);
     getUserCards(user.id, query).toArray((err, objs) => {
         if(!objs[0]) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
@@ -412,13 +412,14 @@ function summon(user, args, callback) {
         let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : getRandomCard(cards);
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
-        let alert = "**" + user.username + "** summons [" 
-            + utils.toTitleCase(match.name.replace(/_/g, " ")) + "]("
-            + getCardURL(match) + ")\n";
+        let alert = "**" + user.username + "** summons ";
 
         if(match.animated && match.imgur) {
+            alert += "**" + utils.toTitleCase(match.name.replace(/_/g, " ")) + "**";
             callback(alert + "\nhttps://i.imgur.com/" + match.imgur + ".gifv");
         } else {
+            alert += "[" + utils.toTitleCase(match.name.replace(/_/g, " ")) + "]";
+            alert += "("+ getCardURL(match) + ")\n";
             callback(utils.formatImage(null, null, alert, getCardURL(match)));
         }
 
@@ -431,252 +432,38 @@ function summon(user, args, callback) {
     });
 }
 
-//DEPRECATED
-async function transfer(from, to, args, guild, callback) {
-    return callback(utils.formatError(from, "Deprecated command", 
-        "since 1.9.12 sending cards was replaced with selling.\n"
-        + "Please use `->sell @user card name`\n"
-        + "Learn more by running `->help sell`"));
+function getCardInfo(user, args, callback) {
+    if(!args) return callback("**" + user.username + "**, please specify card query");
+    let query = utils.getRequestFromFiltersNoPrefix(args);
 
-    let collection = mongodb.collection('users');
-    modifyingList.push(from.id);
-    try {
-        await _transfer(collection, from, to, args, guild, callback);
-    } finally {
-        removeFromModifying(from.id);
-    }
-}
+    mongodb.collection('cards').find(query).toArray((err, cards) => {
+        let card = query['name']? getBestCardSorted(cards, query['name'])[0] : cards[0];
+        if(!card) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
-//DEPRECATED
-async function _transfer(collection, from, to, args, guild, callback) {
-    let dbUser = await collection.findOne({ discord_id: from.id });
-    if (!dbUser) return;
+        getCardValue(card, val => {
+            let col = collections.parseCollection(card.collection)[0];
+            let info = "";
+            info += "**" + utils.getFullCard(card) + "**\n";
+            info += "Fandom: **" + col.name + "**\n";
+            info += "Type: **" + getCardType(card) + "**\n";
+            info += "Price: **" + val + "** `🍅`\n";
 
-    if (!dbUser.gets) dbUser.gets = 500;
-    if (!dbUser.sends) dbUser.sends = 500;
+            if(card.source) {
+                if(card.source.startsWith("http"))
+                    info += "[Image source](" + card.source + ")";
+                else info += "Source: **" + card.source + "**";
+            }
 
-    if (!dbUser.dailystats) dbUser.dailystats = { summon: 0, send: 0, claim: 0, get: 0 };
-
-    if (args.includes("-ratio")) {
-        let ratio = utils.getRatio(dbUser).toFixed(2);
-        callback(utils.formatInfo(from,
-            null, "Your give/get ratio is **" + ratio + "**\n"
-            + (ratio < 2.5 ? "You **can** send cards\n" : "You **can not** send cards\n")
-            + (ratio > 0.4 ? "You **can** receive cards\n" : "You **can not** receive cards\n")
-            + "Max ratio: **2.5**\nMin ratio: **0.4**\n"
-            + "You sent today: **" + dbUser.dailystats.send + "**/25\n"
-            + "You got today: **" + dbUser.dailystats.get + "**/25"));
-        return;
-    }
-
-    if (!args || args.length == 0) return callback("**" + from.username + "**, please specify name/collection/level");
-
-    for (m in args) {
-        if (args[m].includes("*"))
-            return callback("**" + from.username + "**, you can't transfer crystals");
-    }
-
-    if (from.id == to) {
-        callback(dbUser.username + ", did you actually think it would work?");
-        return;
-    }
-
-    if (!to) return;
-    
-    if (dbUser.dailystats.send > 1 && !utils.canSend(dbUser)) {
-        callback(utils.formatError(from,
-            "Can't send card!",
-            "you can't send more cards. Please, trade fairly and consider **getting** more cards from users. Details: `->help trade`\n"
-            + "Your give/get ratio is **" + utils.getRatio(dbUser).toFixed(2) + "**"));
-        return;
-    }
-
-    let query = utils.getRequestFromFilters(args);
-    let objs = await getUserCards(from.id, query).toArray();
-
-    if (!objs[0]) return callback(utils.formatError(from, "Can't find card", "can't find card matching that request"));
-
-    let cards = objs[0].cards;
-    let match = query['cards.name'] ? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
-
-    if (!match) return callback(utils.formatError(from, "Can't find card", "can't find card matching that request"));
-    if (match.fav && match.amount == 1) return callback(utils.formatError(from, null, "you can't send favorite card."
-        + " To remove from favorites use `->fav remove [card query]`"));
-
-    let name = utils.toTitleCase(match.name.replace(/_/g, " "));
-    let hours = 20 - utils.getHoursDifference(match.frozen);
-    if (match.amount <= 1 && hours && hours > 0) {
-        callback(utils.formatError(dbUser, 
-            "Card is frozen",
-            "the card '**" + name + "**' is frozen for **" 
-            + hours + "** more hours! You can't transfer it"));
-        return;
-    }
-
-    let u2 = await collection.findOne({ discord_id: to });
-
-    if (!u2) return;
-
-    if (u2.blocklist && u2.blocklist.includes(from.id))
-        return callback(utils.formatError(from, "Can't send card", "this user blocked trading with you"));
-
-    if (!utils.canGet(u2)) {
-        callback(utils.formatError(from,
-            "Can't send card!",
-            "user **" + u2.username + "** recieved too many cards. This user has to **send** more cards. Details: `->help trade`"));
-        return;
-    }
-
-    if (!u2.dailystats) u2.dailystats = { summon: 0, send: 0, claim: 0, get: 0 };
-    else if (!u2.dailystats.get) u2.dailystats.get = 0;
-
-    if (u2.dailystats.get > 25) return callback(utils.formatError(from,
-        "Can't send card!",
-        "user **" + u2.username + "** is out of daily trading limit. This user can't get more cards today"));
-
-    if (modifyingList.indexOf(u2.discord_id) > -1) {
-        return callback(utils.formatError(from,
-            "Can't send card!",
-            "user **" + u2.username + "** can't accept cards right now, try to send again."));
-    }
-
-    match.fav = false;
-    dbUser.cards = removeCardFromUser(dbUser.cards, match);
-    u2.cards = addCardToUser(u2.cards, match);
-    dbUser.dailystats.send++;
-    u2.dailystats.get++;
-
-    var fromExp = dbUser.exp;
-    fromExp = heroes.getHeroEffect(dbUser, 'send', fromExp, match.level);
-    if (fromExp > dbUser.exp)
-        callback("**Akari** grants **" + Math.round(fromExp - dbUser.exp)
-            + "**🍅 to **" + dbUser.username
-            + "** for sending a card!");
-
-    if (dbUser.dailystats.send === 25)
-        callback(utils.formatWarning(from, null, "your **next** transfer will cost **100** Tomatoes"));
-    else if (dbUser.dailystats.send > 25) {
-        let fee = (dbUser.dailystats.send - 25) * 100;
-
-        if (fee > dbUser.exp) return callback(utils.formatError(dbUser,
-            "Can't send card!",
-            "you don't have enough **Tomatoes** to pay your trading fee!"));
-
-        callback(utils.formatWarning(from, null, "you paid **" + fee + "** Tomatoes fee, because you are over your daily trade limit"));
-        fromExp -= fee;
-    }
-
-    heroes.addXP(dbUser, .2);
-    let price = await new Promise(resolve => {
-        getCardValue(match, price => {
-            resolve(price);
+            callback(utils.formatInfo(null, null, info));
         });
     });
-
-    let ratioIncrease = (price === Infinity ? 0 : price / 100);
-    if (quest.preCheckSend(dbUser, match.level)) ratioIncrease = 0;
-    let newSends = objs[0]._id.sends + ratioIncrease;
-    let newGets = objs[0]._id.gets;
-
-    if (newGets + newSends > 1500) {
-        newGets *= .5;
-        newSends *= .5;
-    }
-
-    let transaction = {
-        from: from.username,
-        from_id: from.id,
-        to: u2.username,
-        to_id: to,
-        card: match,
-        guild: guild.name,
-        guild_id: guild.id,
-        time: new Date()
-    }
-
-    mongodb.collection('transactions').insert(transaction);
-    report(dbUser, transaction);
-    report(u2, transaction);
-
-    await collection.update(
-        { discord_id: from.id }, {
-            $set: {
-                cards: dbUser.cards,
-                dailystats: dbUser.dailystats,
-                exp: fromExp,
-                sends: newSends,
-                gets: newGets
-            }
-        }
-    );
-    quest.checkSend(dbUser, match.level, callback);
-    
-    match.frozen = new Date();
-    collection.update(
-        { discord_id: to },
-        {
-            $set: { cards: u2.cards, dailystats: u2.dailystats },
-            $inc: { gets: ratioIncrease }
-        }
-    ).then(() => {
-        forge.getCardEffect(dbUser, 'send', u2, callback);
-    });
-
-    callback(utils.formatConfirm(from, "Sent successfully", "you sent **" + name + "** to **" + u2.username + "**\n"
-        + "Recommended price for this card: **" + Math.floor(price) + "**🍅"));
 }
 
-//DEPRECATED
-function pay(from, to, args, guild, callback) {
-    return callback(utils.formatError(from, "Deprecated command", 
-        "tomato transfer is not possible since 1.9.12\n"
-        + "Other users should use `->sell @you card name` in order to sell you cards for fixed tomato price.\n"
-        + "Learn more by running `->help sell`"));
-    
-    let collection = mongodb.collection('users');
-    let amount = args.filter(a => utils.isInt(a))[0];
-
-    if(!amount || !to) return;
-
-    amount = Math.abs(amount);
-    collection.findOne({ discord_id: from.id }).then(dbUser => {
-        if(!dbUser) return;
-
-        if(from.id == to) {
-            callback("Did you actually think it would work?");
-            return;
-        }
-
-        if(dbUser.exp >= amount) {
-            collection.findOne({ discord_id: to }).then(user2 => {
-                if(!user2) return;
-
-                let ratio = amount/100;
-                let transaction = {
-                    from: dbUser.username,
-                    from_id: dbUser.discord_id,
-                    to: user2.username,
-                    to_id: to,
-                    exp: amount,
-                    guild: guild.name,
-                    guild_id: guild.id,
-                    time: new Date()
-                };
-
-                dbUser.exp -= amount;
-                user2.exp += amount;
-                report(dbUser, transaction);
-                report(user2, transaction);
-
-                mongodb.collection('transactions').insert(transaction);
-                collection.update({ discord_id: from.id }, {$inc: {exp: -amount, sends: ratio }});
-                collection.update({ discord_id: to }, {$inc: {exp: amount, gets: ratio }});
-                callback(utils.formatConfirm(dbUser, "Tomatoes sent", "you sent **" + amount + "**🍅 to **" + user2.username + "**"));
-            });
-            return;
-        }
-        callback(utils.formatError(dbUser.username, "Can't send Tomatoes", "you don't have enough funds"));
-    });
+function getCardType(card) {
+    let col = collections.parseCollection(card.collection)[0];
+    if(card.craft) return "craft";
+    if(col.special) return "event";
+    return "ordinary";
 }
 
 //DEPRECATED
@@ -1281,8 +1068,8 @@ function getCardFile(card) {
 }
 
 function getCardURL(card) {
-    // if(card.animated && card.imgur) 
-    //     return "https://i.imgur.com/" + card.imgur + ".gifv";
+    if(card.animated && card.imgur) 
+        return "https://i.imgur.com/" + card.imgur + ".gifv";
 
     let ext = card.animated? '.gif' : '.png';
     let prefix = card.craft? card.level + 'cr' : card.level;

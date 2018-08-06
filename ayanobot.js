@@ -140,6 +140,9 @@ bot.on("message", async (username, userID, channelID, message, event) => {
                     console.log('[Ayano] Stopping Amusement Club process...'); 
                     child.stop(); 
                 } break;
+            case 'getsources':
+                scanImageSources();
+                break;
             case 'restart': 
                 console.log('[Ayano] Restarting Amusement Club process...'); 
                 restarts = 0; 
@@ -402,27 +405,39 @@ function other(args) {
     }
 }
 
-function startChanging() {
-    let images = require('./serverpics.json');
-
-    setInterval(() => {
-        console.log("set pic");
-        setPic(1, (err) => {
-            setTimeout(() => {
-                setPic(0);
-            }, 3000)
-        });
-    }, 100000);
-
-    setInterval(() => {
-        setPic(2, () => {
-            setTimeout(() => {
-                setPic(0);
-            }, 3000)
-        });
-    }, 310000);
-}
-
 function setPic(index, callback) {
     bot.editServer( {"serverID":"351871492536926210", "icon":images[index]}, callback);
+}
+
+const dir = "../sources/";
+function scanImageSources() {
+    let files = fs.readdirSync(dir);
+    let count = 0;
+
+    files.forEach(file => {
+        console.log("-----------------Processing " + file);
+        let cnt = fs.readFileSync(dir + file, 'utf8');
+        
+        cnt.split('\n').forEach(str => {
+            let name = str.split(' - ')[0];
+            let link = str.split(' - ')[1];
+            let level = name? parseInt(name[0]) : 0;
+            let nameonly = name.toLowerCase().trim().substring(2);
+            if(name && link && level) {
+                mongodb.collection("cards").update({
+                    name: nameonly,
+                    level: level
+                }, {
+                    $set: { source: link.trim() }
+                });
+                count++;
+                console.log(level + " - " + nameonly);
+            }
+        });
+    });
+
+    bot.sendMessage({
+        to: settings.botcommchannel, 
+        embed: utils.formatConfirm(null, "Finished scanning image sources", "Assigned for **" + count + "** images")
+    });
 }

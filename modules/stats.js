@@ -37,7 +37,7 @@ function general(callback) {
     let lastWeek = new Date(date.setDate(date.getDate() - 7));
     ucollection.count({'cards.1': {$exists: true}}).then(ucc => {
         ccollection.count().then(ccc => {
-            ccollection.count().then(pcc => {
+            pcollection.count().then(pcc => {
                 ucollection.count({lastdaily: {$gt: lastWeek}}).then(aucc => {
                     let res = "";
                     res += "Overall users: **" + ucc + "**\n"; 

@@ -189,6 +189,10 @@ function getCommand(user, channel, guild, message, event, callback) {
             case 'summon':
                 dbManager.summon(user, cnt, callback);
                 return;
+            case 'info': 
+            case 'cardinfo':
+                dbManager.getCardInfo(user, cnt, callback);
+                return;
             case 'eval':
                 dbManager.eval(user, cnt, callback);
                 return;
