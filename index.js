@@ -71,22 +71,17 @@ function _init() {
         user.username = username;
 
         if(user.bot || cooldownList.includes(userID)) return;
-            //invite.checkStatus(message, guild, t => {
-                //if(!t){
-                    cooldownList.push(userID);
-                    setTimeout(() => removeFromCooldown(userID), 1000);
+        cooldownList.push(userID);
+        setTimeout(() => removeFromCooldown(userID), 1000);
 
-                    getCommand(user, channel, guild, message, event, (res, obj) => {
+        getCommand(user, channel, guild, message, event, (res, obj) => {
+            if(obj) bot.uploadFile({to: channelID, file: obj, message: res});
+            else if(res) {
+                if(typeof res === "string") bot.sendMessage({to: channelID, message: res});
+                else bot.sendMessage({to: channelID, embed: res});
+            } 
+        });
 
-                        if(obj) bot.uploadFile({to: channelID, file: obj, message: res});
-                        else if(res) {
-                            if(typeof res === "string") bot.sendMessage({to: channelID, message: res});
-                            else bot.sendMessage({to: channelID, embed: res});
-                        } 
-                    });
-                //}
-                //else bot.sendMessage({to: channelID, embed: t});
-            //});
     });
 
     bot.on("any", (message) => {
@@ -213,39 +208,12 @@ function getCommand(user, channel, guild, message, event, callback) {
                     auctions.processRequest(user, cnt, chanID, callback);
                 }
                 return;
-            case 'give':
-            case 'send':
-                if(channelType == 0) callback('Card transfer is possible only on servers');
-                else if(channelType == 1) callback('Card transfer is possible only in bot channel');
-                else {
-                    let inp = utils.getUserID(cnt);
-                    dbManager.transfer(user, inp.id, inp.input, guild, callback);
-                }
-                return;
             case 'block':
                 if(channelType == 0) callback('This operation is possible in bot channel only');
                 else if(channelType == 1) callback('This operation is possible in bot channel only');
                 else {
                     let inp = utils.getUserID(cnt);
                     dbManager.block(user, inp.id, inp.input, (text) =>{
-                        callback(text);
-                    });
-                }
-                return;
-            case 'ratio':
-                if(channelType == 1) callback('This operation is possible in bot channel only');
-                else {
-                    dbManager.transfer(user, null, '-ratio', guild, (text) =>{
-                        callback(text);
-                    });
-                }
-                return;
-            case 'pay':
-                if(channelType == 0) callback('Tomato transfer is possible only on servers');
-                else if(channelType == 1) callback('Tomato transfer is possible only in bot channel');
-                else {
-                    let inp = utils.getUserID(cnt);
-                    dbManager.pay(user, inp.id, inp.input, guild, (text) =>{
                         callback(text);
                     });
                 }

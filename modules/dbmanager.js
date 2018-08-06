@@ -544,8 +544,8 @@ function daily(u, callback) {
 
         heroes.addXP(user, 3);
 
-        var msg = "**" + user.username + "** recieved daily **" + amount + "** 🍅 You now have " 
-        + (Math.floor(user.exp) + amount) + "🍅 \n";
+        var msg = "recieved daily **" + amount + "** 🍅 You now have " 
+            + (Math.floor(user.exp) + amount) + "🍅 \n";
 
         if(!user.hero) msg += "(you got extra 700🍅 as a new player bonus)\n";
         else msg += "You also got **2 daily quests**. To view them use `->quests`\n";
@@ -563,7 +563,7 @@ function daily(u, callback) {
             incr.promoexp = tgexp;
             msg += "A special promotion is now going until **" + promo.ends + "**!\n"
                 + "You got **" + tgexp + "** " + promo.currency + "\n"
-                + "Use `->claim promo` to get special limited time cards";
+                + "Use `->claim promo` to get special limited time cards\n";
         }
 
         let quests = user.hero? quest.getRandomQuests() : [];
@@ -575,7 +575,8 @@ function daily(u, callback) {
             }
         );
 
-        callback(msg);
+        msg += "[Vote for free card](https://discordbots.org/bot/340988108222758934)";
+        callback(utils.formatInfo(user, null, msg));
 
         if(user.lastmsg != dailymessage.id) {
             callback(utils.formatInfo(user, dailymessage.title, dailymessage.body));
@@ -1079,8 +1080,8 @@ function getCardURL(card) {
     let path = col.special? '/promo/' : '/cards/';
     if(!card.animated && col.compressed) ext = '.jpg';
 
-    //return "https://amusementclub.nyc3.digitaloceanspaces.com" 
-    return "https://cdn.amusementclub.xyz" 
+    return "https://amusementclub.nyc3.digitaloceanspaces.com" 
+    //return "https://cdn.amusementclub.xyz" 
         + path + col.id + '/' + prefix + "_" + card.name.toLowerCase() + ext;
 }
 

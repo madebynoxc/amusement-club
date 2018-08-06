@@ -6,6 +6,7 @@ const Discord = require("discord.io");
 const cardmanager = require('./modules/cardmanager.js');
 const utils = require("./modules/localutils.js");
 const collections = require('./modules/collections.js');
+const heroes = require('./modules/heroes.js');
 var MongoClient = require('mongodb').MongoClient;
 
 var restarts = 0;
@@ -118,12 +119,15 @@ bot.on("ready", (event) => {
 });
 
 bot.on("message", async (username, userID, channelID, message, event) => {
-    if(!message.startsWith("ayy")) return;
     if(message.toLowerCase() === "ayy")
         return sendMessage(channelID, "lmao");
 
+    if(userID != acsettings.clientid && message.toLowerCase().includes("tomato")) 
+        bot.addReaction({ channelID: channelID, messageID: event.d.id, reaction: "🍅" });
+
+    if(!message.startsWith("ayy")) return;
+
     if(channelID == settings.botcommchannel) {
-        //console.log(message.substring(4));
         switch(message.substring(4).split(' ')[0]) {
             case 'help':
                 showCommands(); break;
@@ -154,9 +158,11 @@ bot.on("message", async (username, userID, channelID, message, event) => {
         }
     } else {
         let ayyDBUser = await ayymembers.findOne({discord_id: userID});
-        if(ayyDBUser.isMod) {
-            var id = utils.getUserID(message.substring(4)).id;
-            switch(message.substring(4).split(' ')[0]) {
+        if(ayyDBUser.isMod || userID == settings.adminID) {
+            let id = message.split(' ')[2];
+            let comm = message.split(' ')[1];
+
+            switch(comm) {
                 case 'addmod':
                     if(id && userID == settings.adminID){
                         ayymembers.update({discord_id: id}, {$set: {isMod: true}});
@@ -170,6 +176,10 @@ bot.on("message", async (username, userID, channelID, message, event) => {
                         sendEmbed(channelID, formConfirm(null, "Moderator perms were removed"));
                     } else 
                         sendEmbed(channelID, formError("Can't execute", "You have no rights to execute this command or arguments are incorrert"));
+                    break;
+                case 'find':
+                case 'count':
+                    doRequest(message.substring(4), channelID);
                     break;
             }
         }
@@ -191,12 +201,14 @@ bot.on("guildMemberAdd", async member =>  {
         ayymembers.update({discord_id: member.id}, {$inc: {joinCount: 1}});
     } else {
         msg += `Ayy welcome, <@${user.id}>`;
-        if(!acDBUser)
-            msg += "! Here is your :doughnut:\nWhy are you still not part of **Amusement Club**?\nGet started with `->claim` in #bot-main !";
-        else 
-            if(acDBUser.hero) msg += ` and **${acDBUser.hero.name}**!`;
-            msg += "\nYou can ask bot related questions in #support\nTrade in #bot-trade";
-
+        if(!acDBUser) {
+            msg += "\nPlease read <#475932375499538435>";
+            msg += "\nAlso here is your :doughnut:\nJoin **Amusement Club** gacha! Get started with `->claim` in <#351871635424542731> !";
+        } else {
+            if(acDBUser.hero) msg += ` and **${acDBUser.hero.name}** (level ${heroes.getHeroLevel(acDBUser.hero.exp)})!`;
+            msg += "\nPlease read <#475932375499538435>";
+            msg += "\nYou can ask bot related questions in <#370742439679492096>\nTrade your cards in <#351957621437235200>";
+        }
         addNewUser(user);
     }
 
@@ -244,6 +256,38 @@ function formWarn(title, desc) {
     return e;
 }
 
+function doRequest(argstr, channelID) {
+    try {
+        let args = argstr.split(' ');
+        let type = args.shift();
+        let col = mongodb.collection(args.shift());
+        let query = JSON.parse(args.join(' '));
+
+        switch(type) {
+            case 'find':
+                col.findOne(query).then(res => {
+                    if(res){
+                        let resmsg = "";
+                        Object.keys(res).forEach((key, val) => { 
+                            if(Array.isArray(res[key]))
+                                resmsg += key + ": **[" + res[key].length + "]**\n";
+                            else
+                                resmsg += key + ": **" + res[key] + "**\n";
+                        });
+                        sendEmbed(channelID, formConfirm("Returned results", resmsg));
+                    } else
+                        sendEmbed(channelID, formError(null, "Nothing found"));
+                });
+                break;
+            case 'count':
+                col.count(query).then(amount => {
+                    sendEmbed(channelID, formConfirm(null, "Found **" + amount + "**"));
+                });
+                break;
+        }
+    } catch(e) { sendEmbed(channelID, formError(null, e.toString())) }
+}
+
 function sendMessage(where, message) {
     bot.sendMessage({
         to: where, 
@@ -286,7 +330,16 @@ function rename(argument) {
     let result = "";
     let query = utils.getRequestFromFiltersNoPrefix(getstr);
 
-    mongodb.collection('cards').findOne(query).then(card => {
+    if(!query.collection || !query.collection.$in[0])
+        return bot.sendMessage({
+            to: settings.botcommchannel, 
+            embed: formError("Can't update card", "Please include collection name")
+        });
+
+    let col = collections.parseCollection(query.collection.$in[0])[0];
+    let qCol = col.special? mongodb.collection('promocards') : mongodb.collection('cards');
+
+    qCol.findOne(query).then(card => {
         if(!card)
             return bot.sendMessage({
                 to: settings.botcommchannel, 
@@ -296,7 +349,7 @@ function rename(argument) {
         let newname = setstr.trim().replace(/ /gi, '_');
         query = utils.getCardQuery(card);
 
-        mongodb.collection('cards').update(query, {$set: {name: newname}}).then(res => {
+        qCol.update(query, {$set: {name: newname}}).then(res => {
             result += "Card **" + utils.getFullCard(card) + "** is updated in database\n";
             mongodb.collection('users').updateMany(
                 {cards: {"$elemMatch": query}}, 
