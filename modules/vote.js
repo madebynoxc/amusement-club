@@ -12,7 +12,8 @@ function connect(db, client) {
 }
 
 function processRequest(user, channel, args, callback) {
-    bot.createDMChannel(user.id, (err, res) => {
+    callback(utils.formatInfo(user, null, "you can vote for Amusement Club every 12 hours and get free card\n[Go to voting page](https://discordbots.org/bot/340988108222758934)"));
+    /*bot.createDMChannel(user.id, (err, res) => {
         if(err && channel)
             callback("**" + user.username + "**, can't send you a message. Please, allow direct messages from server members in privacy settings");
 
@@ -26,7 +27,7 @@ function processRequest(user, channel, args, callback) {
                bot.sendMessage({to: res.id, embed: m}); 
             });
         }
-    });
+    });*/
 }
 
 function castVote(user, args, callback) {

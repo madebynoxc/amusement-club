@@ -60,6 +60,8 @@ function _formatSymbols(word) {
     return word 
         .replace('.', '\\.')
         .replace('?', '\\?')
+        .replace(']', '')
+        .replace('[', '')
         .replace('_', ' ');
 }
 

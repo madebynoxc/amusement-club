@@ -1080,8 +1080,9 @@ function getCardURL(card) {
     let path = col.special? '/promo/' : '/cards/';
     if(!card.animated && col.compressed) ext = '.jpg';
 
-    return "https://amusementclub.nyc3.digitaloceanspaces.com" 
+    //return "https://amusementclub.nyc3.digitaloceanspaces.com" 
     //return "https://cdn.amusementclub.xyz" 
+    return settings.cardurl
         + path + col.id + '/' + prefix + "_" + card.name.toLowerCase() + ext;
 }
 
