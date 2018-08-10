@@ -210,7 +210,7 @@ function claim(user, guildID, arg, callback) {
                     // let emb = utils.formatInfo(null, null, phrase);
                     // if(amount == 1) emb.image = { "url": getCardURL(res[0]) };
                     // callback(emb);
-                    callback(utils.formatImage(null, null, phrase, getCardURL(res[0])));
+                    callback(utils.formatImage(null, null, phrase, getCardURL(res[0], false)));
                     quest.checkClaim(dbUser, callback);
                 }).catch(e => console.log(e));
             });
@@ -282,7 +282,7 @@ function claimPromotion(user, dbUser, amount, callback) {
             }
         ).then(() => {
             let emb = utils.formatInfo(null, null, phrase);
-            if(amount == 1) emb.image = { "url": getCardURL(res[0]) };
+            if(amount == 1) emb.image = { "url": getCardURL(res[0], false) };
             callback(emb);
             //callback(phrase, ((amount == 1)? getCardFile(res[0]) : null));
         }).catch(e => console.log(e));
@@ -1068,8 +1068,8 @@ function getCardFile(card) {
     return './cards/' + col + '/' + prefix + "_" + card.name + ext;
 }
 
-function getCardURL(card) {
-    if(card.animated && card.imgur) 
+function getCardURL(card, useGifv = true) {
+    if(useGifv && card.animated && card.imgur) 
         return "https://i.imgur.com/" + card.imgur + ".gifv";
 
     let ext = card.animated? '.gif' : '.png';

@@ -80,7 +80,7 @@ async function getInfo(userID, name, callback) {
         let resp = "**" + col.name + "**\n";
 
         resp += "Overall cards: **" + colCardCount + "**\n";
-        resp += "You have: **" + userCardCount + " (" + Math.round((userCardCount/colCardCount) * 100) + "%)**\n";
+        resp += "You have: **" + userCardCount + " (" + Math.floor((userCardCount/colCardCount) * 100) + "%)**\n";
         resp += "Aliases: **" + col.aliases.join(" **|** ") + "**\n";
         //resp += col.compressed? "Uses JPG\n" : "Uses PNG\n";
         if(col.origin)
