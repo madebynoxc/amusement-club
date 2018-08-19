@@ -37,6 +37,7 @@ const lev = require('js-levenshtein');
 const sellManager = require('./sell.js');
 const auctions = require('./auctions.js');
 const collections = require('./collections.js');
+const admin = require('./admin.js');
 
 function disconnect() {
     isConnected = false;
@@ -50,6 +51,7 @@ function connect(bot, callback) {
         logger.message("[DB Manager] Connected correctly to database");
 
         mongodb = db;
+        admin.connect(db, client);
         quest.connect(db);
         heroes.connect(db);
         forge.connect(db);

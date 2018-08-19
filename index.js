@@ -20,13 +20,15 @@ const cardList = require('./modules/list.js');
 const auctions = require('./modules/auctions.js');
 const collections = require('./modules/collections.js');
 const dblapi = require('./modules/dblapi.js');
+const admin = require('./modules/admin.js');
 
 var bot, guildcount = 0;
 var cooldownList = [];
 var restartChannelID;
 
 bot = new Discord.Client({
-    token: settings.token
+    token: settings.token,
+    shard: [0, 1]
 });
 
 dbManager.connect(bot);
@@ -151,6 +153,10 @@ function getCommand(user, channel, guild, message, event, callback) {
                 return;
             case 'vote': 
                 vote.processRequest(user, channel, cnt, callback);
+                return;
+            case 'admin':
+                if(dbManager.isAdmin(user.id))
+                    admin.processRequest(user, channel, cnt, callback);
                 return;
             case 'cl': 
             case 'claim': 
