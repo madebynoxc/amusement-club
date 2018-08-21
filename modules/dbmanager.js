@@ -38,6 +38,7 @@ const sellManager = require('./sell.js');
 const auctions = require('./auctions.js');
 const collections = require('./collections.js');
 const admin = require('./admin.js');
+const dblapi = require('./modules/dblapi.js');
 
 function disconnect() {
     isConnected = false;
@@ -64,6 +65,7 @@ function connect(bot, callback) {
         sellManager.connect(db);
         auctions.connect(db, client);
         collections.connect(db);
+        dblapi.connect(dbManager.getDB(), bot);
         //cardmanager.updateCards(db);
 
         let date = new Date();

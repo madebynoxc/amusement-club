@@ -19,7 +19,6 @@ const sellManager = require('./modules/sell.js');
 const cardList = require('./modules/list.js');
 const auctions = require('./modules/auctions.js');
 const collections = require('./modules/collections.js');
-const dblapi = require('./modules/dblapi.js');
 const admin = require('./modules/admin.js');
 
 var bot, guildcount = 0;
@@ -47,8 +46,6 @@ function _init() {
             bot.sendMessage({to: restartChannelID, message: "Discord.io websocket connection was restarted. Connected to discord"});
             restartChannelID = null;
         }
-
-        dblapi.connect(dbManager.getDB(), bot);
     });
 
     bot.on("disconnect", (errMsg, code) => {
