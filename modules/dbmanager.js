@@ -38,7 +38,7 @@ const sellManager = require('./sell.js');
 const auctions = require('./auctions.js');
 const collections = require('./collections.js');
 const admin = require('./admin.js');
-const dblapi = require('./modules/dblapi.js');
+const dblapi = require('./dblapi.js');
 
 function disconnect() {
     isConnected = false;
