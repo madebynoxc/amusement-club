@@ -216,8 +216,10 @@ function getRequestFromFiltersWithPrefix(args, prefix) {
     }
 
     if(keywords.length > 0) {
-        let keywordString = keywords.join('_').replace(/\\/g, '');
-        query[prefix + 'name'] = new RegExp("(_|^)" + keywordString, 'ig');
+        try{
+            let keywordString = keywords.join('_');
+            query[prefix + 'name'] = new RegExp("(_|^)" + keywordString, 'ig');
+        } catch(e) {}
     } 
 
     return query;
