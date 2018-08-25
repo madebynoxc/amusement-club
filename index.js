@@ -4,7 +4,6 @@ const utils = require("./modules/localutils.js");
 const logger = require('./modules/log.js');
 const settings = require('./settings/general.json');
 const react = require('./modules/reactions.js');
-const quickhelp = require('./help/quick.json');
 const heroDB = require('./modules/heroes.js');
 const forge = require('./modules/forge.js');
 const stats = require('./modules/stats.js');
@@ -438,12 +437,4 @@ function getUpdateLog(index) {
     let mes = "**" + changelog[index].version + "**\n";
     mes += changelog[index].changes.join("\n");
     return mes;
-}
-
-function getHelp(com) {
-    var phrases = quickhelp.filter(e => e.name == com);
-    if(phrases.length > 0) {
-        return phrases[0].values.join('\n');
-    }
-    return undefined;
 }

@@ -8,7 +8,7 @@ module.exports = {
 }
 
 var MongoClient = require('mongodb').MongoClient;
-var mongodb, client, userCount;
+var mongodb, client, userCount, dblapi;
 var cooldownList = [];
 var modifyingList = [];
 
@@ -39,7 +39,6 @@ const auctions = require('./auctions.js');
 const collections = require('./collections.js');
 const admin = require('./admin.js');
 const guildMod = require('./guild.js');
-const dblapi = require('./dblapi.js');
 
 function disconnect() {
     isConnected = false;
@@ -50,6 +49,7 @@ function connect(bot, callback) {
     client = bot;
     MongoClient.connect(settings.database, function(err, db) {
         assert.equal(null, err);
+        dblapi = require('./dblapi.js');
         logger.message("[DB Manager] Connected correctly to database");
 
         mongodb = db;
