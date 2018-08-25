@@ -65,7 +65,7 @@ function connect(bot, callback) {
         sellManager.connect(db);
         auctions.connect(db, client);
         collections.connect(db);
-        dblapi.connect(dbManager.getDB(), bot);
+        dblapi.connect(db, bot);
         //cardmanager.updateCards(db);
 
         let date = new Date();
