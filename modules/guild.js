@@ -54,7 +54,7 @@ async function check(srv) {
             id: srv.id, 
             owner: srv.owner_id,
             botChannels: [], 
-            prefix: "->"
+            prefix: settings.botprefix
         };
 
         Object.keys(srv.channels).map((c, index) => {
