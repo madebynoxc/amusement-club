@@ -1,94 +1,94 @@
 [
     {
-        "guild_id": 224051664787603467,
+        "guild_id": "224051664787603467",
         "collection": "yuruyuri" 
     },
     {
-        "guild_id": 260080390096683019,
+        "guild_id": "260080390096683019",
         "collection": "dragonmaid" 
     },
     {
-        "guild_id": 342193795594452992,
+        "guild_id": "342193795594452992",
         "collection": "fate" 
     },
     {
-        "guild_id": 270174125094469642,
+        "guild_id": "270174125094469642",
         "collection": "gabrieldropout" 
     },
     {
-        "guild_id": 204487943568621568,
+        "guild_id": "204487943568621568",
         "collection": "monogatari" 
     },
     {
-        "guild_id": 204077054608670720,
+        "guild_id": "204077054608670720",
         "collection": "yukiyuna"
     },
     {
-        "guild_id": 248245609033760779,
+        "guild_id": "248245609033760779",
         "collection": "lovelive"
     },
     {
-        "guild_id": 231790205676290049,
+        "guild_id": "231790205676290049",
         "collection": "newgame"
     },
     {
-        "guild_id": 326627132895789058,
+        "guild_id": "326627132895789058",
         "collection": "madeinabyss"
     },
     {
-        "guild_id": 399434224467443716,
+        "guild_id": "399434224467443716",
         "collection": "blends"
     },
     {
-        "guild_id": 362330760365080577,
+        "guild_id": "362330760365080577",
         "collection": "nonnonbiyori"
     },
     {
-        "guild_id": 292277485310312448,
+        "guild_id": "292277485310312448",
         "collection": "codegeass"
     },
     {
-        "guild_id": 364704870177046531,
+        "guild_id": "364704870177046531",
         "collection": "madokamagica"
     },
     {
-        "guild_id": 399727229321609217,
+        "guild_id": "399727229321609217",
         "collection": "mitsuboshicolors"
     },
     {
-        "guild_id": 239658013055516672,
+        "guild_id": "239658013055516672",
         "collection": "k-on"
     },
     {
-        "guild_id": 435299344296706049,
+        "guild_id": "435299344296706049",
         "collection": "steinsgate"
     },
     {
-        "guild_id": 437092938368155668,
+        "guild_id": "437092938368155668",
         "collection": "gochiusa"
     },
     {
-        "guild_id": 440752961279492106,
+        "guild_id": "440752961279492106",
         "collection": "neptunia"
     },
     {
-        "guild_id": 305627343895003136,
+        "guild_id": "305627343895003136",
         "collection": "nogamenolife"
     },
     {
-        "guild_id": 342519426836594698,
+        "guild_id": "342519426836594698",
         "collection": "touhou"
     },
     {
-        "guild_id": 216568859916763136,
+        "guild_id": "216568859916763136",
         "collection": "danganronpa"
     },
     {
-        "guild_id": 416807759502114827,
+        "guild_id": "416807759502114827",
         "collection": "darlinginthefranxx"
     },
     {
-        "guild_id": 241295145365012491,
+        "guild_id": "241295145365012491",
         "collection": "bokunoheroacademia"
     }
 ]

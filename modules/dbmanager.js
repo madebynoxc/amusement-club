@@ -19,7 +19,6 @@ const quest = require('./quest.js');
 const heroes = require('./heroes.js');
 const _ = require("lodash");
 const settings = require('../settings/general.json');
-const guilds = require('../settings/servers.json');
 const promotions = require('../settings/promotions.json');
 const dailymessage = require('../help/promomessage.json');
 const utils = require('./localutils.js');
@@ -88,7 +87,7 @@ function connect(bot, callback) {
     });
 }
 
-function claim(user, guildID, arg, callback) {
+function claim(user, guild, arg, callback) {
     let ucollection = mongodb.collection('users');
     ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
         if(!dbUser) {
@@ -96,17 +95,12 @@ function claim(user, guildID, arg, callback) {
                 discord_id: user.id,
                 username: user.username,
                 cards: [],
-                exp: 2000,
-                gets: 50,
-                sends: 50
+                exp: 2500
             }).then(() => {
-                claim(user, guildID, arg, callback);
+                claim(user, guild, arg, callback);
             });
             return;
         }
-
-        // if(_.sample([0,1,2]) === 0)
-        //     return getRandomJoke(dbUser, callback);
 
         let any = false;
         let promo = false;
@@ -123,10 +117,8 @@ function claim(user, guildID, arg, callback) {
 
         if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, get: 0, quests: 0};
 
-        if(promo) {
-            claimPromotion(user, dbUser, Math.max(parseInt(amount), 1), callback);
-            return;
-        }
+        if(promo)
+            return claimPromotion(user, dbUser, Math.max(parseInt(amount), 1), callback);
 
         amount = Math.min(Math.max(parseInt(amount), 1), 20 - dbUser.dailystats.claim);
 
@@ -146,14 +138,13 @@ function claim(user, guildID, arg, callback) {
         }
 
         let collection = mongodb.collection('cards');
-        let guild = guilds.filter(g => g.guild_id == guildID)[0];
         let query = [ 
             { $match: { } },
             { $sample: { size: amount } } 
         ]
 
-        if(guild && !any) {
-            query[0].$match.collection = guild.collection;
+        if(guild && guild.lock && !any) {
+            query[0].$match.collection = guild.lock;
             query[0].$match.craft = {$in: [null, false]};
         }
 

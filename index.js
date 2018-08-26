@@ -118,7 +118,7 @@ function log(username, channel, guild, message) {
 }
 
 async function getCommand(user, channel, guild, message, event, callback) {
-    let curg = await guilds.getByID(guild.id);
+    let curg = guild? await guilds.getByID(guild.id) : {prefix: settings.botprefix};
     let channelType = channel? 1 : 0; //0 - DM, 1 - channel, 2 - bot channel
     if(channelType == 1 && curg.botChannels.includes(channel.id)) 
         channelType = 2; 
@@ -146,14 +146,16 @@ async function getCommand(user, channel, guild, message, event, callback) {
                 if(channelType == 0) callback('Claiming is available only on servers');
                 else if(channelType == 1) botOnly(chanID);
                 else {
-                    dbManager.claim(user, guild.id, cnt, (text, img) => {
+                    await dbManager.claim(user, curg, cnt, (text, img) => {
                         callback(text, img);
                     });
                 }
                 return;
             case 'server': 
             case 'guild': 
-                guilds.processRequest(user, guild, chanID, cnt, callback);
+                if(channelType == 0) callback('This operation is possible only on server');
+                else 
+                    guilds.processRequest(user, guild, chanID, cnt, callback);
                 return;
             case 'dif':
             case 'diff':

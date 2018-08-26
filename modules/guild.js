@@ -15,6 +15,8 @@ function connect(db, client) {
 
     scollection = mongodb.collection("servers");
     ucollection = mongodb.collection("users");
+
+    setOldGuilds();
 }
 
 function processRequest(user, server, channelID, args, callback) {
@@ -32,12 +34,17 @@ function processRequest(user, server, channelID, args, callback) {
         case 'setprefix':
             setprefix(user, server.id, args, callback);
             break;
+        case 'lock':
+            lock(user, server.id, args, callback);
+            break;
+        case 'unlock':
+            unlock(user, server.id, callback);
+            break;
     }
 }
 
 async function getByID(serverID) {
-    let guild = await scollection.findOne({id: serverID});
-    return guild;
+    return scollection.findOne({id: serverID});
 }
 
 async function check(srv) {
@@ -77,7 +84,7 @@ async function check(srv) {
 async function setbot(user, serverID, channelID, callback) {
     let guild = await getByID(serverID);
     let owner = bot.users[guild.owner];
-    if(guild.owner == user.id) {
+    if(guild.owner == user.id || settings.admins.includes(user.id)) {
         if(guild.botChannels.includes(channelID))
             return callback(utils.formatError(user, null, "this channel is already marked as bot"));
 
@@ -91,7 +98,7 @@ async function setbot(user, serverID, channelID, callback) {
 async function unsetbot(user, serverID, channelID, callback) {
     let guild = await getByID(serverID);
     let owner = bot.users[guild.owner];
-    if(guild.owner == user.id) {
+    if(guild.owner == user.id || settings.admins.includes(user.id)) {
         if(!guild.botChannels.includes(channelID))
             return callback(utils.formatError(user, null, "this is not a bot channel"));
 
@@ -106,7 +113,10 @@ async function setprefix(user, serverID, args, callback) {
     let guild = await getByID(serverID);
     let owner = bot.users[guild.owner];
     let pref = args[0];
-    if(guild.owner == user.id) {
+    if(guild.owner == user.id || settings.admins.includes(user.id)) {
+        if(!pref)
+            return callback(utils.formatError(user, null, "prefix can't be null"));
+
         if(pref.length > 3)
             return callback(utils.formatError(user, null, "prefix can't be longer than 3 characters"));
 
@@ -118,7 +128,25 @@ async function setprefix(user, serverID, args, callback) {
 }
 
 async function lock(user, serverID, args, callback) {
-    
+    let guild = await getByID(serverID);
+    let owner = bot.users[guild.owner];
+    let col = collections.parseCollection(args[0])[0];
+    if(settings.admins.includes(user.id)) {
+        if(!col)
+            return callback(utils.formatError(user, "Failed", "can't find collection **" + args[0] + "**"));
+
+        await scollection.update({id: serverID}, {$set: {lock: col.id}});
+        return callback(utils.formatConfirm(user, null, "locked current server to **" + col.name + "**"));
+    }
+}
+
+async function unlock(user, serverID, callback) {
+    let guild = await getByID(serverID);
+    let owner = bot.users[guild.owner];
+    if(settings.admins.includes(user.id)) {
+        await scollection.update({id: serverID}, {$unset: {lock: ""}});
+        return callback(utils.formatConfirm(user, null, "unlocked current server"));
+    }
 }
 
 async function info(srv, callback) {
@@ -134,7 +162,16 @@ async function info(srv, callback) {
     if(guild.lock)
         resp += `Locked on: **${collections.getByID(guild.lock).name}**\n`;
 
-    resp += `Bot channels: **${guild.botChannels.map(c => bot.channels[c].name).join(' | ')}**`;
-    
+    try {resp += `Bot channels: **${guild.botChannels.map(c => bot.channels[c].name).join(' | ')}**`;}
+    catch(e) {}
+
     callback(utils.formatInfo(null, srv.name, resp));
+}
+
+async function setOldGuilds() {
+    let list = require('../settings/servers.json')
+    for (let i = 0; i < list.length; i++) {
+        await scollection.update({id: list[i].guild_id}, 
+            {$set: {lock: list[i].collection}});
+    }
 }

@@ -1,5 +1,14 @@
 [
     {
+        "version": "1.12",
+        "changes": [
+            "Better guild management",
+            "Added custom server prefixes",
+            "Added bot channel customization",
+            "Technical improvements to server locking"
+        ]
+    },
+    {
         "version": "1.11.3",
         "changes": [
             "Birthday event",
