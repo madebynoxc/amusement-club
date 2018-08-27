@@ -400,7 +400,10 @@ function getClaimedCard(user, fullName, args, callback) {
                     { discord_id: user.discord_id },
                     { $set: {cards: user.cards } }
                 ).then(u => {
-                    callback(utils.formatImage(user, null, "you got **" + name + "** [" + res.collection + "]!", dbManager.getCardURL(res)));
+                    let phrase = "you got **" + name + "** [" + res.collection + "] !\n";
+                    if(user.cards && user.cards.filter(c => utils.cardsMatch(c, res)).length > 0)
+                                    phrase += "*you already have this card*";
+                    callback(utils.formatImage(user, null, phrase, dbManager.getCardURL(res)));
                 }).catch(e => logger.error(e));
             });
             return true;

@@ -56,6 +56,10 @@ async function processRequest(user, args, guild, channelID, callback) {
     if(!objs[0]) return callback(utils.formatError(user, "Can't find cards", "can't find any card matching that request"));
 
     let cards = objs[0].cards;
+    if(query['cards.name'] && cards.length > 1) {
+        return callback(utils.formatError(user, "Ambiguous query", "found multiple cards with that name, try specifying further."));
+    }
+
     let match = query['cards.name'] ? dbmanager.getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
     if(!match) return callback(utils.formatError(user, "Can't find cards", "can't find any card matching that request"));
 
