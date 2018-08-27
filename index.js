@@ -430,7 +430,8 @@ async function getCommand(user, channel, guild, message, event, callback) {
 function botOnly(channelID) {
     bot.sendMessage({to: channelID, message: 'This command is possible only in bot channel'}, (err, resp) => {
         setTimeout(() => {
-           bot.deleteMessage({channelID: channelID, messageID: resp.id}); 
+            if(resp)
+                bot.deleteMessage({channelID: channelID, messageID: resp.id}); 
         }, 3000);
     });
 }

@@ -16,7 +16,7 @@ function connect(db, client) {
     scollection = mongodb.collection("servers");
     ucollection = mongodb.collection("users");
 
-    setOldGuilds();
+    //setOldGuilds();
 }
 
 function processRequest(user, server, channelID, args, callback) {
@@ -68,11 +68,11 @@ async function check(srv) {
                 "Dear owner of **" + srv.name + "**!\nThe bot channel on this server has not been found. "
                 + "Please type `->server setbot` in channel where you want to use Amusement Club.\n"
                 + "This is nessessary to avoid spam of bot commands in other channels. More details at `->help guild`" });
-        /*else
+        else
             bot.sendMessage({to: guild.owner, message: 
                 "Thank you for inviting Amusement Club to **" + srv.name + "**!\n"
                 + "Please use `->help invite` to get information about setting up bot on your server.\n"
-                + "`->help guild` will give you the list of possible owner-only commands that you can use." });*/
+                + "`->help guild` will give you the list of possible owner-only commands that you can use." });
 
         scollection.insert(guild);
 
