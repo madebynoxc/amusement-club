@@ -646,7 +646,7 @@ function difference(discUser, parse, callback) {
 
         getUserCards(targetID, query).toArray((err, objs2) => {
             if(!objs2[0]) 
-                return callback(utils.formatError(discUser, null, "has no unique cards for you"));
+                return callback(utils.formatError(discUser, null, "that person has not used the bot"));
 
             let cardsU2 = objs2[0].cards;
             let dbUser2 = objs2[0]._id;
@@ -657,7 +657,7 @@ function difference(discUser, parse, callback) {
             if(dif.length > 0) 
                 callback(dif, dbUser2.username);
             else
-                return callback(utils.formatError(discUser, null, "has no unique cards for you"));
+                return callback(utils.formatError(discUser, null, "**" + dbUser2.username + "** has no unique cards for you"));
         });
     });
 }
