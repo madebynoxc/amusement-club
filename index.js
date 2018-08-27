@@ -49,9 +49,11 @@ function _init() {
     });
 
     bot.on("disconnect", (errMsg, code) => {
-        if(errMsg || code) { 
+        if(errMsg || code && code != 1000) { 
             console.log("[Discord.IO ERROR#" + code + "] " + errMsg);
             setTimeout(() => bot.connect(), 1000);
+        } else {
+            process.exit();
         }
         console.log("[Discord.IO] Discord Bot Disconnected");
     });
