@@ -401,7 +401,7 @@ function getClaimedCard(user, fullName, args, callback) {
                     { $set: {cards: user.cards } }
                 ).then(u => {
                     let phrase = "you got **" + name + "** [" + res.collection + "] !\n";
-                    if(user.cards && user.cards.filter(c => utils.cardsMatch(c, res)).length > 0)
+                    if(user.cards && user.cards.filter(c => utils.cardsMatch(c, res)).length > 1)
                                     phrase += "*you already have this card*";
                     callback(utils.formatImage(user, null, phrase, dbManager.getCardURL(res)));
                 }).catch(e => logger.error(e));
