@@ -394,15 +394,16 @@ function getClaimedCard(user, fullName, args, callback) {
                 let res = _.sample(i);
                 if(!res) return;
 
-                user.cards = dbManager.addCardToUser(user.cards, res);
                 let name = utils.toTitleCase(res.name.replace(/_/g, " "));
+                let phrase = "you got **" + name + "** [" + res.collection + "]!\n";
+                if(user.cards && user.cards.filter(c => utils.cardsMatch(c, res)).length > 0)
+                                phrase += "*you already have this card*";
+
+                user.cards = dbManager.addCardToUser(user.cards, res);
                 ucollection.update(
                     { discord_id: user.discord_id },
                     { $set: {cards: user.cards } }
                 ).then(u => {
-                    let phrase = "you got **" + name + "** [" + res.collection + "] !\n";
-                    if(user.cards && user.cards.filter(c => utils.cardsMatch(c, res)).length > 1)
-                                    phrase += "*you already have this card*";
                     callback(utils.formatImage(user, null, phrase, dbManager.getCardURL(res)));
                 }).catch(e => logger.error(e));
             });
