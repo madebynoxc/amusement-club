@@ -646,7 +646,7 @@ function difference(discUser, parse, callback) {
 
         getUserCards(targetID, query).toArray((err, objs2) => {
             if(!objs2[0]) 
-                return callback(utils.formatError(discUser, null, "that person has not used the bot"));
+                return callback(utils.formatError(discUser, null, "that user has no such cards"));
 
             let cardsU2 = objs2[0].cards;
             let dbUser2 = objs2[0]._id;
