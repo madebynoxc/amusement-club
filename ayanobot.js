@@ -156,7 +156,10 @@ bot.on("message", async (username, userID, channelID, message, event) => {
                 if(userID == settings.adminID)
                     other(message.substring(4));
         }
-    } else {
+    } else if(channelID) {
+        if(publicCommands(username, channelID, message, event))
+            return;
+        
         let ayyDBUser = await ayymembers.findOne({discord_id: userID});
         if(ayyDBUser.isMod || userID == settings.adminID) {
             let id = message.split(' ')[2];
@@ -185,6 +188,59 @@ bot.on("message", async (username, userID, channelID, message, event) => {
         }
     }
 });
+
+async function publicCommands(username, channelID, message, event) {
+    let comm = message.split(' ')[1];
+    let id = message.split(' ')[2];
+    let guild = bot.servers[event.d.guild_id];
+
+    switch(comm) {
+        case 'quote':
+        case 'repost':
+        if(id) {
+            let newChID = message.split(' ')[3];
+            if(newChID && newChID.startsWith('<#'))
+                newChID = newChID.substring(2, newChID.length - 1);
+
+            bot.getMessage( {channelID: newChID? newChID : channelID, messageID: id.trim()}, (err, msg) => {
+                if(err) {
+                    if(err.statusCode == 404)
+                        sendEmbed(channelID, formError(null, "Can't find message with that ID"));
+                    return false;
+                }
+
+                let emb = {};
+                emb.color = 3570568;
+                emb.description = msg.content;
+                emb.author = {
+                    name: msg.author.username,
+                    icon_url: "https://cdn.discordapp.com/avatars/" 
+                        + msg.author.id + "/"
+                        + msg.author.avatar + ".png"
+                };
+
+                emb.footer = {
+                    text: (new Date(msg.timestamp)).toLocaleString()
+                }
+
+                if(msg.attachments.length > 0) {
+                    emb.image = {url: msg.attachments[0].url}
+
+                } else if(msg.embeds.length > 0 && msg.embeds[0].image) {
+                    emb.image = {url: msg.embeds[0].image.url};
+                    emb.description = msg.embeds[0].description;
+                }
+
+                sendEmbed(channelID, emb);
+                bot.deleteMessage({channelID: channelID, messageID: event.d.id}); 
+            }); 
+
+            return true;
+        }
+    }
+
+    return false;
+}
 
 bot.on("guildMemberAdd", async member =>  {
     console.log("New member " + member.id);

@@ -77,7 +77,7 @@ async function check(srv) {
         scollection.insert(guild);
 
     } else if(guild.owner != srv.owner_id) {
-        scollection.update({id: serverID}, {$set: {owner: srv.owner_id}});
+        scollection.update({id: srv.id}, {$set: {owner: srv.owner_id}});
     }
 }
 
