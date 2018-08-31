@@ -189,6 +189,18 @@ bot.on("message", async (username, userID, channelID, message, event) => {
     }
 });
 
+bot.on("any", (message) => {
+    let _data = message.d;
+    switch (message.t) {
+        case "MESSAGE_REACTION_ADD":
+            if(_data.emoji.name == "🔁"){
+                let u = bot.users[_data.user_id];
+                quote(u.username, _data.channel_id, _data.channel_id, _data.message_id);
+            }
+            break;
+    }
+});
+
 async function publicCommands(username, channelID, message, event) {
     let comm = message.split(' ')[1];
     let id = message.split(' ')[2];
@@ -202,44 +214,49 @@ async function publicCommands(username, channelID, message, event) {
             if(newChID && newChID.startsWith('<#'))
                 newChID = newChID.substring(2, newChID.length - 1);
 
-            bot.getMessage( {channelID: newChID? newChID : channelID, messageID: id.trim()}, (err, msg) => {
-                if(err) {
-                    if(err.statusCode == 404)
-                        sendEmbed(channelID, formError(null, "Can't find message with that ID"));
-                    return false;
-                }
-
-                let emb = {};
-                emb.color = 3570568;
-                emb.description = msg.content;
-                emb.author = {
-                    name: msg.author.username,
-                    icon_url: "https://cdn.discordapp.com/avatars/" 
-                        + msg.author.id + "/"
-                        + msg.author.avatar + ".png"
-                };
-
-                emb.footer = {
-                    text: (new Date(msg.timestamp)).toLocaleString()
-                }
-
-                if(msg.attachments.length > 0) {
-                    emb.image = {url: msg.attachments[0].url}
-
-                } else if(msg.embeds.length > 0 && msg.embeds[0].image) {
-                    emb.image = {url: msg.embeds[0].image.url};
-                    emb.description = msg.embeds[0].description;
-                }
-
-                sendEmbed(channelID, emb);
-                bot.deleteMessage({channelID: channelID, messageID: event.d.id}); 
-            }); 
-
+            quote(username, newChID? newChID : channelID, channelID, id, event.d.id);
             return true;
         }
     }
 
     return false;
+}
+
+async function quote(username, targChannelID, channelID, id, requestID) {
+    bot.getMessage( {channelID: targChannelID, messageID: id.trim()}, (err, msg) => {
+        if(err) {
+            if(err.statusCode == 404)
+                sendEmbed(channelID, formError(null, "Can't find message with that ID"));
+            return false;
+        }
+
+        let emb = {};
+        emb.color = 3570568;
+        emb.description = msg.content;
+        emb.author = {
+            name: msg.author.username + " 🔁 " + username,
+            icon_url: "https://cdn.discordapp.com/avatars/" 
+                + msg.author.id + "/"
+                + msg.author.avatar + ".png"
+        };
+
+        emb.footer = {
+            text: (new Date(msg.timestamp)).toLocaleString()
+        }
+
+        if(msg.attachments.length > 0) {
+            emb.image = {url: msg.attachments[0].url}
+
+        } else if(msg.embeds.length > 0 && msg.embeds[0].image) {
+            emb.image = {url: msg.embeds[0].image.url};
+            emb.description = msg.embeds[0].description;
+        }
+
+        sendEmbed(channelID, emb);
+
+        if(requestID)
+            bot.deleteMessage({channelID: channelID, messageID: requestID}); 
+    }); 
 }
 
 bot.on("guildMemberAdd", async member =>  {
