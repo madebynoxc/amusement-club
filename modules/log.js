@@ -12,16 +12,16 @@ var log_file, log_err;
 mkdirp(settings.logpath, function (err) {
     if (err) console.error("[Logger:ERROR] " + err);
     else {
-        log_file = fs.createWriteStream(settings.logpath + 'message.log', {flags : 'w'});
+        //log_file = fs.createWriteStream(settings.logpath + 'message.log', {flags : 'w'});
         log_err = fs.createWriteStream(settings.logpath + 'error.log', {flags : 'w'});
-        console.log("[Logger] Successful init for logging into files in " + settings.logpath);
+        //console.log("[Logger] Successful init for logging into files in " + settings.logpath);
     }
 });
 
 function message(str) {
     if(!log_file) return;
 
-    log_file.write(getDateTime() + util.format(str) + '\n');
+    //log_file.write(getDateTime() + util.format(str) + '\n');
     console.log(str);
 }
 

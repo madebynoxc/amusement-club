@@ -44,7 +44,7 @@ function disconnect() {
     mongodb.close();
 }
 
-function connect(bot, callback) {
+function connect(bot, shard, shardCount, callback) {
     client = bot;
     MongoClient.connect(settings.database, function(err, db) {
         assert.equal(null, err);
@@ -65,19 +65,21 @@ function connect(bot, callback) {
         sellManager.connect(db);
         auctions.connect(db, client);
         collections.connect(db);
-        guildMod.connect(db, client);
-        dblapi.connect(db, client); 
+        guildMod.connect(db, client, shard);
+        dblapi.connect(db, client, shard, shardCount); 
         //cardmanager.updateCards(db);
 
-        let date = new Date();
-        let deletDate = new Date(date.setDate(date.getDate() - 5));
-        db.collection('transactions').remove({time: {$lt: deletDate}}).then(res => {
-            console.log("Removed old transactions: " + res.result.n);
-        });
+        if(shard == 0) {
+            let date = new Date();
+            let deletDate = new Date(date.setDate(date.getDate() - 5));
+            db.collection('transactions').remove({time: {$lt: deletDate}}).then(res => {
+                console.log("Removed old transactions: " + res.result.n);
+            });
 
-        db.collection('auctions').remove({date: {$lt: deletDate}}).then(res => {
-            console.log("Removed old auctions: " + res.result.n);
-        });
+            db.collection('auctions').remove({date: {$lt: deletDate}}).then(res => {
+                console.log("Removed old auctions: " + res.result.n);
+            });
+        }
 
         db.collection('users').count({'cards.1': {$exists: true}}).then(uc => {
             userCount = uc;
@@ -219,23 +221,17 @@ function claimPromotion(user, dbUser, amount, callback) {
     let ucollection = mongodb.collection('users');
 
     let claimCost = getPromoClaimsCost(dbUser, amount);
-    if(promotions.current == -1) {
-        callback("**" + user.username + "**, there are no promotional cards available now");
-        return;
-    }
+    if(promotions.current == -1)
+        return callback("**" + user.username + "**, there are no promotional cards available now");
 
     let promo = promotions.list[promotions.current];
-    if(!dbUser.promoexp){
-        callback("**" + user.username + "**, you have to earn some " + promo.currency + " first.\n"
+    if(!dbUser.promoexp)
+        return callback("**" + user.username + "**, you have to earn some " + promo.currency + " first.\n"
             + "To earn them claim ordinary cards");
-        return;
-    }
     
-    if(dbUser.promoexp < claimCost) {
-        callback("**" + user.username + "**, you don't have enough " + promo.currency + " to claim a card \n" 
+    if(dbUser.promoexp < claimCost)
+        return callback("**" + user.username + "**, you don't have enough " + promo.currency + " to claim a card \n" 
             + "You need at least " + claimCost + ", but you have " + Math.floor(dbUser.promoexp));
-        return;
-    }
     
     let collection = mongodb.collection('promocards');
     let query = [ 

@@ -239,13 +239,13 @@ async function sell(user, incArgs, channelID, callback) {
 
             reactions.addNewConfirmation(user.id, formatSell(user, match, price, fee), channelID, async () => {
                 await idlock.acquire("createauction", async () => {
-                    let aucID = await generateBetterID();
                     dbUser.cards = dbManager.removeCardFromUser(dbUser.cards, match);
                     match.fav = false;
 
                     if(!dbUser.cards || dbUser.cards.length == 0) return; 
 
                     await ucollection.update({discord_id: user.id}, {$set: {cards: dbUser.cards}, $inc: {exp: -fee}});
+                    let aucID = await generateBetterID();
                     await acollection.insert({
                         id: aucID, finished: false, date: new Date(), price: price, author: user.id, card: match
                     });

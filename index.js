@@ -21,16 +21,21 @@ const collections = require('./modules/collections.js');
 const admin = require('./modules/admin.js');
 const guilds = require('./modules/guild.js');
 
-var bot, guildcount = 0;
+var bot, curShard = 0, shards = 0;
 var cooldownList = [];
 var restartChannelID;
 
+curShard = parseInt(process.argv[2]);
+shards = parseInt(process.argv[3]);
+
 bot = new Discord.Client({
     token: settings.token,
-    shard: [0, 1]
+    shard: [curShard, shards]
 });
 
-dbManager.connect(bot);
+console.log("Started bot instance " + curShard + "/" + shards);
+
+dbManager.connect(bot, curShard, shards);
 _init();
 
 function _init() {
@@ -38,14 +43,14 @@ function _init() {
     react.setBot(bot);
 
     bot.on("ready", (event) => {
-        console.log('Found ' + guildcount + ' guilds')
-        console.log('[Discord.IO] Logged in as %s - %s\n', bot.username, bot.id);
+        console.log(`[${curShard}] Found ${Object.keys(bot.servers).length} guilds`)
+        console.log(`[${curShard}] Logged in as ${bot.username} ${bot.id}\n`);
         bot.getAllUsers();
         bot.setPresence({game: {name: "->help"}});
         if(restartChannelID) {
             bot.sendMessage({to: restartChannelID, message: "Discord.io websocket connection was restarted. Connected to discord"});
             restartChannelID = null;
-        }     
+        }
     });
 
     bot.on("disconnect", (errMsg, code) => {
@@ -60,7 +65,6 @@ function _init() {
 
     bot.on("guildCreate", g => {
         //console.log("Registered guild: " + g.name);
-        guildcount++;
         guilds.check(g);
     });
 

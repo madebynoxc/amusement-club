@@ -4,32 +4,36 @@ const dbManager = require('./dbmanager.js');
 const port = 3001;
 
 const settings = require('../settings/general.json');
-const dbl = new DBL(settings.dbltoken, { webhookPort: port, webhookAuth: settings.dblpass });
 
-var mongodb, client, ccollection, ucollection;
+var dbl, mongodb, client, ccollection, ucollection;
 
-dbl.webhook.on('ready', hook => {
-    console.log(`Webhook running at http://${hook.hostname}:${hook.port}${hook.path}`);
-});
-
-dbl.webhook.on('error', e => {
-    console.log(`[DBL] ${e}`);
-});
-
-function connect(db, bot) {
+function connect(db, bot, curShard, shards) {
     mongodb = db;
     client = bot;
     ccollection = db.collection("cards");
     ucollection = db.collection("users");
 
-    setInterval(() => {
-        dbl.postStats(Object.keys(client.servers).length);
-    }, 1800000);
+    if(curShard == 0){
+        dbl = new DBL(settings.dbltoken, { webhookPort: port, webhookAuth: settings.dblpass });
 
-    dbl.webhook.on('vote', vote => {
-        console.log(`User with ID ${vote.user} just voted!`);
-        getCard(vote.user);
-    });
+        dbl.webhook.on('vote', vote => {
+            console.log(`User with ID ${vote.user} just voted!`);
+            getCard(vote.user);
+        });
+
+        dbl.webhook.on('ready', hook => {
+            console.log(`Webhook running at http://${hook.hostname}:${hook.port}${hook.path}`);
+        });
+
+        dbl.webhook.on('error', e => {
+            console.log(`[DBL] ${e}`);
+        });
+    } else 
+        dbl = new DBL(settings.dbltoken);
+
+    setInterval(() => {
+        dbl.postStats(Object.keys(client.servers).length, curShard, shards);
+    }, 1800000);
 }
 
 function getCard(userID) {

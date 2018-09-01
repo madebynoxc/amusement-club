@@ -7,11 +7,10 @@ const cardmanager = require('./modules/cardmanager.js');
 const utils = require("./modules/localutils.js");
 const collections = require('./modules/collections.js');
 const heroes = require('./modules/heroes.js');
-var MongoClient = require('mongodb').MongoClient;
+const MongoClient = require('mongodb').MongoClient;
 
-var restarts = 0;
-var mongodb, stdout, child, isrestart = false;
-var ayymembers, ayystats, ucollection;
+var mongodb, stdout;
+var ayymembers, ayystats, ucollection, instances = [];
 
 var bot = new Discord.Client({
     token: settings.token
@@ -37,98 +36,30 @@ bot.on("ready", (event) => {
             name: "over Amusement Club"
         } 
     });
+});
 
-    if(child) return;
-
-    child = new (forever.Monitor)(settings.startpoint, {
-        max: 100,
-        silent: false,
-        killTree: true,
-        minUptime: 2000,
-        spinSleepTime: 10000,
-    });
-
-    child.on('exit', function () {
-        bot.sendMessage({
-            to: settings.botcommchannel, 
-            embed: formError("Process EXIT", "Amusement club stopped")
-        });
-        restarts = 0;
-    });
-
-    child.on('error', function (err) {
-        bot.sendMessage({
-            to: settings.botcommchannel, 
-            embed: formError("Process exited with code 1!", err.toString())
-        });
-    });
-
-    child.on('stderr', function (err) {
-        bot.sendMessage({
-            to: settings.botcommchannel, 
-            embed: formError("Bot process error", err.toString())
-        });
-    });
-
-    child.on('stop', function (data) {
-        if(isrestart) return;
-        bot.sendMessage({
-            to: settings.botcommchannel, 
-            embed: formConfirm("Process stopped", "Amusement Club was manually stopped")
-        });
-        console.log('[Ayano] Bot stopped');
-    });
-
-    child.on('start', function (data) {
-        bot.sendMessage({
-            to: settings.botcommchannel, 
-            embed: formWarn("Starting bot", "Starting Amusement Club...")
-        });
-        setTimeout(() => {
-            bot.sendMessage({
-                to: settings.botcommchannel, 
-                embed: formConfirm("Process started", "Amusement Club bot process is now running")
-            });
-        }, 4000);
-        console.log('[Ayano] Bot started');
-    });
-
-    child.on('restart', function (data) {
-        restarts++;
-        bot.sendMessage({
-            to: settings.botcommchannel, 
-            embed: formWarn("Restarting bot", "Restarting Amusement Club...")
-        });
-        setTimeout(() => {
-            bot.sendMessage({
-                to: settings.botcommchannel, 
-                embed: formConfirm("Restarted", "Amusement Club was restarted successfully")
-            });
-        }, 4000);
-        console.log('[Ayano] Bot restarted');
-        isrestart = false;
-    });
-
-    bot.on("disconnect", (errMsg, code) => {
-        if(errMsg || code) { 
-            console.log("[Ayano ERROR#" + code + "] " + errMsg);
-            setTimeout(() => bot.connect(), 1000);
-        }
-        console.log("[Ayano] Discord Bot Disconnected");
-    });
+bot.on("disconnect", (errMsg, code) => {
+    if(errMsg || code) { 
+        console.log("[Ayano ERROR#" + code + "] " + errMsg);
+        setTimeout(() => bot.connect(), 1000);
+    }
+    console.log("[Ayano] Discord Bot Disconnected");
 });
 
 bot.on("message", async (username, userID, channelID, message, event) => {
-    if(message.toLowerCase() === "ayy")
+    message = message.toLowerCase();
+    if(message === "ayy")
         return sendMessage(channelID, "lmao");
 
-    if(userID != acsettings.clientid && message.toLowerCase().includes("tomato")) 
+    if(userID != acsettings.clientid && message.includes("tomato")) 
         bot.addReaction({ channelID: channelID, messageID: event.d.id, reaction: "🍅" });
 
     if(!message.startsWith("ayy")) return;
 
     if(channelID == settings.botcommchannel) {
-        switch(message.substring(4).split(' ')[0]) {
+        let splitMessage = message.split(' ');
+        let num = parseInt(splitMessage[2]);
+        switch(splitMessage[1]) {
             case 'help':
                 showCommands(); break;
             case 'update': 
@@ -136,26 +67,47 @@ bot.on("message", async (username, userID, channelID, message, event) => {
                 updateCardsRemote(); break;
             case 'start': 
                 console.log('[Ayano] Starting Amusement Club process...'); 
-                child.start(); break;
+                if(instances.length > 0)
+                    num = instances.length;
+
+                startBot(!num? settings.shards : num); break;
             case 'rename': 
                 rename(message.substring(11)); break;
             case 'stop': 
-                if(userID == settings.adminID) {
-                    console.log('[Ayano] Stopping Amusement Club process...'); 
-                    child.stop(); 
+                if(isNaN(num)) {
+                    console.log('[Ayano] Stopping ALL Amusement Club instances...'); 
+                    instances.forEach(inst => {if(inst.running) inst.stop()});
+                } else {
+                    console.log('[Ayano] Stopping Amusement Club instance #' + num); 
+                    instances[num].stop();  
                 } break;
             case 'getsources':
                 scanImageSources();
                 break;
-            case 'restart': 
-                console.log('[Ayano] Restarting Amusement Club process...'); 
-                restarts = 0; 
-                isrestart = true;
-                child.restart(); break;
+            case 'restart':
+                if(instances.length > 0) {
+                    if(isNaN(num)) {
+                        console.log('[Ayano] Restarting ALL Amusement Club instances...'); 
+                        instances.forEach(inst => inst.restart());
+                    } else {
+                        console.log('[Ayano] Restarting Amusement Club instance #' + num); 
+                        instances[num].restart();
+                    }
+                } else
+                    bot.sendMessage({
+                        to: settings.botcommchannel, 
+                        embed: formError("Can't restart any process", "Seems like there are no processes initialized.\n"
+                            + "Try running `ayy start` first")
+                    });
+                break;
+            case 'status':
+                getStatus();
+                break;
             default:
                 if(userID == settings.adminID)
                     other(message.substring(4));
         }
+
     } else if(channelID) {
         if(publicCommands(username, channelID, message, event))
             return;
@@ -200,6 +152,138 @@ bot.on("any", (message) => {
             break;
     }
 });
+
+bot.on("guildMemberAdd", async member =>  {
+    console.log("New member " + member.id);
+    let user = bot.users[member.id];
+
+    let ayyDBUser = await ayymembers.findOne({discord_id: member.id});
+    let acDBUser = await ucollection.findOne({discord_id: member.id});
+    let msg = "";
+
+    if(ayyDBUser) {
+        msg += `Welcome back, <@${user.id}>\nDid you forget something?`;
+        if(ayyDBUser.joinCount > 2) 
+            sendMessage(settings.reportchannel, `User **${user.username} (${user.id})** joined server **${ayyDBUser.joinCount}** times :thinking:`);
+        ayymembers.update({discord_id: member.id}, {$inc: {joinCount: 1}});
+    } else {
+        msg += `Ayy welcome, <@${user.id}>`;
+        if(!acDBUser) {
+            msg += "\nPlease read <#475932375499538435>";
+            msg += "\nAlso here is your :doughnut:\nJoin **Amusement Club** gacha! Get started with `->claim` in <#351871635424542731> !";
+        } else {
+            if(acDBUser.hero) msg += ` and **${acDBUser.hero.name}** (level ${heroes.getHeroLevel(acDBUser.hero.exp)})!`;
+            msg += "\nPlease read <#475932375499538435>";
+            msg += "\nYou can ask bot related questions in <#370742439679492096>\nTrade your cards in <#351957621437235200>";
+        }
+        addNewUser(user);
+    }
+
+    sendMessage(settings.mainchannel, msg);
+});
+
+bot.on("guildCreate", g => {
+    let usercount = 0;
+    Object.keys(g.members).forEach((mID, member) => {
+        let user = bot.users[mID];
+        ayymembers.findOne({discord_id: user.id}).then(ayyDBUser => {
+            if(!ayyDBUser) addNewUser(user);
+        });
+
+        usercount++;
+    });
+
+    console.log("[Ayano] Found " + usercount + " users");
+});
+
+function getStatus() {
+    let msg = "";
+    let cnt = 0;
+    msg += `Database: **${mongodb.serverConfig.isConnected()? "`✅`" : "`❌`"}**\n`;
+    instances.forEach(inst => {
+        msg += `Instance [${cnt}]: **${inst.running? "`✅`" : "`❌`"}**\n`;
+        cnt++;
+    });
+
+    bot.sendMessage({
+        to: settings.botcommchannel, 
+        embed: formConfirm("Current status", msg)
+    });
+}
+
+function startBot(shards) {
+    bot.sendMessage({
+        to: settings.botcommchannel, 
+        embed: formWarn("Starting bot", `Starting ${shards} Amusement Club instances`)
+    });
+
+    for(let i=0; i<shards; i++) {
+
+        if(instances[i]) {
+            if(!instances[i].running)
+                instances[i].start();
+
+            continue;
+        }
+
+        let child = new (forever.Monitor)(settings.startpoint, {
+            max: 100,
+            silent: false,
+            killTree: true,
+            minUptime: 2000,
+            spinSleepTime: 10000,
+            args: [i, shards]
+        });
+
+        child.on('exit', function () {
+            bot.sendMessage({
+                to: settings.botcommchannel, 
+                embed: formError(null, `Bot process #${i} stopped`)
+            });
+        });
+
+        child.on('error', function (err) {
+            bot.sendMessage({
+                to: settings.botcommchannel, 
+                embed: formError(`Error occured in #${i}`, err.toString())
+            });
+        });
+
+        child.on('stderr', function (err) {
+            bot.sendMessage({
+                to: settings.botcommchannel, 
+                embed: formError(`Error occured in #${i}`, err.toString())
+            });
+        });
+
+        child.on('stop', function (data) {
+            console.log(`Stopped process #${i}`);
+        });
+
+        child.on('start', function (data) {
+            //console.log('[Ayano] Bot started');
+        });
+
+        child.on('restart', function (data) {
+            bot.sendMessage({
+                to: settings.botcommchannel, 
+                embed: formWarn(null, `Restarting bot process #${i}`)
+            });
+            console.log('[Ayano] Bot restarted');
+        });
+
+        child.on('stdout', function (data) {
+            if(data.includes("Logged in as"))
+                bot.sendMessage({
+                    to: settings.botcommchannel, 
+                    embed: formConfirm(null, "Started bot process #" + i)
+                });
+        });
+
+        instances.push(child);
+        child.start();
+    }
+}
 
 async function publicCommands(username, channelID, message, event) {
     let comm = message.split(' ')[1];
@@ -247,8 +331,8 @@ async function quote(username, targChannelID, channelID, id, requestID) {
         if(msg.attachments.length > 0) {
             emb.image = {url: msg.attachments[0].url}
 
-        } else if(msg.embeds.length > 0 && msg.embeds[0].image) {
-            emb.image = {url: msg.embeds[0].image.url};
+        } else if(msg.embeds.length > 0) {
+            emb.image = msg.embeds[0].image;
             emb.description = msg.embeds[0].description;
         }
 
@@ -258,49 +342,6 @@ async function quote(username, targChannelID, channelID, id, requestID) {
             bot.deleteMessage({channelID: channelID, messageID: requestID}); 
     }); 
 }
-
-bot.on("guildMemberAdd", async member =>  {
-    console.log("New member " + member.id);
-    let user = bot.users[member.id];
-
-    let ayyDBUser = await ayymembers.findOne({discord_id: member.id});
-    let acDBUser = await ucollection.findOne({discord_id: member.id});
-    let msg = "";
-
-    if(ayyDBUser) {
-        msg += `Welcome back, <@${user.id}>\nDid you forget something?`;
-        if(ayyDBUser.joinCount > 2) 
-            sendMessage(settings.reportchannel, `User **${user.username} (${user.id})** joined server **${ayyDBUser.joinCount}** times :thinking:`);
-        ayymembers.update({discord_id: member.id}, {$inc: {joinCount: 1}});
-    } else {
-        msg += `Ayy welcome, <@${user.id}>`;
-        if(!acDBUser) {
-            msg += "\nPlease read <#475932375499538435>";
-            msg += "\nAlso here is your :doughnut:\nJoin **Amusement Club** gacha! Get started with `->claim` in <#351871635424542731> !";
-        } else {
-            if(acDBUser.hero) msg += ` and **${acDBUser.hero.name}** (level ${heroes.getHeroLevel(acDBUser.hero.exp)})!`;
-            msg += "\nPlease read <#475932375499538435>";
-            msg += "\nYou can ask bot related questions in <#370742439679492096>\nTrade your cards in <#351957621437235200>";
-        }
-        addNewUser(user);
-    }
-
-    sendMessage(settings.mainchannel, msg);
-});
-
-bot.on("guildCreate", g => {
-    let usercount = 0;
-    Object.keys(g.members).forEach((mID, member) => {
-        let user = bot.users[mID];
-        ayymembers.findOne({discord_id: user.id}).then(ayyDBUser => {
-            if(!ayyDBUser) addNewUser(user);
-        });
-
-        usercount++;
-    });
-
-    console.log("[Ayano] Found " + usercount + " users");
-});
 
 function addNewUser(user) {
     ayymembers.insert({
@@ -477,6 +518,11 @@ async function updateCardsRemote() {
         return;
     } 
 
+    bot.sendMessage({
+        to: settings.botcommchannel, 
+        embed: formWarn(null, null, "Updating cards, please wait...")
+    });
+
     let res = await cardmanager.updateCardsS3(mongodb);
     var emb = "";
 
@@ -490,13 +536,20 @@ async function updateCardsRemote() {
     if(res.warnings.length > 0) {
         bot.sendMessage({
             to: settings.botcommchannel, 
-            embed: utils.formatConfirm(null, "Warning!", res.warnings.join('\n'))
+            embed: utils.formatWarn(null, "Warning!", res.warnings.join('\n'))
         });
     }
 
     bot.sendMessage({
         to: settings.botcommchannel, 
         embed: utils.formatConfirm(null, "Finished updating cards", emb)
+    }, (err, resp) => {
+        if(err) {
+            bot.sendMessage({
+                to: settings.botcommchannel, 
+                embed: utils.formatWarn(null, null, "Finished updating cards, but failed to list updated collections")
+            });
+        }
     });
 }
 

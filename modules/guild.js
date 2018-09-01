@@ -2,16 +2,17 @@ module.exports = {
     processRequest, connect, check, getByID
 }
 
-var mongodb, bot, scollection, ucollection;
+var mongodb, bot, scollection, ucollection, shard;
 const _ = require('lodash');
 const utils = require('./localutils');
 const collections = require('./collections');
 const dbManager = require('./dbmanager');
 const settings = require('../settings/general.json');
 
-function connect(db, client) {
+function connect(db, client, sh) {
     mongodb = db;
     bot = client;
+    shard = sh;
 
     scollection = mongodb.collection("servers");
     ucollection = mongodb.collection("users");
@@ -158,6 +159,7 @@ async function info(srv, callback) {
     resp += `Owner: **${owner.username}#${owner.discriminator}**\n`;
     resp += `Players: **${playercount}/${members.length}**\n`;
     resp += `Prefix: **${guild.prefix}**\n`;
+    resp += `Using shard: **${shard}**\n`;
 
     if(guild.lock)
         resp += `Locked on: **${collections.getByID(guild.lock).name}**\n`;
