@@ -1,5 +1,13 @@
 [
     {
+        "version": "1.12.5",
+        "changes": [
+            "Added sharding support",
+            "Improved Ayano to support multiple processes",
+            "Various performance improvements"
+        ]
+    },
+    {
         "version": "1.12",
         "changes": [
             "Better guild management",

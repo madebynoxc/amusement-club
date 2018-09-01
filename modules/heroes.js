@@ -46,7 +46,7 @@ function getHero(dbUser, callback) {
     var h = dbUser.hero;
     if(!h) {
         let stars = dbManager.countCardLevels(dbUser.cards);
-        var msg = "**" + dbUser.username + "**, you have no any hero yet. \n";
+        var msg = "**" + dbUser.username + "**, you have no hero yet. \n";
         if(stars >= 50) msg += "To choose one, use `->hero list`";
         else msg += "You can get one once you have more than 50 \u2B50 stars (you have now " + stars + "\u2B50 stars)";
         callback(msg);
