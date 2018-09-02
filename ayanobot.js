@@ -109,14 +109,14 @@ bot.on("message", async (username, userID, channelID, message, event) => {
         }
 
     } else if(channelID) {
-        if(publicCommands(username, channelID, message, event))
-            return;
+        let check = await publicCommands(username, channelID, message, event);
+        if(check) return;
         
         let ayyDBUser = await ayymembers.findOne({discord_id: userID});
         if(ayyDBUser.isMod || userID == settings.adminID) {
             let id = message.split(' ')[2];
             let comm = message.split(' ')[1];
-
+            
             switch(comm) {
                 case 'addmod':
                     if(id && userID == settings.adminID){
