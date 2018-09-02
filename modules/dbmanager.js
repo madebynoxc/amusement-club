@@ -63,7 +63,7 @@ function connect(bot, shard, shardCount, callback) {
         helpMod.connect(db, client);
         vote.connect(db, client);
         sellManager.connect(db);
-        auctions.connect(db, client);
+        auctions.connect(db, client, shard);
         collections.connect(db);
         guildMod.connect(db, client, shard);
         dblapi.connect(db, client, shard, shardCount); 

@@ -14,13 +14,15 @@ const settings = require('../settings/general.json');
 const aucTime = 5;
 const idlock = new AsyncLock();
 
-function connect(db, client) {
+function connect(db, client, shard) {
     mongodb = db;
     bot = client;
     acollection = db.collection('auctions');
     ucollection = db.collection('users');
     tcollection = db.collection('transactions');
-    setInterval(checkAuctionList, 5000);
+
+    if(shard == 0)
+        setInterval(checkAuctionList, 5000);
 }
 
 function processRequest(user, args, channelID, callback) {
