@@ -67,8 +67,8 @@ function getCard(userID) {
 }
 
 function sendDM(toID, embed) {
-    bot.createDMChannel(toID, (createErr, newChannel) => {
-        bot.sendMessage({to: newChannel.id, embed: embed}, 
+    client.createDMChannel(toID, (createErr, newChannel) => {
+        client.sendMessage({to: newChannel.id, embed: embed}, 
             (err, resp) => {
             if(err) {
                 console.error("[DBL] Failed to send message to created DM channel");
