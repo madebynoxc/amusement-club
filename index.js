@@ -25,8 +25,8 @@ var bot, curShard = 0, shards = 0;
 var cooldownList = [];
 var restartChannelID;
 
-curShard = parseInt(process.argv[2]);
-shards = parseInt(process.argv[3]);
+curShard = parseInt(process.argv[2]) || 0;
+shards = parseInt(process.argv[3]) || 1;
 
 bot = new Discord.Client({
     token: settings.token,
@@ -83,8 +83,16 @@ function _init() {
         getCommand(user, channel, guild, message, event, (res, obj) => {
             if(obj) bot.uploadFile({to: channelID, file: obj, message: res});
             else if(res) {
-                if(typeof res === "string") bot.sendMessage({to: channelID, message: res});
-                else bot.sendMessage({to: channelID, embed: res});
+                if(typeof res === "string") { 
+                    bot.sendMessage({to: channelID, message: res}, (err, resp) => {
+                        if(err) console.error(err);
+                    });
+                }
+                else { 
+                    bot.sendMessage({to: channelID, embed: res}, (err, resp) => {
+                        if(err) console.error(err);
+                    });
+                }
             } 
         });
 

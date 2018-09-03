@@ -150,7 +150,9 @@ async function bid(user, args, callback) {
         else msg += "To remain in the auction, you should bid more than **" + getNextBid(auc) + "**🍅\n"
         msg += "Use `->auc bid " + auc.id + " [new bid]`\n";
         msg += "This auction will end in **" + getTime(auc) + "**";
-        bot.sendMessage({to: auc.lastbidder, embed: utils.formatWarning(null, "Oh no!", msg)});
+        bot.sendMessage({to: auc.lastbidder, embed: utils.formatWarning(null, "Oh no!", msg)}, (err, resp) => {
+            if(err) console.error(err);
+        });
     } else {
         auc.price = price;
         let strprice = hidebid? "???" : price;
@@ -158,7 +160,9 @@ async function bid(user, args, callback) {
 
         if(hidebid) msg += "The bid is hidden by hero effect.\n";
         msg += "This auction will end in **" + getTime(auc) + "**";
-        bot.sendMessage({to: auc.author, embed: utils.formatInfo(null, "Yay!", msg)});
+        bot.sendMessage({to: auc.author, embed: utils.formatInfo(null, "Yay!", msg)}, (err, resp) => {
+            if(err) console.error(err);
+        });
     }
 
     await acollection.update({_id: auc._id}, {$set: {
@@ -333,17 +337,23 @@ async function checkAuctionList() {
 
         let yaaymes = "You won an auction for **" + utils.getFullCard(auc.card) + "**!\nCard is now yours.\n";
         if(tomatoback > 0) yaaymes += "You got **" + tomatoback + "** tomatoes back from that transaction.";
-        bot.sendMessage({to: auc.lastbidder, embed: utils.formatConfirm(null, "Yaaay!", yaaymes)});
+        bot.sendMessage({to: auc.lastbidder, embed: utils.formatConfirm(null, "Yaaay!", yaaymes)}, (err, resp) => {
+            if(err) console.error(err);
+        });
         bot.sendMessage({to: auc.author, embed: utils.formatConfirm(null, null, 
             "Your auction for card **" + utils.getFullCard(auc.card) + "** finished!\n"
-            + "You got **" + auc.price + "**🍅 for it")});
+            + "You got **" + auc.price + "**🍅 for it")}, (err, resp) => {
+            if(err) console.error(err);
+        });
     } else {
         dbuser.cards = dbManager.addCardToUser(dbuser.cards, auc.card);
         await ucollection.update({discord_id: auc.author}, {$set: {cards: dbuser.cards}});
 
         bot.sendMessage({to: auc.author, embed: utils.formatError(null, null, 
             "Your auction for card **" + utils.getFullCard(auc.card) + "** finished, but nobody bid on it.\n"
-            + "You got your card back")});
+            + "You got your card back")}, (err, resp) => {
+            if(err) console.error(err);
+        });
     }
 
     await acollection.update({_id: auc._id}, {$set: {finished: true}});
