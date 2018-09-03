@@ -81,21 +81,12 @@ function _init() {
         setTimeout(() => removeFromCooldown(userID), 1000);
 
         getCommand(user, channel, guild, message, event, (res, obj) => {
-            if(obj) bot.uploadFile({to: channelID, file: obj, message: res});
-            else if(res) {
-                if(typeof res === "string") { 
-                    bot.sendMessage({to: channelID, message: res}, (err, resp) => {
-                        if(err) console.error(err);
-                    });
-                }
-                else { 
-                    bot.sendMessage({to: channelID, embed: res}, (err, resp) => {
-                        if(err) console.error(err);
-                    });
-                }
-            } 
+            if(!channelID)
+                bot.createDMChannel(userID, (err2, newChannel) => {
+                    reply(newChannel.id, res, obj);          
+                });
+            else reply(channelID, res, obj);
         });
-
     });
 
     bot.on("any", (message) => {
@@ -108,6 +99,23 @@ function _init() {
     });
 
     bot.connect();
+}
+
+function reply(toID, res, obj) {
+    if(obj) 
+        bot.uploadFile({to: toID, file: obj, message: res});
+
+    else if(res) {
+        if(typeof res === "string") { 
+            bot.sendMessage({to: toID, message: res}, (err, resp) => {
+                if(err) console.error(err);
+            });
+        } else { 
+            bot.sendMessage({to: toID, embed: res}, (err, resp) => {
+                if(err) console.error(err);
+            });
+        }
+    } 
 }
 
 function removeFromCooldown(userID) {

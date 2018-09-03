@@ -58,12 +58,24 @@ function getCard(userID) {
                 }
             ).then(() => {
                 let url = dbManager.getCardURL(card);
-                client.sendMessage({to: userID, embed: utils.formatImage(null, null, 
+                sendDM(userID, utils.formatImage(null, null, 
                     "Thank you for your vote!\nYou got [" + utils.getFullCard(card) + "]("
-                    + url + ")\nVote again for free claim in 12 hours.", url)});
+                    + url + ")\nVote again for free claim in 12 hours.", url));
             });
         });
     }).catch(e => console.log(e));
+}
+
+function sendDM(toID, embed) {
+    bot.createDMChannel(toID, (createErr, newChannel) => {
+        bot.sendMessage({to: newChannel.id, embed: embed}, 
+            (err, resp) => {
+            if(err) {
+                console.error("[DBL] Failed to send message to created DM channel");
+                console.error(err);
+            }
+        });
+    });
 }
 
 module.exports = { connect }

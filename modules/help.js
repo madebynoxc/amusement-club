@@ -25,10 +25,11 @@ function processRequest(user, channel, args, callback) {
     if(!req) help = helpAll[0];
     else help = helpAll.filter(h => h.type.includes(req))[0];
 
-    if(help) bot.sendMessage({to: user.id, embed: getEmbed(help)});
-    else bot.sendMessage({to: user.id, message: "Can't find module/command **" + req  + "**. Run `->help` to see the list" });
-
-    if(channel) callback("**" + user.username + "**, help was sent to you"); 
+    if(help){ 
+        sendDM(user.id, getEmbed(help));
+        if(channel) callback("**" + user.username + "**, help was sent to you"); 
+    }
+    else if(channel) callback("Can't find module/command **" + req  + "**. Run `->help` to see the list");
 }
 
 function getEmbed(o) {
@@ -60,4 +61,16 @@ function processUserInput(inp, author, callback) {
             }
         });
     }
+}
+
+function sendDM(toID, embed) {
+    bot.createDMChannel(toID, (createErr, newChannel) => {
+        bot.sendMessage({to: newChannel.id, embed: embed}, 
+            (err, resp) => {
+            if(err) {
+                console.error("[Help] Failed to send message to created DM channel");
+                console.error(err);
+            }
+        });
+    });
 }
