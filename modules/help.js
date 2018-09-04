@@ -25,11 +25,11 @@ function processRequest(user, channel, args, callback) {
     if(!req) help = helpAll[0];
     else help = helpAll.filter(h => h.type.includes(req))[0];
 
-    if(help){ 
-        sendDM(user.id, getEmbed(help));
-        if(channel) callback("**" + user.username + "**, help was sent to you"); 
-    }
-    else if(channel) callback("Can't find module/command **" + req  + "**. Run `->help` to see the list");
+    if(help)
+        sendDM(user, getEmbed(help), channel, callback);
+
+    else if(channel) 
+        callback("Can't find module/command **" + req  + "**. Run `->help` to see the list");
 }
 
 function getEmbed(o) {
@@ -63,13 +63,14 @@ function processUserInput(inp, author, callback) {
     }
 }
 
-function sendDM(toID, embed) {
-    bot.createDMChannel(toID, (createErr, newChannel) => {
+function sendDM(user, embed, channel, callback) {
+    bot.createDMChannel(user.id, (createErr, newChannel) => {
         bot.sendMessage({to: newChannel.id, embed: embed}, 
             (err, resp) => {
-            if(err) {
-                console.error("[Help] Failed to send message to created DM channel");
-                console.error(err);
+            if(channel){
+                if(err) 
+                    callback(utils.formatError(user, "Can't send you messages", "please, make sure you have **Allow direct messages from server members** enabled in server privacy settings"));
+                else callback("**" + user.username + "**, help was sent to you"); 
             }
         });
     });

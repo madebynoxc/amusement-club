@@ -71,8 +71,8 @@ function sendDM(toID, embed) {
         client.sendMessage({to: newChannel.id, embed: embed}, 
             (err, resp) => {
             if(err) {
-                console.error("[DBL] Failed to send message to created DM channel");
-                console.error(err);
+                //console.error("[DBL] Failed to send message to created DM channel");
+                //console.error(err);
             }
         });
     });

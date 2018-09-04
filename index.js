@@ -108,11 +108,11 @@ function reply(toID, res, obj) {
     else if(res) {
         if(typeof res === "string") { 
             bot.sendMessage({to: toID, message: res}, (err, resp) => {
-                if(err) console.error(err);
+                if(err) console.log(err);
             });
         } else { 
             bot.sendMessage({to: toID, embed: res}, (err, resp) => {
-                if(err) console.error(err);
+                if(err) console.log(err);
             });
         }
     } 

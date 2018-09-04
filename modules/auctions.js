@@ -421,8 +421,8 @@ function sendDM(toID, embed) {
         bot.sendMessage({to: newChannel.id, embed: embed}, 
             (err, resp) => {
             if(err) {
-                console.error("[Auc] Failed to send message to created DM channel");
-                console.error(err);
+                console.log("[Auc] Failed to send message to created DM channel");
+                //console.error(err);
             }
         });
     });

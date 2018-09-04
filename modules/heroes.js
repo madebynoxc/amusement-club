@@ -90,7 +90,7 @@ function assign(dbUser, args, channelID, callback) {
     var hasHero = dbUser.hero != undefined;
     if(hasHero) {
         if(dbUser.exp < 2500)
-            return callback(utils.formatError(dbUser, null, "hero change requires 2000 Tomatoes!\n"));
+            return callback(utils.formatError(dbUser, null, "hero change requires 2500 Tomatoes!\n"));
 
         if(dbUser.lastHeroChange) {
             let hours = 168 - utils.getHoursDifference(dbUser.lastHeroChange);

@@ -92,17 +92,8 @@ function connect(bot, shard, shardCount, callback) {
 function claim(user, guild, arg, callback) {
     let ucollection = mongodb.collection('users');
     ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
-        if(!dbUser) {
-            ucollection.insert( { 
-                discord_id: user.id,
-                username: user.username,
-                cards: [],
-                exp: 2500
-            }).then(() => {
-                claim(user, guild, arg, callback);
-            });
-            return;
-        }
+        if(!dbUser)
+            return newUser(user, () => claim(user, guild, arg, callback), callback);
 
         let any = false;
         let promo = false;
@@ -498,22 +489,40 @@ function sell(user, to, args, callback) {
     });
 }
 
+function newUser(user, nextCall, callback) {
+    let collection = mongodb.collection('users');
+    let scollection = mongodb.collection('system');
+    scollection.findOne({type: "dailycard"}).then(c => {
+        return collection.insert( { 
+            discord_id: user.id,
+            username: user.username,
+            cards: [c.card],
+            exp: 2500
+        }).then(() => {
+            nextCall();
+            client.createDMChannel(user.id, (createErr, newChannel) => {
+                let embed = utils.formatInfo(user, "Welcome!", 
+                    "thank you for joining Amusement Club! To summon your **complimentary 3-star card** type `->sum "
+                    + c.card.name.replace(/_/g, ' ')
+                    + "`\nView all your cards with `->cards`\nFor more information about commands type `->help`");
+                client.sendMessage({to: newChannel.id, embed: embed}, (err, resp) => {
+                    if(err){
+                        callback(utils.formatError(user, null, "an error occured while trying to send you a direct message.\n"
+                            + "Please, make sure you have **Allow direct messages from server members** enabled in server privacy settings.\n"
+                            + "This is really important in order to get free card for voting or participate in auctions!"));
+                        setTimeout(() => callback(embed), 2000);
+                    }
+                });
+            });
+        });
+    });
+}
+
 function daily(u, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: u.id }).then((user) => {
-        if(!user) {
-            collection.insert( { 
-                discord_id: u.id,
-                username: u.username,
-                cards: [],
-                exp: 2000,
-                gets: 50,
-                sends: 50
-            }).then(() => {
-                daily(u, callback);
-            });
-            return;
-        }
+        if(!user)
+            return newUser(u, () => daily(u, callback), callback);
 
         var stars = countCardLevels(user.cards);
         let amount = 300;
@@ -571,7 +580,7 @@ function daily(u, callback) {
         msg += "[Vote for free card](https://discordbots.org/bot/340988108222758934)";
         callback(utils.formatInfo(user, null, msg));
 
-        if(user.lastmsg != dailymessage.id) {
+        if(user.hero && user.lastmsg != dailymessage.id) {
             callback(utils.formatInfo(user, dailymessage.title, dailymessage.body));
         }
     });
