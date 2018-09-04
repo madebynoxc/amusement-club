@@ -418,13 +418,15 @@ function getNextBid(auc) {
 
 function sendDM(toID, embed) {
     bot.createDMChannel(toID, (createErr, newChannel) => {
-        bot.sendMessage({to: newChannel.id, embed: embed}, 
-            (err, resp) => {
-            if(err) {
-                console.log("[Auc] Failed to send message to created DM channel");
-                //console.error(err);
-            }
-        });
+        if(newChannel) {
+            bot.sendMessage({to: newChannel.id, embed: embed}, 
+                (err, resp) => {
+                if(err) {
+                    console.log("[Auc] Failed to send message to created DM channel");
+                    //console.error(err);
+                }
+            });
+        }
     });
 }
 
