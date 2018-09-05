@@ -5,13 +5,16 @@ const port = 3001;
 
 const settings = require('../settings/general.json');
 
-var dbl, mongodb, client, ccollection, ucollection;
+var dbl, mongodb, client, ccollection, ucollection, shard;
 
 function connect(db, bot, curShard, shards) {
+    shard = curShard;
     mongodb = db;
     client = bot;
     ccollection = db.collection("cards");
     ucollection = db.collection("users");
+    scollection = db.collection("system");
+    setGuilds(Object.keys(client.servers).length);
 
     if(curShard == 0){
         dbl = new DBL(settings.dbltoken, { webhookPort: port, webhookAuth: settings.dblpass });
@@ -31,9 +34,20 @@ function connect(db, bot, curShard, shards) {
     } else 
         dbl = new DBL(settings.dbltoken);
 
-    setInterval(() => {
-        dbl.postStats(Object.keys(client.servers).length, curShard, shards);
+    setInterval(async () => {
+        let amount = Object.keys(client.servers).length;
+        dbl.postStats(amount, curShard, shards);
+        setGuilds(amount);
     }, 1800000);
+}
+
+async function setGuilds(amount) {
+    let guildset = {};
+    guildset['guilds.' + shard] = amount;
+    await scollection.update(
+        {type: "stats"}, 
+        {$set: guildset},
+        {upsert: true});
 }
 
 function getCard(userID) {
