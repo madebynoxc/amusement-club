@@ -14,7 +14,6 @@ function connect(db, bot, curShard, shards) {
     ccollection = db.collection("cards");
     ucollection = db.collection("users");
     scollection = db.collection("system");
-    setGuilds(Object.keys(client.servers).length);
 
     if(curShard == 0){
         dbl = new DBL(settings.dbltoken, { webhookPort: port, webhookAuth: settings.dblpass });
