@@ -57,7 +57,11 @@ async function processRequest(user, args, guild, channelID, callback) {
 
     let cards = objs[0].cards;
     if(query['cards.name'] && cards.length > 1) {
-        return callback(utils.formatError(user, "Ambiguous query", "found multiple cards with that name, try specifying further."));
+        //Changes the regex to match the full name instead of any part of the name
+        let exactMatch = new RegExp(query['cards.name'].source.replace("_|", "") + "$", "i");
+        cards = cards.filter(c => exactMatch.test(c.name));
+        //Continue if only one card with the exact name is found
+        if(cards.length != 1) return callback(utils.formatError(user, "Ambiguous query", "found multiple cards with that name, try specifying further."));
     }
 
     let match = query['cards.name'] ? dbmanager.getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
