@@ -57,24 +57,14 @@ function getCard(userID) {
         ccollection.aggregate([ 
             { $match: { level : { $lt: 4 }}},
             { $sample: { size: 1 } } 
-        ]).toArray((err, res) => {
+        ]).toArray(async (err, res) => {
             let card = res[0];
-            dbUser.cards = dbManager.addCardToUser(dbUser.cards, card);
+            await dbManager.addCardToUser(userID, card);
 
-            if(!card || !dbUser.cards)
-                return;
-
-            ucollection.update(
-                { discord_id: userID },
-                {
-                    $set: {cards: dbUser.cards}
-                }
-            ).then(() => {
-                let url = dbManager.getCardURL(card);
-                sendDM(userID, utils.formatImage(null, null, 
-                    "Thank you for your vote!\nYou got [" + utils.getFullCard(card) + "]("
-                    + url + ")\nVote again for free claim in 12 hours.", url));
-            });
+            let url = dbManager.getCardURL(card);
+            sendDM(userID, utils.formatImage(null, null, 
+                "Thank you for your vote!\nYou got [" + utils.getFullCard(card) + "]("
+                + url + ")\nVote again for free claim in 12 hours.", url));
         });
     }).catch(e => console.log(e));
 }

@@ -145,15 +145,18 @@ function sortByStars(cards) {
 
 function getRequestFromFiltersWithPrefix(args, prefix) {
     prefix = prefix || "";
-    let query = {};
+    let query = {sortBy: { }};
     let keywords = [];
     let levelInclude = [];
     let levelExclude = [];
     let collectionInclude = [];
     let collectionExclude = [];
+    let date = new Date();
+    date.setDate(date.getDate() - 1);
+    query.sortBy[prefix + 'level'] = -1;
 
     //console.log(args);
-    if(!args || args.length == 0) return {};
+    if(!args || args.length == 0) return query;
     args.forEach(element => {
         element = element.trim();
         if(isInt(element) && parseInt(element) <= 5 && parseInt(element) > 0)
@@ -165,6 +168,7 @@ function getRequestFromFiltersWithPrefix(args, prefix) {
             else if(el === "multi") query[prefix + 'amount'] = {$gte: 2};
             else if(el === "gif") query[prefix + 'animated'] = true;
             else if(el === "fav") query[prefix + 'fav'] = true;
+            else if(el === "new") query[prefix + 'obtained'] = {$gt: date};
             else if(el === "frozen") {
                 var yesterday = new Date();
                 yesterday.setDate(yesterday.getDate() - 1);
@@ -183,6 +187,7 @@ function getRequestFromFiltersWithPrefix(args, prefix) {
             else if(el === "multi") query[prefix + 'amount'] = {$eq: 1};
             else if(el === "gif") query[prefix + 'animated'] = false;
             else if(el === "fav") query[prefix + 'fav'] = {$in: [null, false]};
+            else if(el === "new") query[prefix + 'obtained'] = {$lt: date};
             else if(el === "frozen") {
                 var yesterday = new Date();
                 yesterday.setDate(yesterday.getDate() - 1);
@@ -192,9 +197,19 @@ function getRequestFromFiltersWithPrefix(args, prefix) {
                 col = collections.parseCollection(el);
                 col.map(c => collectionExclude.push(c.id));
             }
+        } else if(element[0] == '>' || element[0] == '<') {
+            let el = element.substr(1);
+            let accend = element[0] == '>'? -1 : 1;
+            query.sortBy = {};
+
+            if(el === "star") query.sortBy[prefix + 'level'] = accend;
+            else if(el === "date") query.sortBy = null;
+            else if(el === "name") query.sortBy[prefix + 'name'] = accend;
+            else if(el === "amount") query.sortBy[prefix + 'amount'] = accend;
 
         } else keywords.push(element.trim());
     }, this);
+
     if(levelExclude.length > 0 || levelInclude.length > 0) {
         query[prefix + 'level'] = {};
         if(levelExclude.length > 0) {

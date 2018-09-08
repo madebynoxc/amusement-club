@@ -20,17 +20,11 @@ function getPages(cards) {
 function nameCardList(arr) {
     let res = [];
     let passedCards = [];
+    let date = new Date();
+    date.setDate(date.getDate() - 1);
+
     arr.map(card => {
-        //let dupe = passedCards.filter(c => (c.name === card.name))[0];
-        let name = nameCard(card);
-
-        // if(dupe) {
-        //     let d = res.findIndex(c => (c.includes(name)));
-        //     if(d >= 0 && !res[d].includes(dupe.collection)) 
-        //         res[d] += " [" + dupe.collection + "]";
-        //     name += " [" + card.collection + "]";
-        // }
-
+        let name = nameCard(card, date);
         let hours = 20 - utils.getHoursDifference(card.frozen);
         if(hours && hours > 0) {
             name += " ❄ ";
@@ -47,15 +41,18 @@ function nameCardList(arr) {
         res.push(name);
     });
 
-    res.sort((a, b) => sortByName(a, b));
+    //res.sort((a, b) => sortByName(a, b));
 
     return res;
 }
 
-function nameCard(card) {
+function nameCard(card, newC) {
     try {
         let res = utils.getFullCard(card);
-        if(card.amount > 1) res += " (x" + card.amount + ")";
+        if(card.obtained && card.obtained > newC)
+            res = "[new] " + res;
+        if(card.amount > 1) 
+            res += " (x" + card.amount + ")";
         return res;
     } catch (e) {logger.error(e);}
     return null;

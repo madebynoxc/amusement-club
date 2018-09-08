@@ -241,12 +241,12 @@ async function sell(user, incArgs, channelID, callback) {
 
             reactions.addNewConfirmation(user.id, formatSell(user, match, price, fee), channelID, async () => {
                 await idlock.acquire("createauction", async () => {
-                    dbUser.cards = dbManager.removeCardFromUser(dbUser.cards, match);
+                    let pullResult = dbManager.pullCard(user.id, match);
                     match.fav = false;
 
-                    if(!dbUser.cards || dbUser.cards.length == 0) return; 
+                    if(!pullResult) return; 
 
-                    await ucollection.update({discord_id: user.id}, {$set: {cards: dbUser.cards}, $inc: {exp: -fee}});
+                    await ucollection.update({discord_id: user.id}, {$inc: {exp: -fee}});
                     let aucID = await generateBetterID();
                     await acollection.insert({
                         id: aucID, finished: false, date: new Date(), price: price, author: user.id, card: match
@@ -321,9 +321,9 @@ async function checkAuctionList() {
 
     if(auc.lastbidder) {
         let bidder = await ucollection.findOne({discord_id: auc.lastbidder});
-        bidder.cards = dbManager.addCardToUser(bidder.cards, auc.card);
+        await dbManager.pushCard(auc.lastbidder, auc.card);
         let tomatoback = Math.floor(forge.getCardEffect(bidder, 'auc', auc.price)[0]);
-        await ucollection.update({discord_id: auc.lastbidder}, {$set: {cards: bidder.cards}, $inc: {exp: tomatoback}});
+        await ucollection.update({discord_id: auc.lastbidder}, {$inc: {exp: tomatoback}});
         await ucollection.update({discord_id: auc.author}, {$inc: {exp: auc.price}});
 
         transaction.to = bidder.username;
@@ -338,9 +338,7 @@ async function checkAuctionList() {
             "Your auction for card **" + utils.getFullCard(auc.card) + "** finished!\n"
             + "You got **" + auc.price + "**🍅 for it"));
     } else {
-        dbuser.cards = dbManager.addCardToUser(dbuser.cards, auc.card);
-        await ucollection.update({discord_id: auc.author}, {$set: {cards: dbuser.cards}});
-
+        await dbManager.pushCard(auc.author, auc.card);
         sendDM(auc.author, utils.formatError(null, null, 
             "Your auction for card **" + utils.getFullCard(auc.card) + "** finished, but nobody bid on it.\n"
             + "You got your card back"));

@@ -4,7 +4,8 @@ module.exports = {
     daily, getQuests, getBestCardSorted, getUserCards,
     leaderboard, difference, dynamicSort, countCardLevels, getCardValue,
     getCardFile, getDefaultChannel, isAdmin, needsCards, getCardURL,
-    removeCardFromUser, addCardToUser, eval, whohas, block, fav, track, getDB
+    removeCardFromUser, addCardToUser, eval, whohas, block, fav, track, getDB,
+    pushCard, pullCard
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -186,22 +187,21 @@ function claim(user, guild, arg, callback) {
                 }
 
                 if(!dbUser.cards) dbUser.cards = [];
-                res.map(r => dbUser.cards = addCardToUser(dbUser.cards, r));
+                //res.map(r => dbUser.cards = addCardToUser(dbUser.cards, r));
+                res.map(r => pushCard(user.id, r));
 
                 dbUser.dailystats.claim += amount;
                 heroes.addXP(dbUser, .5 * amount);
                 ucollection.update(
                     { discord_id: user.id },
                     {
-                        $set: {cards: dbUser.cards, dailystats: dbUser.dailystats},
+                        $set: {dailystats: dbUser.dailystats},
                         $inc: incr
                     }
                 ).then(() => {
-                    // let emb = utils.formatInfo(null, null, phrase);
-                    // if(amount == 1) emb.image = { "url": getCardURL(res[0]) };
-                    // callback(emb);
                     callback(utils.formatImage(null, null, phrase, getCardURL(res[0], false)));
                     quest.checkClaim(dbUser, callback);
+
                 }).catch(e => console.log(e));
             });
         });
@@ -254,14 +254,14 @@ function claimPromotion(user, dbUser, amount, callback) {
         }
         phrase += "You now have **" + (dbUser.promoexp - claimCost) + "** " + promo.currency;
 
-        res.map(r => dbUser.cards = addCardToUser(dbUser.cards, r));
+        res.map(r => pushCard(user.id, r));
 
         dbUser.dailystats.promoclaim += amount;
         heroes.addXP(dbUser, .2 * amount);
         ucollection.update(
             { discord_id: user.id },
             {
-                $set: {cards: dbUser.cards, dailystats: dbUser.dailystats},
+                $set: {dailystats: dbUser.dailystats},
                 $inc: {promoexp: -claimCost}
             }
         ).then(() => {
@@ -381,6 +381,9 @@ function getCards(user, args, callback) {
             return callback(utils.formatError(user, null, "no cards found that match your request"), false);
 
         let cards = objs[0].cards;
+        if(args.includes('>date'))
+            cards = cards.reverse();
+
         callback(cards, true);
     });
 }
@@ -447,6 +450,7 @@ function getCardType(card) {
     let col = collections.parseCollection(card.collection)[0];
     if(card.craft) return "craft";
     if(col.special) return "event";
+    if(col.battle) return "battle";
     return "ordinary";
 }
 
@@ -935,7 +939,10 @@ function report(dbUser, transaction, soldcard) {
 }
 
 function getUserCards(userID, query) {
-    return mongodb.collection('users').aggregate([
+    let sortBy = query.sortBy;
+    delete query["sortBy"];
+
+    let aggregation = [
         {"$match":{"discord_id":userID}},
         {"$unwind":"$cards"},
         {"$match":query},
@@ -945,13 +952,16 @@ function getUserCards(userID, query) {
                 username: "$username", 
                 dailystats: "$dailystats",
                 exp: "$exp",
-                quests: "$quests",
-                gets: "$gets",
-                sends: "$sends"
+                quests: "$quests"
             }, 
             cards: {"$push": "$cards"}}
         }
-    ]);
+    ];
+
+    if(sortBy)
+        aggregation.splice(3, 0, {"$sort":sortBy});
+
+    return mongodb.collection('users').aggregate(aggregation);
 }
 
 function nameOwners(col) {
@@ -1102,6 +1112,60 @@ function getDefaultChannel(g) {
 
 function isAdmin(sender) {
     return settings.admins.includes(sender);
+}
+
+async function pushCard(userID, card) {
+    let ucollection = mongodb.collection('users');
+    let command = await ucollection.update(
+        { discord_id: userID, cards: {$elemMatch: utils.getCardQuery(card)} }, 
+        { $inc: {"cards.$.amount": 1} });
+
+    if(!command.result.ok)
+        return false;
+
+    if(command.result.nModified == 0) {
+        card.obtained = new Date();
+        card.amount = 1;
+        command = await ucollection.update(
+            { discord_id: userID }, 
+            { $push: { cards: card } });
+
+        if(command.result.nModified == 0 || !command.result.ok)
+            return false;
+    }
+
+    return true;
+}
+
+async function pullCard(userID, card) {
+    let command, qq = {};
+    let query = utils.getCardQuery(card);
+    let ucollection = mongodb.collection('users');
+
+    qq['cards.name'] = query.name;
+    qq['cards.collection'] = query.collection;
+    qq['cards.level'] = query.level;
+
+    let match = (await getUserCards(userID, qq).toArray())[0];
+    if(!match || !match.cards || match.cards.length == 0)
+        return false;
+
+    if(match.cards[0].amount > 1) {
+        command = await ucollection.update(
+            { discord_id: userID, cards: {$elemMatch: query} }, 
+            { $inc: {"cards.$.amount": -1} });
+
+    } else {
+        command = await ucollection.update(
+            { discord_id: userID }, 
+            { $pull: { cards: query }});
+    }
+    console.log(command.result);
+
+    if(!command || command.result.nModified == 0 || !command.result.ok)
+        return false;
+
+    return true;
 }
 
 function addCardToUser(usercards, card) {

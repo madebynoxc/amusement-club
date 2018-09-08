@@ -175,9 +175,9 @@ async function _confirm(user, transaction, callback) {
     //Sell to bot
     if(!transaction.to_id && transaction.from_id == user.id) {
         let dbUser = await ucollection.findOne({discord_id: transaction.from_id});
-        dbUser.cards = dbmanager.removeCardFromUser(dbUser.cards, transaction.card);
+        let pullResult = await dbmanager.pullCard(user.id, transaction.card);
 
-        if(!dbUser.cards) {
+        if(!pullResult) {
             await collection.update({ _id: transaction._id }, {$set: {status: "declined"}});
             react.removeExisting(user.id, true);
             return callback(utils.formatError(user, "Unable to sell", "card that you want to sell was not found in your collection"));
@@ -215,26 +215,21 @@ async function _confirm(user, transaction, callback) {
                 + "** more 🍅 to confirm this transaction"));
 
         transaction.card.fav = false;
-        fromUser.cards = dbmanager.removeCardFromUser(fromUser.cards, transaction.card);
-        if(!fromUser.cards || fromUser.cards.length == 0) 
-            return callback("**" + user.username + "**, something went wrong!");
 
-        fromUser.exp += transaction.price;
-        toUser.cards = dbmanager.addCardToUser(toUser.cards, transaction.card);
-        toUser.exp -= transaction.price;
-
-        if(!fromUser.cards) {
+        let pullResult = await dbmanager.pullCard(transaction.from_id, transaction.card);
+        if(!pullResult) {
             react.removeExisting(user.id, true);
             await collection.update({id: transactionId}, {$set: {status: "declined"}});
             return callback(utils.formatError(user, "Unable to sell", "target card was not found in seller's collection"));
         }
 
+        await dbmanager.pushCard(transaction.to_id, transaction.card);
         await ucollection.update(
                 { discord_id: fromUser.discord_id },
-                { $set: {cards: fromUser.cards, exp: fromUser.exp}});
+                { $inc: {exp: transaction.price}});
         await ucollection.update(
                 { discord_id: toUser.discord_id },
-                { $set: {cards: toUser.cards, exp: toUser.exp}});
+                { $inc: {exp: -transaction.price}});
         await collection.update({ _id: transaction._id }, {$set: {status: "confirmed"}});
 
         react.removeExisting(user.id, true);
