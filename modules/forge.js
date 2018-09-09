@@ -12,7 +12,6 @@ const heroes = require('./heroes.js');
 const quest = require('./quest.js');
 const dbManager = require("./dbmanager.js");
 const inv = require("./inventory.js");
-const cryst = require("./crystal.js");
 const react = require("./reactions.js");
 const collections = require("./collections.js");
 
@@ -20,7 +19,6 @@ function connect(db) {
     mongodb = db;
     ucollection = db.collection('users');
     ccollection = db.collection('cards');
-    cryst.connect(db);
 }
 
 function processRequest(userID, args, callback) {

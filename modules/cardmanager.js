@@ -1,5 +1,5 @@
 module.exports = {
-    updateCards, updateCardsS3
+    updateCardsLocal, updateCardsS3, updateCards_legacy
 }
 
 var mongodb;
@@ -7,10 +7,20 @@ const fs = require('fs');
 const logger = require('./log.js');
 const utils = require("./localutils.js");
 const https = require('https');
-const validExts = ['.png', '.gif', '.jpg'];
-const url = "https://amusementclub.nyc3.digitaloceanspaces.com";
+const AWS = require('aws-sdk');
+const settings = require('../settings/general.json');
 
-function updateCards(connection, callback) {
+const validExts = ['.png', '.gif', '.jpg'];
+const acceptedExts = ['png', 'gif', 'jpg'];
+const url = "https://amusementclub.nyc3.digitaloceanspaces.com";
+const EP = new AWS.Endpoint("nyc3.digitaloceanspaces.com");
+const s3 = new AWS.S3({
+    endpoint: EP, 
+    accessKeyId: settings.s3accessKeyId, 
+    secretAccessKey: settings.s3secretAccessKey
+});
+
+function updateCardsLocal(connection, callback) {
     logger.message("[CardManager 2.3] NOW: Updating cards..."); 
     mongodb = connection;
 
@@ -52,7 +62,7 @@ function updateCards(connection, callback) {
     });
 }
 
-function updateCardsS3(connection) {
+function updateCards_legacy(connection) {
     return new Promise(async (resolve) => {
         logger.message("[CardManager S3.0] NOW: Updating cards..."); 
         mongodb = connection;
@@ -94,10 +104,64 @@ function updateCardsS3(connection) {
     });
 }
 
+async function updateCardsS3(connection, callback) {
+    console.log("[CardManager S3.5] Updating cards..."); 
+
+    //cards/dragonmaid/1_Chinese_Dragon.png
+    let allCards = [];
+    (await connection.collection('cards').find().toArray())
+        .map(card => allCards.push(getCardKey(card)));
+    
+    let res = await loadFilesFromS3(callback, allCards);
+    await insertCrads(res, connection.collection('cards'));
+    return res;
+}      
+
+function loadFilesFromS3(callback, allCards, marker, collected = []) {
+    return new Promise(resolve => {
+        let params = {Bucket: 'amusementclub', MaxKeys: 2000};
+
+        if(marker)
+            params.Marker = marker;
+
+        s3.listObjects(params, async (err, data) => {
+            if(err) console.log(err);
+
+            let len = 0;
+            data.Contents.map(object => {
+                let item = object.Key.split('.')[0];
+                let ext = object.Key.split('.')[1];
+                if(ext && acceptedExts.includes(ext) &&
+                    item.startsWith('cards') && !allCards.includes(item)){
+                    let split = item.split('/');
+                    if(split.length == 3) {
+                        collected.push(getCardObject(split[2], split[1]));
+                        len++;
+                    }
+                }
+            });
+
+            callback(len, collected.length);
+
+            if (data.IsTruncated) {
+                let marker = data.Contents[data.Contents.length - 1].Key;
+                let res = await loadFilesFromS3(callback, allCards, marker, collected);
+                return resolve(res);
+            } else 
+                resolve(collected);
+        });
+    });
+}
+
+function getCardKey(card) {
+    let prefix = card.craft? card.level + 'cr' : card.level;
+    return 'cards/' + card.collection + '/' + prefix + "_" + card.name;
+}
+
 async function getRemoteCardList() {
     return new Promise((resolve) => {
 
-        https.get(url + '?max-keys=100000', (resp) => {
+        https.get(url + '?max-keys=2000', (resp) => {
             let data = '';
 
             resp.on('data', (chunk) => {

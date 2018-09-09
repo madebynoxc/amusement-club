@@ -496,7 +496,7 @@ function updateCards() {
 
         if(cards.length == 0) emb = "No cards were added";
         else {
-            
+
             cards.map(c => {
                 emb += "**" + c.name.replace('=', '') + "** collection got **" + c.count + "** new cards\n";
             });
@@ -509,47 +509,76 @@ function updateCards() {
     });
 }
 
-async function updateCardsRemote() {
-    if(!mongodb){
-        bot.sendMessage({
+function updateCardsRemote() {
+    if(!mongodb)
+        return bot.sendMessage({
             to: settings.botcommchannel, 
             embed: formError("Can't update cards", "The connection to database is invalid")
         });
-        return;
-    } 
 
+    let report = formWarn(null, "Updating cards, please wait...");
     bot.sendMessage({
         to: settings.botcommchannel, 
-        embed: formWarn(null, null, "Updating cards, please wait...")
-    });
+        embed: report
+    }, async (err, resp) => {
+        let res, emb = "";
+        if(acsettings.s3accessKeyId && acsettings.s3secretAccessKey) {
+            let page = 1;
+            res = await cardmanager.updateCardsS3(mongodb, (scanned, included) => {
+                report.description += `\nPass **${page}** | Included: **${scanned}** | Overall: **${included}**`;
+                bot.editMessage({
+                    channelID: resp.channel_id, 
+                    messageID: resp.id, 
+                    embed: report
+                });
+                page++;
+            });
 
-    let res = await cardmanager.updateCardsS3(mongodb);
-    var emb = "";
+            if(res.length == 0) emb = "No cards were added";
+            else {
+                let sort = [];
+                res.map(o => {
+                    let exists = sort.filter(s => s.name == o.collection)[0];
+                    if(exists) exists.count++;
+                    else sort.push({name: o.collection, count: 1});
+                });
 
-    if(res.collected.length == 0) emb = "No cards were added";
-    else {
-        res.collected.map(o => {
-            emb += "**" + o.name + "** collection got **" + o.count + "** new cards\n";
-        });
-    }
+                sort.map(o => emb += `**${o.name}** collection got **${o.count}** new cards\n`);
+            }
 
-    if(res.warnings.length > 0) {
-        bot.sendMessage({
-            to: settings.botcommchannel, 
-            embed: utils.formatWarn(null, "Warning!", res.warnings.join('\n'))
-        });
-    }
-
-    bot.sendMessage({
-        to: settings.botcommchannel, 
-        embed: utils.formatConfirm(null, "Finished updating cards", emb)
-    }, (err, resp) => {
-        if(err) {
+        } else {
             bot.sendMessage({
                 to: settings.botcommchannel, 
-                embed: utils.formatWarn(null, null, "Finished updating cards, but failed to list updated collections")
+                embed: formWarn("Warning", "AWS S3 access key and secret were not found.\nFalling back to legacy card adding (2000 cards will be added)")
+            });
+            res = await cardmanager.updateCards_legacy(mongodb);
+
+            if(res.collected.length == 0) emb = "No cards were added";
+            else {
+                res.collected.map(o => {
+                    emb += "**" + o.name + "** collection got **" + o.count + "** new cards\n";
+                });
+            }
+        }
+
+        if(res.warnings && res.warnings.length > 0) {
+            bot.sendMessage({
+                to: settings.botcommchannel, 
+                embed: formWarn("Warning", res.warnings.join('\n'))
             });
         }
+
+        bot.sendMessage({
+            to: settings.botcommchannel, 
+            embed: formConfirm("Finished updating cards", emb)
+        }, (err2, resp2) => {
+            if(err2) {
+                bot.sendMessage({
+                    to: settings.botcommchannel, 
+                    embed: formWarn(null, "Finished updating cards, but failed to list updated collections")
+                });
+            }
+        });
     });
 }
 
@@ -582,10 +611,6 @@ function other(args) {
             embed: formError("Can't spawn process " + args, e)
         });
     }
-}
-
-function setPic(index, callback) {
-    bot.editServer( {"serverID":"351871492536926210", "icon":images[index]}, callback);
 }
 
 const dir = "../sources/";
