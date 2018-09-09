@@ -1,5 +1,14 @@
 [
     {
+        "version": "1.12.6",
+        "changes": [
+            "Added sorting support `->help query`",
+            "Removed unused modules",
+            "Improved auctions and trading to reduce risk of losing cards",
+            "Added improvements to 'ambigious query' error"
+        ]
+    },
+    {
         "version": "1.12.5",
         "changes": [
             "Added sharding support",

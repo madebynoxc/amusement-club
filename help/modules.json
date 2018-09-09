@@ -353,6 +353,22 @@
             {
                 "title": "Make NEGATIVE request",
                 "description": "->cards ![collection] !fav !gif !craft"
+            },
+            {
+                "title": "Sort by time when card was accuired",
+                "description": "->cards >date or ->cards <date"
+            },
+            {
+                "title": "Sort by star amount",
+                "description": "->cards >star (default) or ->cards <star"
+            },
+            {
+                "title": "Sort by amount",
+                "description": "->cards >amount or ->cards <amount"
+            },
+            {
+                "title": "Sort alphabetically",
+                "description": "->cards >name or ->cards <name"
             }
         ]
     },
