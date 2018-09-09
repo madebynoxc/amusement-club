@@ -245,7 +245,9 @@ function getRequestFromFilters(args) {
 }
 
 function getRequestFromFiltersNoPrefix(args) {
-    return getRequestFromFiltersWithPrefix(args, "");
+    let c = getRequestFromFiltersWithPrefix(args, "");
+    delete c["sortBy"];
+    return c;
 }
 
 function getCardQuery(card) {

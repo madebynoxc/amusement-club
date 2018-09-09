@@ -433,7 +433,7 @@ function getCardInfo(user, args, callback) {
             info += "**" + utils.getFullCard(card) + "**\n";
             info += "Fandom: **" + col.name + "**\n";
             info += "Type: **" + getCardType(card) + "**\n";
-            info += "Price: **" + val + "** `🍅`\n";
+            info += "Price: **" + Math.round(val) + "** `🍅`\n";
 
             if(card.source) {
                 if(card.source.startsWith("http"))
