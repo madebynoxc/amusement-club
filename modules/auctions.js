@@ -74,9 +74,11 @@ async function list(user, args, channelID, callback) {
         }
     });
 
+    let query = utils.getRequestFromFiltersWithPrefix(args, "card.");
+    delete query["sortBy"];
     let auctionList = await acollection.aggregate([
             {"$match": match},
-            {"$match": utils.getRequestFromFiltersWithPrefix(args, "card.")},
+            {"$match": query},
             {"$sort": {date: 1}},
             {"$limit": 200}
         ]).toArray();

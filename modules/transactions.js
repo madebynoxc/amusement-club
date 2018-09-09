@@ -184,11 +184,8 @@ async function _confirm(user, transaction, callback) {
         }
 
         await ucollection.update(
-                { discord_id: user.id },
-                {
-                    $set: {cards: dbUser.cards },
-                    $inc: {exp: transaction.price}
-                });
+            { discord_id: user.id },
+            { $inc: {exp: transaction.price} });
 
         await collection.update({ _id: transaction._id }, {$set: {status: "confirmed"}});
         react.removeExisting(user.id, true);

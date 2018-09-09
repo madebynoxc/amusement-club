@@ -12,7 +12,6 @@ const changelog = require('./help/updates.json');
 const helpMod = require('./modules/help.js');
 const vote = require('./modules/vote.js');
 const invite = require('./modules/invite.js');
-const crystal = require('./modules/crystal.js');
 const transactions = require('./modules/transactions.js');
 const sellManager = require('./modules/sell.js');
 const cardList = require('./modules/list.js');
