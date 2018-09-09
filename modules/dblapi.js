@@ -59,7 +59,7 @@ function getCard(userID) {
             { $sample: { size: 1 } } 
         ]).toArray(async (err, res) => {
             let card = res[0];
-            await dbManager.addCardToUser(userID, card);
+            await dbManager.pushCard(userID, card);
 
             let url = dbManager.getCardURL(card);
             sendDM(userID, utils.formatImage(null, null, 
