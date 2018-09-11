@@ -202,7 +202,7 @@ async function sell(user, incArgs, channelID, callback) {
 
     let query = utils.getRequestFromFilters(args[0].split(' '));
     dbManager.getUserCards(user.id, query).toArray((err, objs) => {
-        if(!objs[0]) 
+        if(!objs || !objs[0]) 
             return callback(utils.formatError(user, null, "no cards found that match your request"));
 
         let cards = objs[0].cards;

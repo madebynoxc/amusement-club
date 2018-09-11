@@ -646,7 +646,7 @@ function difference(discUser, parse, callback) {
 
     let query = utils.getRequestFromFilters(args);
     getUserCards(discUser.id, {}).toArray((err, objs) => {
-        let cardsU1 = objs[0]? objs[0].cards : [];
+        let cardsU1 = (objs && objs[0])? objs[0].cards : [];
         let includeFavorite = false;
         if(query['cards.fav'] == true) {
             includeFavorite = true;
@@ -654,7 +654,7 @@ function difference(discUser, parse, callback) {
         }
 
         getUserCards(targetID, query).toArray((err, objs2) => {
-            if(!objs2[0]) 
+            if(!objs2 || !objs2[0]) 
                 return callback(utils.formatError(discUser, null, "that user has no such cards"));
 
             let cardsU2 = objs2[0].cards;
@@ -767,8 +767,8 @@ function needsCards(user, args, callback) {
     getUserCards(user.id, query).toArray((err, objs) => {
 
         let cards;
-        if(objs[0]) cards = objs[0].cards;
-        else        cards = [];
+        if(objs && objs[0]) cards = objs[0].cards;
+        else cards = [];
 
         query = utils.getRequestFromFiltersNoPrefix(args);
         ccollection.find(query).toArray((err, res) => {
