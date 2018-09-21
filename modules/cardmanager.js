@@ -187,9 +187,10 @@ async function getRemoteCardList() {
 function getCardObject(name, collection) {
     name = name
         .replace(/ /g, '_')
+        .replace(/'/g, '')
         .trim()
         .toLowerCase()
-        .replace(/&apos;/g, "'");
+        .replace(/&apos;/g, "");
 
     let split = name.split('.');
     let craft = name.substr(1, 2) === "cr";

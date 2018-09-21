@@ -71,6 +71,9 @@ function getCard(userID) {
 
 function sendDM(toID, embed) {
     client.createDMChannel(toID, (createErr, newChannel) => {
+        if(!newChannel)
+            return;
+        
         client.sendMessage({to: newChannel.id, embed: embed}, 
             (err, resp) => {
             if(err) {

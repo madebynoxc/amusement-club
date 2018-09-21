@@ -65,6 +65,9 @@ function processUserInput(inp, author, callback) {
 
 function sendDM(user, embed, channel, callback) {
     bot.createDMChannel(user.id, (createErr, newChannel) => {
+        if(!newChannel)
+            return callback(utils.formatError(user, "Can't send you messages", "please, make sure you have **Allow direct messages from server members** enabled in server privacy settings"));
+        
         bot.sendMessage({to: newChannel.id, embed: embed}, 
             (err, resp) => {
             if(channel){

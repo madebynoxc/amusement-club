@@ -1,5 +1,13 @@
 [
     {
+        "version": "1.12.7",
+        "changes": [
+            "Multiple crash fixes",
+            "Updated help",
+            "Added links to cards when using multiple claim"
+        ]
+    },
+    {
         "version": "1.12.6",
         "changes": [
             "Added sorting support `->help query`",

@@ -216,7 +216,7 @@ async function _confirm(user, transaction, callback) {
         let pullResult = await dbmanager.pullCard(transaction.from_id, transaction.card);
         if(!pullResult) {
             react.removeExisting(user.id, true);
-            await collection.update({id: transactionId}, {$set: {status: "declined"}});
+            await collection.update({_id: transaction._id}, {$set: {status: "declined"}});
             return callback(utils.formatError(user, "Unable to sell", "target card was not found in seller's collection"));
         }
 

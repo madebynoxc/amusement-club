@@ -168,14 +168,14 @@ function claim(user, guild, arg, callback) {
                     for (var i = 0; i < res.length; i++) {
                         if(dbUser.cards 
                             && dbUser.cards.filter(c => utils.cardsMatch(c, res[i])).length > 0)
-                            phrase += (i + 1) + ". " + utils.getFullCard(res[i]);
-                        else phrase += (i + 1) + ". **" + utils.getFullCard(res[i]) + "**";
-                        phrase += "\n";
+                            phrase += `${(i + 1)}. [${utils.getFullCard(res[i])}]`;
+                        else phrase += `${(i + 1)}. [**${utils.getFullCard(res[i])}**]`;
+                        phrase += `(${getCardURL(res[i])})\n`;
                     }
                     phrase += "\nUse `->sum [card name]` to summon a card\n";
                 }
 
-                //if(claimCost >= 500) phrase += "*You are claiming for extremely high price*\n";            
+                if(claimCost/amount >= 400) phrase += "-You are claiming for extremely high price-\n";            
                 phrase += "Your next claim will cost **" + nextClaim + "**🍅";
 
                 let incr = {exp: -claimCost};
@@ -392,7 +392,7 @@ function summon(user, args, callback) {
     if(!args) return callback("**" + user.username + "**, please specify card query");
     let query = utils.getRequestFromFilters(args);
     getUserCards(user.id, query).toArray((err, objs) => {
-        if(!objs[0]) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
+        if(!objs || !objs[0]) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
         let cards = objs[0].cards;
         let dbUser = objs[0]._id;

@@ -2,7 +2,7 @@
     {
         "type": ["general"],
         "title": "\u2B50 Amusement Club \u2B50 Card Game",
-        "description": "Amusement Club is an amazing gacha game for discord!\nUse `->claim` to get cards.\nYou can call `->daily` every **20** hours and get free tomatoes.\nGet a hero after 50 Stars and earn tomatoes from completing `->quests` that you get with `->daily` and trading using `->sell` and `->auction`!",
+        "description": "Amusement Club is an amazing gacha game for discord!\nUse `->claim` to get cards.\nYou can call `->daily` every **20** hours and get free tomatoes.\nGet a hero after 50 Stars and earn tomatoes from completing `->quests` that you get with `->daily` and trading using `->sell` and `->auction`!\n\nIf you need help with setting up bot channel or setting custom prefix on your server, use `->help server`",
         "fields": [
             {
                 "title": "Commands.",
@@ -10,7 +10,7 @@
             },
             {
                 "title": "Modules.",
-                "description": "->help leaderboards\n->help hero\n->help collections\n->help forge\n->help auction\n->help transactions\n->help query\n->help inventory\n->help stats\n->help invite"
+                "description": "->help leaderboards\n->help hero\n->help collections\n->help forge\n->help auction\n->help transactions\n->help query\n->help inventory\n->help stats\n->help server\n->help invite"
             },
             {
                 "title": "Contacts",
@@ -22,7 +22,7 @@
             },
             {
                 "title": "Invite bot",
-                "description": "Please run `->help invite` and read the conditions"
+                "description": "Please run `->help invite` and read the conditions. Use `->help server` to get information about server related commands"
             }
         ]
     },
