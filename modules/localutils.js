@@ -206,6 +206,7 @@ function getRequestFromFiltersWithPrefix(args, prefix) {
             else if(el === "date") query.sortBy = null;
             else if(el === "name") query.sortBy[prefix + 'name'] = accend;
             else if(el === "amount") query.sortBy[prefix + 'amount'] = accend;
+            else query.sortBy[prefix + 'level'] = -1;
 
         } else keywords.push(element.trim());
     }, this);
@@ -360,17 +361,21 @@ function generateNextId(last) {
 function getFullCard(card) {
     let res = "[";
 
-    if(card.collection == "halloween") res += "H";
-    else if(card.collection == "valentine") res += "V";
+    if(card.collection == "halloween") res += "`🎃`";
+    else if(card.collection == "valentine") res += "`🍫`";
     else if(card.collection == "birthday") res += "`🍰`";
     else {
-        for(let i=0; i<parseInt(card.level); i++)
-            res += "★"; 
+        for(let i=0; i<parseInt(card.level); i++) {
+            if(card.collection == "christmas") 
+                res += "`❄`";
+            else
+                res += "★"; 
+        }
     }
     res += "]  ";
     if(card.fav) res += "`❤` "
     if(card.craft) res += "[craft]  ";
-    //if(card.collection == "christmas") res += "[xmas]  ";
+
     res += toTitleCase(card.name.replace(/_/g, " "));
     res += " `[" + card.collection + "]`";
     return res;

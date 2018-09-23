@@ -19,13 +19,13 @@ function getPages(cards) {
 
 function nameCardList(arr) {
     let res = [];
-    let passedCards = [];
+    //let passedCards = [];
     let date = new Date();
     date.setDate(date.getDate() - 1);
 
     arr.map(card => {
         let name = nameCard(card, date);
-        let hours = 20 - utils.getHoursDifference(card.frozen);
+        /*let hours = 20 - utils.getHoursDifference(card.frozen);
         if(hours && hours > 0) {
             name += " ❄ ";
             if(hours == 1) {
@@ -35,9 +35,9 @@ function nameCardList(arr) {
             else {
                 name += hours + "h";
             }
-        }
+        }*/
 
-        passedCards.push(card);
+        //passedCards.push(card);
         res.push(name);
     });
 
