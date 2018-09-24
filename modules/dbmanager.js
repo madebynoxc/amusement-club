@@ -164,15 +164,15 @@ function claim(user, guild, arg, callback) {
                     if(dbUser.cards && dbUser.cards.filter(c => utils.cardsMatch(c, res[0])).length > 0)
                         phrase += "*you already have this card*\n";
                 } else {
-                    //phrase += " (new cards are bold):\n"
+                    phrase += "\n";
                     for (var i = 0; i < res.length; i++) {
                         if(dbUser.cards 
                             && dbUser.cards.filter(c => utils.cardsMatch(c, res[i])).length > 0)
                             phrase += `${(i + 1)}. [${utils.getFullCard(res[i])}]`;
-                        else phrase += `${(i + 1)}. [new] [${utils.getFullCard(res[i])}]`;
+                        else phrase += `${(i + 1)}. [${utils.getFullCard(res[i])}] **[new]**`;
                         phrase += `(${getCardURL(res[i])})\n`;
                     }
-                    phrase += "\nUse `->sum [card name]` to summon a card\n";
+                    phrase += "\nUse `->sum [card name]` to summon a card\nOr click on the name to open card image\n";
                 }
 
                 if(claimCost/amount >= 400) phrase += "-You are claiming for extremely high price-\n";            

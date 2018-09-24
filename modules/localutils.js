@@ -359,20 +359,20 @@ function generateNextId(last) {
 }
 
 function getFullCard(card) {
-    let res = "[";
+    let res = "[`";
 
-    if(card.collection == "halloween") res += "`🎃`";
-    else if(card.collection == "valentine") res += "`🍫`";
-    else if(card.collection == "birthday") res += "`🍰`";
+    if(card.collection == "halloween") res += "🎃";
+    else if(card.collection == "valentine") res += "🍫";
+    else if(card.collection == "birthday") res += "🍰";
     else {
         for(let i=0; i<parseInt(card.level); i++) {
             if(card.collection == "christmas") 
-                res += "`❄`";
+                res += "❄";
             else
                 res += "★"; 
         }
     }
-    res += "]  ";
+    res += "`]  ";
     if(card.fav) res += "`❤` "
     if(card.craft) res += "[craft]  ";
 
