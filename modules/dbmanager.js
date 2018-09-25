@@ -167,9 +167,9 @@ function claim(user, guild, arg, callback) {
                     phrase += "\n";
                     for (var i = 0; i < res.length; i++) {
                         phrase += `${(i + 1)}. [${utils.getFullCard(res[i])}](${getCardURL(res[i])})`;
-                        if(dbUser.cards 
-                            && dbUser.cards.filter(c => utils.cardsMatch(c, res[i])).length > 0)
-                            phrase += "**[new]**";
+                        if(!dbUser.cards 
+                            || dbUser.cards.filter(c => utils.cardsMatch(c, res[i])).length == 0)
+                            phrase += " **[new]**";
                         phrase += "\n";
                     }
                     phrase += "\nUse `->sum [card name]` to summon a card\nOr click on the name to open card image\n";
