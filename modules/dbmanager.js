@@ -114,22 +114,22 @@ function claim(user, guild, arg, callback) {
         if(promo)
             return claimPromotion(user, dbUser, Math.max(parseInt(amount), 1), callback);
 
-        amount = Math.min(Math.max(parseInt(amount), 1), 20 - dbUser.dailystats.claim);
+        let max = 20 - dbUser.dailystats.claim;
+        if (max === 0)
+            return callback("**" + user.username + "**, you reached a limit of your daily claim. \n"
+                + "It will be reset next time you successfully run `->daily`");
+
+        if(amount > max)
+            return callback(`**${user.username}**, you can't claim more than **${max}** cards today`);
+
+        amount = Math.max(parseInt(amount), 1);
 
         let claimCost = getClaimsCost(dbUser, amount);
         let nextClaim = 50 * (dbUser.dailystats.claim + amount + 1);
-        if(dbUser.exp < claimCost) {
-            callback("**" + user.username + "**, you don't have enough 🍅 "
+        if(dbUser.exp < claimCost) 
+            return callback("**" + user.username + "**, you don't have enough 🍅 "
                 + ((amount == 1)? "to claim a card" : "to claim **" + amount + "** cards")
                 + "\nYou need at least **" + claimCost + "**, but you have **" + Math.floor(dbUser.exp) + "**");
-            return;
-        }
-
-        if (amount === 0) {
-            callback("**" + user.username + "**, you reached a limit of your daily claim. \n"
-                + "It will be reset next time you successfully run `->daily`");
-            return;
-        }
 
         let collection = mongodb.collection('cards');
         let query = [ 
@@ -166,7 +166,11 @@ function claim(user, guild, arg, callback) {
                 } else {
                     phrase += "\n";
                     for (var i = 0; i < res.length; i++) {
-                        phrase += `${(i + 1)}. [${utils.getFullCard(res[i])}](${getCardURL(res[i])})`;
+                        if(res.length > 10)
+                            phrase += `${(i + 1)}. ${utils.getFullCard(res[i])}`;
+                        else
+                            phrase += `${(i + 1)}. [${utils.getFullCard(res[i])}](${getCardURL(res[i])})`;
+
                         if(!dbUser.cards 
                             || dbUser.cards.filter(c => utils.cardsMatch(c, res[i])).length == 0)
                             phrase += " **[new]**";
@@ -181,7 +185,7 @@ function claim(user, guild, arg, callback) {
                 let incr = {exp: -claimCost};
                 if(promotions.current > -1) {
                     let prm = promotions.list[promotions.current];
-                    let addedpromo = Math.floor(claimCost / 2);
+                    let addedpromo = Math.floor(claimCost / 3);
                     incr = {exp: -claimCost, promoexp: addedpromo};
                     phrase += "\n You got additional **" + addedpromo + "** " + prm.currency;
                 }

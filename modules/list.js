@@ -25,23 +25,8 @@ function nameCardList(arr) {
 
     arr.map(card => {
         let name = nameCard(card, date);
-        /*let hours = 20 - utils.getHoursDifference(card.frozen);
-        if(hours && hours > 0) {
-            name += " ❄ ";
-            if(hours == 1) {
-                let mins = 60 - (utils.getMinutesDifference(card.frozen) % 60);
-                name += mins + "m";
-            }
-            else {
-                name += hours + "h";
-            }
-        }*/
-
-        //passedCards.push(card);
         res.push(name);
     });
-
-    //res.sort((a, b) => sortByName(a, b));
 
     return res;
 }

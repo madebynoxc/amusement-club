@@ -362,6 +362,7 @@ function getFullCard(card) {
     let res = "[`";
 
     if(card.collection == "halloween") res += "🎃";
+    else if(card.collection == "halloween18") res += "🍬";
     else if(card.collection == "valentine") res += "🍫";
     else if(card.collection == "birthday") res += "🍰";
     else {

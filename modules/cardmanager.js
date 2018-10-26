@@ -135,7 +135,7 @@ function loadFilesFromS3(callback, allCards, marker, collected = []) {
                     item.startsWith('cards') && !allCards.includes(item)){
                     let split = item.split('/');
                     if(split.length == 3) {
-                        collected.push(getCardObject(split[2], split[1]));
+                        collected.push(getCardObject(split[2] + '.' + ext, split[1]));
                         len++;
                     }
                 }
@@ -196,6 +196,7 @@ function getCardObject(name, collection) {
     let craft = name.substr(1, 2) === "cr";
 
     collection = collection.replace(/=/g, '');
+    console.log(name);
 
     return {
         "name": craft? split[0].substr(4) : split[0].substr(2),

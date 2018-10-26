@@ -151,6 +151,9 @@ async function unlock(user, serverID, callback) {
 }
 
 async function info(srv, callback) {
+    if(!srv)
+        return;
+    
     let guild = await getByID(srv.id);
     let members = Object.keys(srv.members);
     let playercount = await ucollection.count({discord_id: {$in: members}});
