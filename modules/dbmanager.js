@@ -243,7 +243,6 @@ function claimPromotion(user, dbUser, amount, callback) {
             if(dbUser.cards && dbUser.cards.filter(
                 c => c.name == res[0].name && c.collection == res[0].collection).length > 0)
                 phrase += "(*you already have this card*)\n";
-            //phrase += "Forge this card with other promo cards and get crystals!\n"
         } else {
             phrase += " (new cards are bold):\n"
             for (var i = 0; i < res.length; i++) {
@@ -254,8 +253,8 @@ function claimPromotion(user, dbUser, amount, callback) {
                 phrase += "\n";
             }
             phrase += "\nUse `->sum [card name]` to summon a card\n";
-            //phrase += "Use `->forge [card 1], [card 2], ...` to combine cards into crystals\n";
         }
+
         phrase += "You now have **" + (dbUser.promoexp - claimCost) + "** " + promo.currency;
 
         res.map(r => pushCard(user.id, r));

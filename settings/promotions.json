@@ -1,5 +1,5 @@
 {
-    "current": -1,
+    "current": 4,
     "list": [
         {
             "name": "halloween",
@@ -20,6 +20,11 @@
             "name": "birthday",
             "currency": "🎂 Cakes",
             "ends": "16th Aug 2018"
+        },
+        {
+            "name": "halloween18",
+            "currency": "🍬 Candies",
+            "ends": "15th Nov 2018"
         }
     ]
 }

@@ -432,6 +432,8 @@ function requestCard(user, findObj, callback) {
             col = mongodb.collection('promocards');
             findObj.level = findObj.level - 1;
             if(findObj.level == 3) findObj.level = 3;
+            if(cardcol.id == "halloween18")
+                findObj.collection = "halloween";
         }
     }
 

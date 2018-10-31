@@ -64,7 +64,7 @@ bot.on("message", async (username, userID, channelID, message, event) => {
                 showCommands(); break;
             case 'update': 
                 console.log('[Ayano] Trying to update cards...'); 
-                updateCardsRemote(); break;
+                updateCardsRemote(splitMessage[2]); break;
             case 'start': 
                 console.log('[Ayano] Starting Amusement Club process...'); 
                 if(instances.length > 0)
@@ -509,7 +509,7 @@ function updateCards() {
     });
 }
 
-function updateCardsRemote() {
+function updateCardsRemote(arg) {
     if(!mongodb)
         return bot.sendMessage({
             to: settings.botcommchannel, 
@@ -524,7 +524,8 @@ function updateCardsRemote() {
         let res, emb = "";
         if(acsettings.s3accessKeyId && acsettings.s3secretAccessKey) {
             let page = 1;
-            res = await cardmanager.updateCardsS3(mongodb, (scanned, included) => {
+            let targetCol = (arg == 'promo')? 'promocards' : 'cards';
+            res = await cardmanager.updateCardsS3(mongodb, targetCol, (scanned, included) => {
                 report.description += `\nPass **${page}** | Included: **${scanned}** | Overall: **${included}**`;
                 bot.editMessage({
                     channelID: resp.channel_id, 

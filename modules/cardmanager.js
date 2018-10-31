@@ -104,20 +104,21 @@ function updateCards_legacy(connection) {
     });
 }
 
-async function updateCardsS3(connection, callback) {
+async function updateCardsS3(connection, col, callback) {
     console.log("[CardManager S3.5] Updating cards..."); 
 
     //cards/dragonmaid/1_Chinese_Dragon.png
+    let curPrefix = (col == 'promocards')? 'promo' : col;
     let allCards = [];
-    (await connection.collection('cards').find().toArray())
-        .map(card => allCards.push(getCardKey(card)));
+    (await connection.collection(col).find().toArray())
+        .map(card => allCards.push(getCardKey(card, curPrefix)));
     
-    let res = await loadFilesFromS3(callback, allCards);
-    await insertCrads(res, connection.collection('cards'));
+    let res = await loadFilesFromS3(callback, allCards, curPrefix);
+    await insertCrads(res, connection.collection(col));
     return res;
 }      
 
-function loadFilesFromS3(callback, allCards, marker, collected = []) {
+function loadFilesFromS3(callback, allCards, root, marker, collected = []) {
     return new Promise(resolve => {
         let params = {Bucket: 'amusementclub', MaxKeys: 2000};
 
@@ -132,7 +133,7 @@ function loadFilesFromS3(callback, allCards, marker, collected = []) {
                 let item = object.Key.split('.')[0];
                 let ext = object.Key.split('.')[1];
                 if(ext && acceptedExts.includes(ext) &&
-                    item.startsWith('cards') && !allCards.includes(item)){
+                    item.startsWith(root) && !allCards.includes(item)){
                     let split = item.split('/');
                     if(split.length == 3) {
                         collected.push(getCardObject(split[2] + '.' + ext, split[1]));
@@ -145,7 +146,7 @@ function loadFilesFromS3(callback, allCards, marker, collected = []) {
 
             if (data.IsTruncated) {
                 let marker = data.Contents[data.Contents.length - 1].Key;
-                let res = await loadFilesFromS3(callback, allCards, marker, collected);
+                let res = await loadFilesFromS3(callback, allCards, root, marker, collected);
                 return resolve(res);
             } else 
                 resolve(collected);
@@ -153,9 +154,9 @@ function loadFilesFromS3(callback, allCards, marker, collected = []) {
     });
 }
 
-function getCardKey(card) {
+function getCardKey(card, keyprefix) {
     let prefix = card.craft? card.level + 'cr' : card.level;
-    return 'cards/' + card.collection + '/' + prefix + "_" + card.name;
+    return keyprefix + '/' + card.collection + '/' + prefix + "_" + card.name;
 }
 
 async function getRemoteCardList() {
@@ -196,8 +197,6 @@ function getCardObject(name, collection) {
     let craft = name.substr(1, 2) === "cr";
 
     collection = collection.replace(/=/g, '');
-    console.log(name);
-
     return {
         "name": craft? split[0].substr(4) : split[0].substr(2),
         "collection": collection,
