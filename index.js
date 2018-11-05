@@ -19,6 +19,7 @@ const auctions = require('./modules/auctions.js');
 const collections = require('./modules/collections.js');
 const admin = require('./modules/admin.js');
 const guilds = require('./modules/guild.js');
+const heapdump = require("heapdump");
 
 var bot, curShard = 0, shards = 0;
 var cooldownList = [];
@@ -311,6 +312,21 @@ async function getCommand(user, channel, guild, message, event, callback) {
                     }
                 } else {
                     callback(user.username + ", 'award' is admin-only command");
+                }
+                return;
+            case 'heapdump':
+                if(dbManager.isAdmin(user.id)) {
+                    heapdump.writeSnapshot("./amusementclub-" + Date.now() + ".heapsnapshot", (err, filename) => {
+                        if (filename) {
+                            callback(`Finished writing heap snapshot to ${filename}`);
+                        }
+                        else {
+                            callback("Failed to write heap snapshot")
+                        }
+                    });
+                }
+                else {
+                    callback(user.username + ", 'heapdump' is admin-only command");
                 }
                 return;
             case 'lead':
