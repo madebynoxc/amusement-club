@@ -29,6 +29,7 @@ async function processRequest(user, args, guild, channelID, callback) {
         if(parse.id) {
             msg += "you have already set up transaction to this user.\n"
             msg += "Target user has to run `->confirm " + res.id + "` to confirm it.\n";
+            msg += "Use `->decline " + res.id + "` to decline transaction.\n";
         } else {
             msg += "There is still previous sell request in place.\n"
             msg += "To confirm it run `->confirm " + res.id + "`\nTo cancel use `->decline " + res.id + "`\n"
@@ -56,13 +57,13 @@ async function processRequest(user, args, guild, channelID, callback) {
     if(!objs[0]) return callback(utils.formatError(user, "Can't find cards", "can't find any card matching that request"));
 
     let cards = objs[0].cards;
-    if(query['cards.name'] && cards.length > 1) {
+    /*if(query['cards.name'] && cards.length > 1) {
         //Changes the regex to match the full name instead of any part of the name
         let exactMatch = new RegExp(query['cards.name'].source.replace("_|", "") + "$", "i");
         cards = cards.filter(c => exactMatch.test(c.name));
         //Continue if only one card with the exact name is found
         if(cards.length != 1) return callback(utils.formatError(user, "Ambiguous query", "found multiple cards with that name, try specifying further."));
-    }
+    }*/
 
     let match = query['cards.name'] ? dbmanager.getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
     if(!match) return callback(utils.formatError(user, "Can't find cards", "can't find any card matching that request"));
@@ -102,11 +103,11 @@ async function processRequest(user, args, guild, channelID, callback) {
         
         await tcollection.insert(transaction);
         targetUser.id = targetUser.discord_id;
-        return react.addNewConfirmation(parse.id, formatSellRequest(targetUser, transaction), channelID, () => {
+        return react.addNewConfirmation(dbUser.discord_id, formatSellRequest(targetUser, transaction), channelID, () => {
             transModule.confirm(targetUser, [transaction.id], callback);
         }, () => {
             transModule.decline(targetUser, [transaction.id], callback);
-        });
+        }, parse.id);
     } else {
         transaction.price = forge.getCardEffect(dbUser, 'sell', settings.cardprice[match.level - 1])[0];
         await tcollection.insert(transaction);

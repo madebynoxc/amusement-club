@@ -38,15 +38,17 @@ function addNewPagination(userID, title, data, channelID) {
     });
 }
 
-function addNewConfirmation(userID, embed, channelID, onConfirm, onDecline) {
+function addNewConfirmation(userID, embed, channelID, onConfirm, onDecline, canReact) {
     removeExisting(userID);
+    console.log(canReact);
 
     var mes = {
         "userID": userID, 
         "embed": embed,
         "onConfirm": onConfirm,
         "onDecline": onDecline,
-        "removeID": Math.random()
+        "removeID": Math.random(),
+        "canReact": canReact? canReact : userID
     };
 
     reactMessages.push(mes);
@@ -74,7 +76,7 @@ function onCollectReaction(userID, channelID, messageID, emoji) {
 }
 
 function processEmoji(userID, channelID, messageID, emoji) {
-    var mes = reactMessages.filter((o)=> (o.id == messageID && o.userID == userID))[0];
+    var mes = reactMessages.filter((o)=> (o.id == messageID && o.canReact == userID))[0];
     if(!mes) return false;
     switch(emoji.name) {
         case '⬅':
@@ -136,8 +138,9 @@ function reactConfirm(message) {
 }
 
 function removeExisting(userID, del = false, removeID = null) {
-    var pgn = reactMessages.filter((o)=> o.userID == userID)[0];
-    if(pgn && (removeID === null || removeID === pgn.removeID)){
+    var pgn = reactMessages.filter((o)=> o.canReact == userID)[0];
+    if(pgn && (!removeID || removeID === pgn.removeID)){
+
         if(pgn.message) {
             let mesObj = { 
                 channelID: pgn.message.channel_id, 
