@@ -21,7 +21,8 @@ function addNewPagination(userID, title, data, channelID) {
         "page": 1,
         "userID": userID,
         "data": data,
-        "removeID": Math.random()
+        "removeID": Math.random(),
+        "canReact": userID
     };
 
     reactMessages.push(mes);

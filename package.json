@@ -12,7 +12,7 @@
     "async-lock": "^1.1.2",
     "aws-sdk": "^2.311.0",
     "dblapi.js": "^2.2.0",
-    "discord.io": "https://github.com/woor/discord.io/tarball/gateway_v6",
+    "discord.io": "github:Woor/discord.io#gateway_v6",
     "forever-monitor": "^1.7.1",
     "js-levenshtein": "^1.1.2",
     "lodash": "^4.17.10",
