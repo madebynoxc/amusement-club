@@ -160,7 +160,7 @@ async function getCommand(user, channel, guild, message, event, callback) {
                 return;
             case 'admin':
                 if(dbManager.isAdmin(user.id))
-                    admin.processRequest(user, channel, cnt, callback);
+                    await admin.processRequest(user, channel, cnt, callback);
                 return;
             case 'cl': 
             case 'claim': 

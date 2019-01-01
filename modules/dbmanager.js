@@ -30,7 +30,7 @@ const inv = require('./inventory.js');
 const stats = require('./stats.js');
 const invite = require('./invite.js');
 const helpMod = require('./help.js');
-const vote = require('./vote.js');
+//const vote = require('./vote.js');
 const transactions = require('./transactions.js');
 const ratioInc = require('./ratioincrease.json');
 const lev = require('js-levenshtein');
@@ -49,7 +49,7 @@ function connect(bot, shard, shardCount, callback) {
     client = bot;
     MongoClient.connect(settings.database, function(err, db) {
         assert.equal(null, err);
-        dblapi = require('./dblapi.js');
+        //dblapi = require('./dblapi.js');
         logger.message("[DB Manager] Connected correctly to database");
 
         mongodb = db;
@@ -62,12 +62,12 @@ function connect(bot, shard, shardCount, callback) {
         transactions.connect(db);
         invite.connect(db, client);
         helpMod.connect(db, client);
-        vote.connect(db, client);
+        //vote.connect(db, client);
         sellManager.connect(db);
         auctions.connect(db, client, shard);
         collections.connect(db);
         guildMod.connect(db, client, shard);
-        dblapi.connect(db, client, shard, shardCount); 
+        //dblapi.connect(db, client, shard, shardCount); 
         //cardmanager.updateCards(db);
 
         if(shard == 0) {
@@ -584,7 +584,7 @@ function daily(u, callback) {
             }
         );
 
-        msg += "[Vote for free card](https://discordbots.org/bot/340988108222758934)";
+        //msg += "[Vote for free card](https://discordbots.org/bot/340988108222758934)";
         callback(utils.formatInfo(user, null, msg));
 
         if(user.hero && user.lastmsg != dailymessage.id) {

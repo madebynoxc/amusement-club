@@ -1,5 +1,13 @@
 [
     {
+        "version": "1.12.9",
+        "changes": [
+            "Admin comands update",
+            "Updated modeules, removed vulnerables",
+            "Removed DBL support"
+        ]
+    },
+    {
         "version": "1.12.7",
         "changes": [
             "Multiple crash fixes",
