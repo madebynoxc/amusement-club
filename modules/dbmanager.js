@@ -662,7 +662,7 @@ function difference(discUser, parse, callback) {
 
             let cardsU2 = objs2[0].cards;
             let dbUser2 = objs2[0]._id;
-            let dif = cardsU2.filter(x => cardsU1.filter(y => utils.cardsMatch(x, y)) == 0);
+            let dif = utils.diff(cardsU2, cardsU1).firstOnly;
             if(includeFavorite != true) {
                 dif = dif.filter(x => !(x.fav && x.amount == 1));
             }
@@ -775,7 +775,7 @@ function needsCards(user, args, callback) {
 
         query = utils.getRequestFromFiltersNoPrefix(args);
         ccollection.find(query).toArray((err, res) => {
-            let dif = res.filter(x => cards.filter(y => utils.cardsMatch(x, y)) == 0);
+            let dif = utils.diff(res, cards).firstOnly
             
             if(dif.length > 0) 
                 callback(dif, true);
