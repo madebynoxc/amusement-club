@@ -38,7 +38,9 @@ module.exports = {
     generateRandomId,
     generateNextId,
     getFullCard,
-    formatImage
+    formatImage,
+    cardComparator,
+    diff
 }
 
 const fs = require('fs');
@@ -205,6 +207,7 @@ function getRequestFromFiltersWithPrefix(args, prefix) {
             if(el === "star") query.sortBy[prefix + 'level'] = accend;
             else if(el === "date") query.sortBy = null;
             else if(el === "name") query.sortBy[prefix + 'name'] = accend;
+            else if(el.startsWith("col")) query.sortBy[prefix + 'collection'] = accend;
             else if(el === "amount") query.sortBy[prefix + 'amount'] = accend;
             else query.sortBy[prefix + 'level'] = -1;
 
@@ -381,6 +384,71 @@ function getFullCard(card) {
     res += toTitleCase(card.name.replace(/_/g, " "));
     res += " `[" + card.collection + "]`";
     return res;
+}
+
+/// Compares two cards for sorting
+/// Guarantees that no two different cards will compare as equal 
+function cardComparator(a, b) {
+    if (a.level < b.level) {
+        return 1;
+    }
+    if (a.level > b.level) {
+        return -1;
+    }
+    if (a.collection < b.collection) {
+        return -1;
+    }
+    if (a.collection > b.collection) {
+        return 1;
+    }
+    let alc = a.name.toLowerCase();
+    let blc = b.name.toLowerCase();
+    if (alc < blc) {
+        return -1;
+    }
+    if (alc > blc) {
+        return 1;
+    }
+    return 0;
+}
+
+/// Finds differences in the first and second arrays
+/// - parameter first: An array of objects
+/// - parameter second: An array of objects
+/// - parameter comparator: A comparator usable in the sort function.  Defaults to cardComparator.
+/// - returns: An object with properites `firstOnly`, `secondOnly`, and `both`, all of which are arrays
+function diff(first, second, comparator) {
+    let firstOnly = [], secondOnly = [], both = [];
+    if (!comparator) {
+        comparator = cardComparator;
+    }
+    let firstSorted = first.sort(comparator);
+    let secondSorted = second.sort(comparator);
+    let i1 = 0;
+    let i2 = 0;
+    while (i1 < firstSorted.length && i2 < secondSorted.length) {
+        let compared = comparator(firstSorted[i1], secondSorted[i2]);
+        if (compared < 0) {
+            firstOnly.push(firstSorted[i1]);
+            i1 += 1;
+        }
+        else if (compared > 0) {
+            secondOnly.push(secondSorted[i2]);
+            i2 += 1;
+        }
+        else {
+            both.push(firstSorted[i1]);
+            i1 += 1;
+            i2 += 1;
+        }
+    }
+    if (i1 < firstSorted.length) {
+        firstOnly = firstOnly.concat(firstSorted.slice(i1));
+    }
+    if (i2 < secondSorted.length) {
+        secondOnly = secondOnly.concat(secondSorted.slice(i2));
+    }
+    return {firstOnly: firstOnly, secondOnly: secondOnly, both: both}
 }
 
 // db.getCollection('users').aggregate([
