@@ -69,7 +69,7 @@
     }, {
         "name": "sushi_squad",
         "level": 25,
-        "effect": "Get 20% more 🍅 when you sell a card",
+        "effect": "Get 20% more 🍅 when you sell a card to bot",
         "cost": 3700,
         "compressed": false,
         "cards": [
