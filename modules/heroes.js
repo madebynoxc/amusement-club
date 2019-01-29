@@ -122,8 +122,9 @@ function assign(dbUser, args, channelID, callback) {
 }
 
 function switchHero(newHero, dbUser, callback) {
-    var upd = dbUser.hero? {$set: {"hero.name": newHero.name, lastHeroChange: new Date()}, $inc: {exp: -2500}} 
-        : {$set: {hero: newHero, lastHeroChange: new Date()}};
+    var upd = dbUser.hero? {
+        $set: {"hero.name": newHero.name, "hero.subname": newHero.subname, lastHeroChange: new Date()}, 
+        $inc: {exp: -2500}} : {$set: {hero: newHero, lastHeroChange: new Date()}};
 
     ucollection.update(
         { discord_id: dbUser.discord_id }, upd
