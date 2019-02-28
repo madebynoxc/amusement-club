@@ -498,8 +498,20 @@ function sell(user, to, args, callback) {
 
 function newUser(user, nextCall, callback) {
     let collection = mongodb.collection('users');
+    let ccollection = mongodb.collection('cards');
     let scollection = mongodb.collection('system');
-    scollection.findOne({type: "dailycard"}).then(c => {
+    scollection.findOne({type: "dailycard"}).then(async c => {
+        if (!c) {
+            c = {
+                type: "dailycard",
+                timestamp: new Date(),
+                card: (await ccollection.aggregate([
+                    {"$match": {"level": 3}},
+                    {"$sample" : {"size": 1}}
+                ]).toArray())[0]
+            };
+            await scollection.insert(c);
+        }
         return collection.insert( { 
             discord_id: user.id,
             username: user.username,

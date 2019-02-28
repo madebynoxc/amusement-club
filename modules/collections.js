@@ -1,5 +1,5 @@
 module.exports = {
-    connect, processRequest, getCollections, parseCollection, getByID
+    connect, processRequest, getCollections, addCollection, parseCollection, getByID
 }
 
 const dbManager = require("./dbmanager.js");
@@ -97,6 +97,19 @@ function getCollections() {
             cache = c;
             resolve(c);
         });
+    });
+}
+
+function addCollection(col, special = false, compressed = false) {
+    return new Promise((resolve) => {
+        mongodb.collection('collections').insert({
+            id: col,
+            name: col,
+            origin: null,
+            aliases: [col],
+            special: special,
+            compressed: compressed
+        }).then(c => resolve(c));
     });
 }
 

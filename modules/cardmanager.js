@@ -9,6 +9,7 @@ const utils = require("./localutils.js");
 const https = require('https');
 const AWS = require('aws-sdk');
 const settings = require('../settings/general.json');
+const collections = require('./collections.js')
 
 const validExts = ['.png', '.gif', '.jpg'];
 const acceptedExts = ['png', 'gif', 'jpg'];
@@ -30,6 +31,7 @@ function updateCardsLocal(connection, callback) {
         collection2.find({}).toArray((err2, res2) => {
             let allCards = res.concat(res2);
             fs.readdir('./cards', (err2, items) => {
+                let cols = collections.getCollections();
                 let collected = [];
                 items.forEach(item => {
                     let newCards = [];
@@ -45,6 +47,9 @@ function updateCardsLocal(connection, callback) {
                                 return e.name == card.name && e.collection === item.replace('=', '');
                             }).length == 0){
                                 newCards.push(card);
+                                let col = cols.filter(c => c.name == item)[0];
+                                if(!col) cols.push({name: item, special: false, compressed: ext == 'jpg'});
+                                else if(!card.craft && ext == 'jpg') col.compressed = true;
                             }
                         } else  logger.error("Can't parse card: " + files[i]);
                     }
@@ -54,6 +59,10 @@ function updateCardsLocal(connection, callback) {
                     else insertCrads(newCards, mongodb.collection('cards'));
 
                     if(newCards.length > 0) collected.push({name: item, count: newCards.length});
+                });
+                collected.forEach(item => {
+                    if (!collections.parseCollection(item.name).length)
+                        collections.addCollection(item.name, item.special, item.compressed);
                 });
                 logger.message("[CardManager 2.3] Card update finished"); 
                 if(callback) callback(collected);
@@ -84,16 +93,28 @@ function updateCards_legacy(connection) {
                     warnings.push(card.name + " : " + name.split('.')[0]);
 
                 if(allCards.filter(c => utils.cardsMatch(c, card)) == 0) {
-                    if(type == 'promo') newPromoCards.push(card);
+                    let special = false;
+                    let compressed = name.split('.')[1] == "jpg";
+                    if(type == 'promo') {
+                        newPromoCards.push(card);
+                        special = true;
+                    }
                     else if(type == 'cards') newCards.push(card);
 
                     let col = collected.filter(c => c.name == collection)[0];
-                    if(!col) collected.push({name: collection, count: 1});
-                    else col.count++;
+                    if(!col) collected.push({name: collection, count: 1, special: special, compressed: false});
+                    else {
+                        col.count++;
+                        if(!card.craft && compressed) col.compressed = true;
+                    }
                 }
             }
         });
 
+        collected.forEach(item => {
+            if (!collections.parseCollection(item.name).length)
+                collections.addCollection(item.name, item.special, item.compressed);
+        });
         if(newCards.length > 0) 
             await insertCrads(newCards, mongodb.collection('cards'));
         if(newPromoCards.length > 0) 
@@ -118,7 +139,7 @@ async function updateCardsS3(connection, col, callback) {
     return res;
 }      
 
-function loadFilesFromS3(callback, allCards, root, marker, collected = []) {
+function loadFilesFromS3(callback, allCards, root, marker, collected = [], cols = []) {
     return new Promise(resolve => {
         let params = {Bucket: 'amusementclub', MaxKeys: 2000};
 
@@ -136,7 +157,11 @@ function loadFilesFromS3(callback, allCards, root, marker, collected = []) {
                     item.startsWith(root) && !allCards.includes(item)){
                     let split = item.split('/');
                     if(split.length == 3) {
-                        collected.push(getCardObject(split[2] + '.' + ext, split[1]));
+                        let card = getCardObject(split[2] + '.' + ext, split[1]);
+                        collected.push(card);
+                        let col = cols.filter(c => c.name == split[1])[0];
+                        if(!col) cols.push({name: split[1], special: root == 'promo', compressed: ext == 'jpg'});
+                        else if(!card.craft && ext == 'jpg') col.compressed = true;
                         len++;
                     }
                 }
@@ -146,10 +171,15 @@ function loadFilesFromS3(callback, allCards, root, marker, collected = []) {
 
             if (data.IsTruncated) {
                 let marker = data.Contents[data.Contents.length - 1].Key;
-                let res = await loadFilesFromS3(callback, allCards, root, marker, collected);
+                let res = await loadFilesFromS3(callback, allCards, root, marker, collected, cols);
                 return resolve(res);
-            } else 
+            } else {
+                cols.forEach(item => {
+                    if (!collections.parseCollection(item.name).length)
+                        collections.addCollection(item.name, item.special, item.compressed);
+                });
                 resolve(collected);
+            }
         });
     });
 }
