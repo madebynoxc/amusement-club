@@ -59,6 +59,7 @@ bot.on("message", async (username, userID, channelID, message, event) => {
     if(channelID == settings.botcommchannel) {
         let splitMessage = message.split(' ');
         let num = parseInt(splitMessage[2]);
+        let col;
         switch(splitMessage[1]) {
             case 'help':
                 showCommands(); break;
@@ -81,6 +82,21 @@ bot.on("message", async (username, userID, channelID, message, event) => {
                     console.log('[Ayano] Stopping Amusement Club instance #' + num); 
                     instances[num].stop();  
                 } break;
+            case 'alias':
+                col = collections.parseCollection(splitMessage[3]);
+                if (splitMessage[2] == "add")
+                    addAlias(col, splitMessage[4]);
+                else if (splitMessage[2] == "remove")
+                    removeAlias(col, splitMessage[4]);
+                break;
+            case 'origin':
+                col = collections.parseCollection(splitMessage[2]);
+                setOrigin(col, splitMessage[3]);
+                break;
+            case 'collection':
+                col = collections.parseCollection(splitMessage[2]);
+                setCollectionName(col, message.substring(16 + splitMessage[2].length));
+                break;
             case 'getsources':
                 scanImageSources();
                 break;
@@ -195,6 +211,12 @@ bot.on("guildCreate", g => {
 
     console.log("[Ayano] Found " + usercount + " users");
 });
+
+function toTitleCase(str) {
+    return str.replace(/\w\S*/g, function(txt){
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
+}
 
 function getStatus() {
     let msg = "";
@@ -419,7 +441,172 @@ function sendEmbed(where, emb) {
 function showCommands(argument) {
     bot.sendMessage({
         to: settings.botcommchannel, 
-        embed: formConfirm("Command list", "update [cards]\nstart [bot]\nstop [bot]\nrestart [bot]\nrename [card query], [new name]")
+        embed: formConfirm("Command list", "update [cards|promo]\nstart [bot]\nstop [bot]\nrestart [bot]\nrename [card query], [new name]\ncollection [collection query] [new name]\norigin [collection query] [new origin]\nalias <add|remove> [collection query] [alias]")
+    });
+}
+
+function addAlias(col, alias) {
+    if(!mongodb){
+        bot.sendMessage({
+            to: settings.botcommchannel,
+            embed: formError("Can't update collection", "The connection to database is invalid")
+        });
+        return;
+    }
+
+    if(col.length == 0){
+        bot.sendMessage({
+            to: settings.botcommchannel,
+            embed: formError("Can't remove alias", "Make sure the collection specified is spelled correctly")
+        });
+        return;
+    }
+
+    if(col.length > 1){
+        bot.sendMessage({
+            to: settings.botcommchannel,
+            embed: formError("Can't remove alias", "Too many collections found. Please specify further")
+        });
+        return;
+    }
+
+    col = col[0];
+    let result = "";
+    const cols = mongodb.collection('collections');
+    let query = {id: col.id}
+    cols.update(query, {$push: {aliases: alias}}).then(res => {
+        result += "Alias **" + alias + "** has been added to collection **" + col.id + "**\n";
+        cols.findOne(query).then(res => {
+            result += "Collection's aliases: **" + res.aliases.join(" **|** ") + "**\n";
+            result += "Collection update finished\n";
+            return bot.sendMessage({
+                to: settings.botcommchannel,
+                embed: formConfirm("Update finished", result)
+            });
+        });
+    });
+}
+
+function removeAlias(col, alias) {
+    if(!mongodb){
+        bot.sendMessage({
+            to: settings.botcommchannel,
+            embed: formError("Can't update collection", "The connection to database is invalid")
+        });
+        return;
+    }
+
+    if(col.length == 0){
+        bot.sendMessage({
+            to: settings.botcommchannel,
+            embed: formError("Can't remove alias", "Make sure the collection specified is spelled correctly")
+        });
+        return;
+    }
+
+    if(col.length > 1){
+        bot.sendMessage({
+            to: settings.botcommchannel,
+            embed: formError("Can't remove alias", "Too many collections found. Please specify further")
+        });
+        return;
+    }
+
+    col = col[0];
+    let result = "";
+    const cols = mongodb.collection('collections');
+    let query = {id: col.id}
+    cols.update(query, {$pull: {aliases: alias}}).then(res => {
+        result += "Alias **" + alias + "** has been removed from collection **" + col.id + "**\n";
+        cols.findOne(query).then(res => {
+            result += "Collection's aliases: **" + res.aliases.join(" **|** ") + "**\n";
+            result += "Collection update finished\n";
+            return bot.sendMessage({
+                to: settings.botcommchannel,
+                embed: formConfirm("Update finished", result)
+            });
+        });
+    });
+}
+
+function setOrigin(col, origin) {
+    if(!mongodb){
+        bot.sendMessage({
+            to: settings.botcommchannel,
+            embed: formError("Can't update collection", "The connection to database is invalid")
+        });
+        return;
+    }
+
+    if(col.length == 0){
+        bot.sendMessage({
+            to: settings.botcommchannel,
+            embed: formError("Can't remove alias", "Make sure the collection specified is spelled correctly")
+        });
+        return;
+    }
+
+    if(col.length > 1){
+        bot.sendMessage({
+            to: settings.botcommchannel,
+            embed: formError("Can't remove alias", "Too many collections found. Please specify further")
+        });
+        return;
+    }
+
+    col = col[0];
+    let result = "";
+    const cols = mongodb.collection('collections');
+    let query = {id: col.id}
+    cols.update(query, {$set: {origin: origin}}).then(res => {
+        result += "Origin of collection **" + col.id + "** is set.\n";
+        result += "**" + origin + "**\n";
+        result += "Collection update finished\n";
+        return bot.sendMessage({
+            to: settings.botcommchannel,
+            embed: formConfirm("Update finished", result)
+        });
+    });
+}
+
+function setCollectionName(col, name) {
+    if(!mongodb){
+        bot.sendMessage({
+            to: settings.botcommchannel,
+            embed: formError("Can't update collection", "The connection to database is invalid")
+        });
+        return;
+    }
+
+    if(col.length == 0){
+        bot.sendMessage({
+            to: settings.botcommchannel,
+            embed: formError("Can't remove alias", "Make sure the collection specified is spelled correctly")
+        });
+        return;
+    }
+
+    if(col.length > 1){
+        bot.sendMessage({
+            to: settings.botcommchannel,
+            embed: formError("Can't remove alias", "Too many collections found. Please specify further")
+        });
+        return;
+    }
+
+    col = col[0];
+    let result = "";
+    const cols = mongodb.collection('collections');
+    let query = {id: col.id}
+    console.log(col);
+    cols.update(query, {$set: {name: toTitleCase(name)}}).then(res => {
+        console.log(res);
+        result += "**" + name + "** is set as the name of collection **" + col.id + "**.\n";
+        result += "Collection update finished\n";
+        return bot.sendMessage({
+            to: settings.botcommchannel,
+            embed: formConfirm("Update finished", result)
+        });
     });
 }
 
@@ -561,6 +748,7 @@ function updateCardsRemote(arg) {
                 });
             }
         }
+        collections.getCollections();
 
         if(res.warnings && res.warnings.length > 0) {
             bot.sendMessage({
