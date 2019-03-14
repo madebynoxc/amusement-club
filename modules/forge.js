@@ -66,8 +66,8 @@ function getInfo(user, name, callback, image = false) {
         "** was not found");
 }
 
-function craftCard(user, args, callback) {
-    var cards = args.join('_').split(',');
+async function craftCard(user, args, callback) {
+    var cards = args.join(' ').split(/\s*,\s*/g);
     if(!cards || cards.length < 2)
         return callback("Minimum **2** cards or items required for forge\nDon't forget to put `,` between names"
             + "\nInclude only card/item **name**");
@@ -80,7 +80,12 @@ function craftCard(user, args, callback) {
         if(cards[i][0] == "_") 
             name = cards[i].substr(1); 
 
-        let card = dbManager.getBestCardSorted(user.cards, name)[0];
+        let filters = name.split(" ");
+        let query = utils.getRequestFromFilters(filters);
+        let userCards = await dbManager.getUserCards(user.discord_id, query).toArray();
+        let card;
+        if (userCards && userCards[0])
+            card = query['cards.name']? dbManager.getBestCardSorted(userCards[0].cards, query['cards.name'])[0] : _.sample(userCards[0].cards);
         if(!card) 
             return callback("**" + user.username 
                 + "**, card with name **" + name.replace(/_/g, " ")
