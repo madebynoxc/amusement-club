@@ -41,6 +41,9 @@ function processRequest(user, server, channelID, args, callback) {
         case 'unlock':
             unlock(user, server.id, callback);
             break;
+        case 'allowany':
+            toggleAny(user, server.id, callback);
+            break;
     }
 }
 
@@ -150,6 +153,16 @@ async function unlock(user, serverID, callback) {
     }
 }
 
+async function toggleAny(user, serverID, callback) {
+    let guild = await getByID(serverID);
+    let owner = bot.users[guild.owner];
+    if(guild.owner == user.id || settings.admins.includes(user.id)) {
+        let set = !guild.blockany;
+        await scollection.update({id: serverID}, {$set: {blockany: set}});
+        return callback(utils.formatConfirm(user, null, "`any` claim is now " + (set? "**blocked**" : "**allowed**")));
+    }
+}
+
 async function info(srv, callback) {
     if(!srv)
         return;
@@ -164,8 +177,10 @@ async function info(srv, callback) {
     resp += `Prefix: **${guild.prefix}**\n`;
     resp += `Using shard: **${shard}**\n`;
 
-    if(guild.lock)
+    if(guild.lock) {
         resp += `Locked on: **${collections.getByID(guild.lock).name}**\n`;
+        resp += `Any claims are **${guild.blockany? "blocked" : "allowed"}**\n`;
+    }
 
     try {resp += `Bot channels: **${guild.botChannels.map(c => bot.channels[c].name).join(' | ')}**`;}
     catch(e) {}

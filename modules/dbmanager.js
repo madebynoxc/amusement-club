@@ -137,6 +137,9 @@ function claim(user, guild, arg, callback) {
             { $sample: { size: amount } } 
         ]
 
+        if(guild.blockany)
+            any = false;
+
         if(guild && guild.lock && !any) {
             query[0].$match.collection = guild.lock;
             query[0].$match.craft = {$in: [null, false]};
