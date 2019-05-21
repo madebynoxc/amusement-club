@@ -10,6 +10,7 @@ module.exports = {
 
 var MongoClient = require('mongodb').MongoClient;
 var mongodb, client, userCount, dblapi;
+var dailyCol;
 var cooldownList = [];
 var modifyingList = [];
 
@@ -90,11 +91,11 @@ function connect(bot, shard, shardCount, callback) {
     });
 }
 
-function claim(user, guild, arg, callback) {
+function claim(user, guild, channelID, arg, callback) {
     let ucollection = mongodb.collection('users');
     ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
         if(!dbUser)
-            return newUser(user, () => claim(user, guild, arg, callback), callback);
+            return newUser(user, () => claim(user, guild, channelID, arg, callback), callback);
 
         let any = false;
         let promo = false;
@@ -142,6 +143,11 @@ function claim(user, guild, arg, callback) {
 
         if(guild && guild.lock && !any) {
             query[0].$match.collection = guild.lock;
+            query[0].$match.craft = {$in: [null, false]};
+        }
+
+        if(settings.lockChannel && channelID == settings.lockChannel && dailyCol) {
+            query[0].$match.collection = dailyCol;
             query[0].$match.craft = {$in: [null, false]};
         }
 
@@ -605,6 +611,14 @@ function daily(u, callback) {
         if(user.hero && user.lastmsg != dailymessage.id) {
             callback(utils.formatInfo(user, dailymessage.title, dailymessage.body));
         }
+
+        let scollection = mongodb.collection('system');
+        scollection.findOne({type: "dailycard"}).then(async c => {
+            if(c && dailyCol != c.card.collection) {
+                dailyCol = c.card.collection;
+                client.editChannelInfo({channelID: settings.lockChannel, name: dailyCol});
+            }
+        });
     });
 }
 

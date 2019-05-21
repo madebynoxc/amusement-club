@@ -167,7 +167,7 @@ async function getCommand(user, channel, guild, message, event, callback) {
                 if(channelType == 0) callback('Claiming is available only on servers');
                 else if(channelType == 1) botOnly(chanID);
                 else {
-                    await dbManager.claim(user, curg, cnt, (text, img) => {
+                    await dbManager.claim(user, curg, chanID, cnt, (text, img) => {
                         callback(text, img);
                     });
                 }
