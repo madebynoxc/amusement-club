@@ -397,9 +397,7 @@ function getTimeUntilAucEnds(auc) {
     const minutes = Math.floor(base % 60);
     const seconds = Math.floor((base * 60) % 60);
 
-    return  hours > 0    ? `${hours}h ${minutes}m`  :
-            minutes > 0  ? `${minutes}m ${seconds}s`:
-            `${seconds}s`;
+    return  hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m ${seconds}s`;
 }
 
 async function generateBetterID() {
