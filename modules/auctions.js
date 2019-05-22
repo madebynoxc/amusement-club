@@ -387,7 +387,7 @@ function auctionToString(auc, userID) {
 }
 
 function getTimeUntilAucEnds(auc) {
-    var aucDate = auc.date;
+    var aucDate = new Date(auc.date);
     const timeUntilEndMs = aucDate.setHours(auc.date.getHours() + 5) - new Date();
 
     if (timeUntilEndMs <= 0)
@@ -397,10 +397,11 @@ function getTimeUntilAucEnds(auc) {
     const hours = Math.floor(base / 60);
     const minutes = Math.floor(base % 60);
     const seconds = Math.floor((base * 60) % 60);
-return  hours > 0    ? `${hours}h ${minutes}m`  :
-            minutes > 0  ? `${minutes}m ${seconds}s`:
-            `${seconds}s`;
-    }
+    return  hours > 0? `${hours}h ${minutes}m`  :
+                minutes > 0  ? `${minutes}m ${seconds}s`:
+                `${seconds}s`;
+}
+
 async function generateBetterID() {
     let lastAuction = (await acollection.find({}).sort({$natural: -1}).limit(1).toArray())[0];
     return utils.generateNextId(lastAuction? lastAuction.id : "start");
