@@ -151,7 +151,7 @@ async function bid(user, args, callback) {
         if(hidebid) msg += "Next required bid is hidden by hero effect.\n";
         else msg += "To remain in the auction, you should bid more than **" + getNextBid(auc) + "**🍅\n"
         msg += "Use `->auc bid " + auc.id + " [new bid]`\n";
-        msg += "This auction will end in **" + getTime(auc) + "**";
+        msg += "This auction will end in **" + getTimeUntilAucEnds(auc) + "**";
         sendDM(auc.lastbidder, utils.formatWarning(null, "Oh no!", msg));
     } else {
         auc.price = price;
@@ -159,7 +159,7 @@ async function bid(user, args, callback) {
         let msg = "A player has bid on your card **" + utils.getFullCard(auc.card)  + "** with a bid of **" + strprice + "**🍅\n";
 
         if(hidebid) msg += "The bid is hidden by hero effect.\n";
-        msg += "This auction will end in **" + getTime(auc) + "**";
+        msg += "This auction will end in **" + getTimeUntilAucEnds(auc) + "**";
         sendDM(auc.author, utils.formatInfo(null, "Yay!", msg));
     }
 
@@ -294,7 +294,7 @@ async function info(user, args, channelID, callback) {
         if(user.id == auc.lastbidder && !auc.finished) 
             resp += "You are currently leading in this auction\n";
         if(auc.finished) resp += "**This auction has finished**\n";
-        else resp += "Finishes in: **" + getTime(auc) + "**\n";
+        else resp += "Finishes in: **" + getTimeUntilAucEnds(auc) + "**\n";
 
         let emb = utils.formatInfo(null, "Information about auction", resp);
         emb.image = {url: dbManager.getCardURL(auc.card, false)};
@@ -379,28 +379,25 @@ function auctionToString(auc, userID) {
         else resp += "🔷";
     else if(userID == auc.lastbidder) resp += "🔸";
     else resp += "▪";
-    resp += "`[" + getTime(auc) + "] ";
+    resp += "`[" + getTimeUntilAucEnds(auc) + "] ";
     resp += "[" + auc.id + "] ";
     resp += "[" + getNextBid(auc) + "🍅]`  ";
     resp += "**" + utils.getFullCard(auc.card) + "**\n";
     return resp;
 }
 
-function getTime(auc) {
-    let hours = aucTime - utils.getHoursDifference(auc.date);
-    if (hours == 0)
+function getTimeUntilAucEnds(auc) {
+    const timeUntilEndMs = auc.date.setHours(auc.date.getHours() + 5) - new Date();
+
+    if (timeUntilEndMs <= 0)
         return "0s";
-    if(hours <= 1){
-        let mins = 60 - (utils.getMinutesDifference(auc.date) % 60);
-        if(mins <= 1){
-            let secs = 60 - (utils.getSecondsDifference(auc.date) % 60 % 60);
-            if(secs <= 1)
-                return "1s";
-            return secs + "s";
-        }
-        return mins + "m";
-    } else 
-        return hours + "h";
+    
+    const base = timeUntilEndMs / (1000 * 60);
+    const hours = Math.floor(base / 60);
+    const minutes = Math.floor(base % 60);
+    const seconds = Math.floor((base * 60) % 60);
+
+    return  hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m ${seconds}s`;
 }
 
 async function generateBetterID() {

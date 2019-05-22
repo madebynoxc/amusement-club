@@ -1,6 +1,6 @@
 {
   "name": "amusement_club",
-  "version": "1.10.0",
+  "version": "1.13.0",
   "description": "Discord Gacha Bot",
   "main": "index.js",
   "scripts": {

@@ -1,5 +1,11 @@
 [
     {
+        "version": "1.13.0",
+        "changes": [
+            "Increased auction end-time accuracy"
+        ]
+    },
+    {
         "version": "1.12.9",
         "changes": [
             "Admin comands update",
