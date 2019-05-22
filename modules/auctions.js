@@ -397,10 +397,10 @@ function getTimeUntilAucEnds(auc) {
     const hours = Math.floor(base / 60);
     const minutes = Math.floor(base % 60);
     const seconds = Math.floor((base * 60) % 60);
-
-    return  hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m ${seconds}s`;
-}
-
+return  hours > 0    ? `${hours}h ${minutes}m`  :
+            minutes > 0  ? `${minutes}m ${seconds}s`:
+            `${seconds}s`;
+    }
 async function generateBetterID() {
     let lastAuction = (await acollection.find({}).sort({$natural: -1}).limit(1).toArray())[0];
     return utils.generateNextId(lastAuction? lastAuction.id : "start");
