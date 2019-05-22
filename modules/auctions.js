@@ -387,7 +387,8 @@ function auctionToString(auc, userID) {
 }
 
 function getTimeUntilAucEnds(auc) {
-    const timeUntilEndMs = auc.date.setHours(auc.date.getHours() + 5) - new Date();
+    var aucDate = auc.date;
+    const timeUntilEndMs = aucDate.setHours(auc.date.getHours() + 5) - new Date();
 
     if (timeUntilEndMs <= 0)
         return "0s";
