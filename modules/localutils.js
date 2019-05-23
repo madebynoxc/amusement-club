@@ -354,11 +354,20 @@ function generateRandomId() {
     return (Date.now().toString(36).substr(2, 3) + Math.random().toString(36).substr(2, 5));
 }
 
-function generateNextId(last) {
-    var num = parseInt(last, 36);
-    num += Math.pow(77, 4);
-    num %= Math.pow(36, 5);
-    return next = num.toString(36);
+function generateNextId(aucIds) {
+    var minLength = 2;
+    var maxLength = 4;
+    var newId;
+    do {
+        newId = "";
+        var len = Math.floor(Math.random()*(maxLength - minLength +1) + minLength);
+        var charPool = ['q','w','e','r','t','y','a','s','d','f','g','z','x','c','v'];
+        for (var i = 0; i<len; i++) {
+            var randIndex = Math.floor(Math.random()*(charPool.length));
+            newId += charPool[randIndex];
+        }
+    } while ( aucIds.findIndex(function(anId) {return anId == newId} ) != -1 );
+    return newId;
 }
 
 function getFullCard(card) {
