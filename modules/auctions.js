@@ -406,7 +406,7 @@ async function generateBetterID() {
     let aucs = (await acollection.find({}).toArray());
     let aucIds = [];
     for (var i=0; i<aucs.length; i++)
-        aucIds.push(aucs[i]['id'];
+        aucIds.push(aucs[i]['id']);
     return utils.generateNextId(aucIds);
 }
 
