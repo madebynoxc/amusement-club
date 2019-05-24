@@ -195,6 +195,11 @@ function addExtraTime(auc) {
 }
 
 async function sell(user, incArgs, channelID, callback) {
+    if(settings.stopAucSell) {
+        return callback(utils.formatError(user, "Auctions are disabled", 
+            "auction selling is disabled right now. Please try again later"));
+    }
+
     let args = incArgs.join(' ').split(',');
     if(!args || args.length < 1) 
         return callback("**" + user.username + "**, please specify card query and price seperated by `,`\n"
