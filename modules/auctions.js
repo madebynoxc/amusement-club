@@ -89,7 +89,7 @@ async function list(user, args, channelID, callback) {
     }
 
     let pages = getPages(auctionList, user.id);
-    if(pages.length == 0) return callback(utils.formatError(user, null,
+    if(pages.length == 0) return callback(utils.formatError(user, null, 
         "no auctions with that request found"));
 
     reactions.addNewPagination(user.id, title, pages, channelID);
@@ -108,7 +108,7 @@ async function bid(user, args, callback) {
     if(!auc)
         return callback(utils.formatError(user, null, "auction `" + args[0] + "` not found"));
 
-    if(auc.author == user.id)
+    if(auc.author == user.id) 
         return callback(utils.formatError(user, null, "you can't bid on your own auction"));
 
     if(auc.finished)
@@ -135,7 +135,7 @@ async function bid(user, args, callback) {
     if(dbUser.exp < price)
         return callback(utils.formatError(user, null, "you do not have enough tomatoes for that bid"));
 
-    if(auc.lastbidder && auc.lastbidder == user.id)
+    if(auc.lastbidder && auc.lastbidder == user.id) 
         return callback(utils.formatError(user, null, "you already bidded on that auction"));
 
     let hidebid = heroes.getHeroEffect(dbUser, 'auc', false);
@@ -164,9 +164,9 @@ async function bid(user, args, callback) {
     }
 
     await acollection.update({_id: auc._id}, {$set: {
-        price: price,
-        lastbidder: user.id,
-        hidebid: hidebid,
+        price: price, 
+        lastbidder: user.id, 
+        hidebid: hidebid, 
         timeshift: auc.timeshift,
         date: auc.date
     }});
@@ -179,7 +179,7 @@ async function bid(user, args, callback) {
 }
 
 function addExtraTime(auc) {
-    if(!auc.timeshift)
+    if(!auc.timeshift) 
         auc.timeshift = 0;
 
     if(60*aucTime - utils.getMinutesDifference(auc.date) <= 5) {
@@ -196,13 +196,13 @@ function addExtraTime(auc) {
 
 async function sell(user, incArgs, channelID, callback) {
     let args = incArgs.join(' ').split(',');
-    if(!args || args.length < 1)
+    if(!args || args.length < 1) 
         return callback("**" + user.username + "**, please specify card query and price seperated by `,`\n"
             + "Or do not specify price to use eval");
 
     let query = utils.getRequestFromFilters(args[0].split(' '));
     dbManager.getUserCards(user.id, query).toArray((err, objs) => {
-        if(!objs || !objs[0])
+        if(!objs || !objs[0]) 
             return callback(utils.formatError(user, null, "no cards found that match your request"));
 
         let cards = objs[0].cards;
@@ -216,7 +216,7 @@ async function sell(user, incArgs, channelID, callback) {
 
         let match = query['cards.name'] ? dbManager.getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
-        if (match.fav && match.amount == 1)
+        if (match.fav && match.amount == 1) 
             return callback(utils.formatError(user, null, "you can't sell favorite card."
                 + " To remove from favorites use `->fav remove [card query]`"));
 
@@ -250,7 +250,7 @@ async function sell(user, incArgs, channelID, callback) {
                     let pullResult = dbManager.pullCard(user.id, match);
                     match.fav = false;
 
-                    if(!pullResult) return;
+                    if(!pullResult) return; 
 
                     await ucollection.update({discord_id: user.id}, {$inc: {exp: -fee}});
                     let aucID = await generateBetterID();
@@ -282,7 +282,7 @@ async function info(user, args, channelID, callback) {
 
     let author = await ucollection.findOne({discord_id: auc.author});
     if(auc.hidebid && user.id != auc.lastbidder) auc.price = "???";
-
+    
     dbManager.getCardValue(auc.card, (eval) => {
         let resp = "";
         resp += "Seller: **" + author.username + "**\n";
@@ -291,7 +291,7 @@ async function info(user, args, channelID, callback) {
         resp += "Card: **" + utils.getFullCard(auc.card) + "**\n";
         resp += "Card value: **" + Math.floor(eval) + "**`🍅`\n";
         resp += "[Card link](" + dbManager.getCardURL(auc.card, false) + ")\n";
-        if(user.id == auc.lastbidder && !auc.finished)
+        if(user.id == auc.lastbidder && !auc.finished) 
             resp += "You are currently leading in this auction\n";
         if(auc.finished) resp += "**This auction has finished**\n";
         else resp += "Finishes in: **" + getTimeUntilAucEnds(auc) + "**\n";
@@ -340,12 +340,12 @@ async function checkAuctionList() {
         let yaaymes = "You won an auction for **" + utils.getFullCard(auc.card) + "**!\nCard is now yours.\n";
         if(tomatoback > 0) yaaymes += "You got **" + tomatoback + "** tomatoes back from that transaction.";
         sendDM(auc.lastbidder, utils.formatConfirm(null, "Yaaay!", yaaymes));
-        sendDM(auc.author, utils.formatConfirm(null, null,
+        sendDM(auc.author, utils.formatConfirm(null, null, 
             "Your auction for card **" + utils.getFullCard(auc.card) + "** finished!\n"
             + "You got **" + auc.price + "**🍅 for it"));
     } else {
         await dbManager.pushCard(auc.author, auc.card);
-        sendDM(auc.author, utils.formatError(null, null,
+        sendDM(auc.author, utils.formatError(null, null, 
             "Your auction for card **" + utils.getFullCard(auc.card) + "** finished, but nobody bid on it.\n"
             + "You got your card back"));
     }
@@ -374,7 +374,7 @@ function auctionToString(auc, userID) {
 
     if(auc.hidebid) auc.price = "???";
 
-    if(userID == auc.author)
+    if(userID == auc.author) 
         if(auc.lastbidder == null) resp += "🔹";
         else resp += "🔷";
     else if(userID == auc.lastbidder) resp += "🔸";
@@ -392,7 +392,7 @@ function getTimeUntilAucEnds(auc) {
 
     if (timeUntilEndMs <= 0)
         return "0s";
-
+    
     const base = timeUntilEndMs / (1000 * 60);
     const hours = Math.floor(base / 60);
     const minutes = Math.floor(base % 60);
@@ -403,11 +403,8 @@ function getTimeUntilAucEnds(auc) {
 }
 
 async function generateBetterID() {
-    let aucs = (await acollection.find({}).toArray());
-    let aucIds = [];
-    for (var i=0; i<aucs.length; i++)
-        aucIds.push(aucs[i]['id']);
-    return utils.generateNextId(aucIds);
+    let lastAuction = (await acollection.find({}).sort({$natural: -1}).limit(1).toArray())[0];
+    return utils.generateNextId(lastAuction? lastAuction.id : "neko");
 }
 
 function getNextBid(auc) {
@@ -425,7 +422,7 @@ function getNextBid(auc) {
 function sendDM(toID, embed) {
     bot.createDMChannel(toID, (createErr, newChannel) => {
         if(newChannel) {
-            bot.sendMessage({to: newChannel.id, embed: embed},
+            bot.sendMessage({to: newChannel.id, embed: embed}, 
                 (err, resp) => {
                 if(err) {
                     console.log("[Auc] Failed to send message to created DM channel");
