@@ -354,11 +354,40 @@ function generateRandomId() {
     return (Date.now().toString(36).substr(2, 3) + Math.random().toString(36).substr(2, 5));
 }
 
-function generateNextId(last) {
-    var num = parseInt(last, 36);
-    num += Math.pow(77, 4);
-    num %= Math.pow(36, 5);
-    return next = num.toString(36);
+// Given the last-used auction ID, generates a new, seemingly random ID
+// but actually visits every possible ID in the namespace sequentially.
+function generateNextId(lastId) {
+    // The digits in the space are aliased by these characters:
+    var charPool = ['a','b','c','d','e','f','g','h','i','j','k','m',
+            'n','o','p','q','r','s','t','u','v','w','x','y','z'];
+    var base = charPool.length;
+    var idLength = 4;
+
+    // Translate the last ID from our custom character pool to its corresponding
+    // numeric value in the correct base.
+    var lastNum = "";
+    for (var i=0; i<idLength; i++) {
+        lastNum += charPool.indexOf(lastId[i]).toString(base);
+    }
+  
+    // Switch to Base 10 and add our custom increment to get the next ID.
+    // If the size of charPool changes, make sure "increment" is
+    // relatively prime with the new base.
+    lastNum = parseInt(lastNum, base);
+    var increment = 3*Math.pow(base,3) + 11*Math.pow(base,2) + 9*base + 21;
+    var nextNum = (lastNum + increment) % Math.pow(base, idLength);
+
+    // switch back to designated base
+    nextNum = nextNum.toString(base);
+
+    // Pad the number with zeroes so we always get the correct length.
+    var nextNumStr = ("0".repeat(idLength) + nextNum).substr((-1)*idLength,idLength);
+
+    // Translate from the designated base to our custom character pool.
+    var nextId = "";
+    for (var i=0; i<idLength; i++)
+	    nextId += charPool[parseInt(nextNumStr[i], base)];
+    return nextId;
 }
 
 function getFullCard(card) {

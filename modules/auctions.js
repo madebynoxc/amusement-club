@@ -409,7 +409,7 @@ function getTimeUntilAucEnds(auc) {
 
 async function generateBetterID() {
     let lastAuction = (await acollection.find({}).sort({$natural: -1}).limit(1).toArray())[0];
-    return utils.generateNextId(lastAuction? lastAuction.id : "start");
+    return utils.generateNextId(lastAuction? lastAuction.id : "neko");
 }
 
 function getNextBid(auc) {
