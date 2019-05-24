@@ -211,6 +211,13 @@ function getRequestFromFiltersWithPrefix(args, prefix) {
             else if(el === "amount") query.sortBy[prefix + 'amount'] = accend;
             else query.sortBy[prefix + 'level'] = -1;
 
+        } else if(element[0] == '#') {
+            let el = element.substr(1);
+            if(!query[prefix + 'tags']) 
+                query[prefix + 'tags'] = {$in: []};
+
+            query[prefix + 'tags'].$in.push(el);
+
         } else keywords.push(element.trim());
     }, this);
 

@@ -36,10 +36,10 @@ function processRequest(userID, args, callback) {
 }
 
 function listTags(cardname, callback) {
-
+    let query = utils.getRequestFromFiltersNoPrefix(args);
 }
 
-function addTag(user, args, callback) {
+async function addTag(user, args, callback) {
     let tag, cardsearch = [];
     args.map(a => {
         if(a[0] == '#')
@@ -78,7 +78,12 @@ function addTag(user, args, callback) {
                         votes: [{id: user.discord_id, res: 3}]
                     }
                     tagcollection.push(newTag).then(() => { 
-                        callback(utils.formatInfo(user, null, "you assigned tag **#" + tag + "** to **" + match.name + "**"));
+                        query = utils.getCardQuery(card);
+                        ucollection.updateMany(
+                            {cards: {"$elemMatch": query}}, 
+                            {$push: {"cards.$.tags": tag}}).then(res => {
+                            callback(utils.formatInfo(user, null, "you assigned tag **#" + tag + "** to **" + match.name + "**"));
+                        });
                     });
                 });
             }
@@ -91,5 +96,7 @@ function downVote(user, args, callback) {
 }
 
 function getCards(user, tag, callback) {
-
+    tagcollection.findOne({name: tag}).then(dbtag => {
+        
+    });
 }
