@@ -246,6 +246,8 @@ async function getCommand(user, channel, guild, message, event, callback) {
                     });
                 }
                 return;
+            case 'li':
+            case 'ls':
             case 'list':
             case 'cards':
                 if(channelType == 1) return botOnly(chanID);
