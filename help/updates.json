@@ -1,5 +1,14 @@
 [
     {
+        "version": "1.13.1",
+        "changes": [
+            "Better auction IDs",
+            "`ls` and `li` shortcuts for card list",
+            "Updated general stats",
+            "Fixed hero lead bug"
+        ]
+    },
+    {
         "version": "1.13.0",
         "changes": [
             "Increased auction end-time accuracy"

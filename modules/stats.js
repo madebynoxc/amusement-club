@@ -45,7 +45,8 @@ function general(callback) {
                     res += "Active users (7d): **" + aucc + "**\n";
                     res += "Overall cards: **" + (ccc + pcc) + "**\n"; 
                     res += "OS Uptime: **" + Math.floor(os.uptime()/3600) + "** hours\n"; 
-                    res += "Running **Ubuntu 16.04 | MongoDB 3.4.5 | NodeJS 7.10.0**";
+                    res += "RAM used: **" + Math.floor(os.totalmem() * .0000001)  + "mb**\n";
+                    res += "Running **Ubuntu 18.04.1 LTS | MongoDB 4.0.4 | NodeJS 8.10.0**";
                     callback(utils.formatInfo(null, "General bot statistics", res));
                 });
             });
