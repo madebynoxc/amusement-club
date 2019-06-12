@@ -66,7 +66,7 @@
     {
         "type": ["inv", "inventory"],
         "title": "About inventory",
-        "description": "Inventory contains different items that cam be used in game. For example, effect cards. Items can be stored unlimited amount of time. Some items provide effect if they are in user’s inventory, some of them should be used.",
+        "description": "Inventory contains different items that can be used in game. For example, effect cards. Items can be stored unlimited amount of time. Some items provide effect if they are in user’s inventory, some of them should be used.",
         "fields": [
             {
                 "title": "See the list of your items",
@@ -312,16 +312,24 @@
         "description": "You can add any card to favorites. That kind of card can't be sent and it won't show up for other users in `->has` or `->diff` commands, unless you have 2 or more of those cards or add the `-fav` option",
         "fields": [
             {
-                "title": "Favorite card",
+                "title": "Favorite a card",
                 "description": "->fav [card query]"
             },
             {
-                "title": "Remove from favorites",
-                "description": "->fav remove [card query]"
+                "title": "Favorite many cards",
+                "description": "->fav all [card query]"
+            },
+            {
+                "title": "Remove a card from favorites",
+                "description": "->fav remove [card query]\nor\n->unfav [card query]"
+            },
+            {
+                "title": "Remove many from favorites",
+                "description": "->fav remove all [card query]\nor\n->unfav all [card query]"
             },
             {
                 "title": "List favorite cards",
-                "description": "->cards -fav"
+                "description": "->cards -fav\nor\n->favs"
             }
         ]
     },
