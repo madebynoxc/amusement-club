@@ -376,8 +376,8 @@ async function getCommand(user, channel, guild, message, event, callback) {
                     });
                 }
                 return;
-				case 'unfav':
-					 cnt.unshift("remove");
+            case 'unfav':
+                cnt.unshift("remove");
             case 'fav':
                 if(channelType == 1) botOnly(chanID);
                 else {
