@@ -381,6 +381,7 @@ async function getCommand(user, channel, guild, message, event, callback) {
             case 'fav':
                 if(channelType == 1) botOnly(chanID);
                 else {
+                    cnt.unshift(chanID);
                     dbManager.fav(user, cnt, (text) => {
                         callback(text);
                     });
