@@ -41,6 +41,7 @@ const auctions = require('./auctions.js');
 const collections = require('./collections.js');
 const admin = require('./admin.js');
 const guildMod = require('./guild.js');
+const react = require('./reactions.js');
 
 function disconnect() {
     isConnected = false;
@@ -857,6 +858,8 @@ function whohas(user, guild, args, callback) {
 function fav(user, args, callback) {
     // Check for required params.
     if(!args || args.length == 0) return callback("**" + user.username + "**, please specify card query");
+    let chanID = args[0];
+    args.shift();
 
     // Check for optional params.
     let remove = args[0] == 'remove';
@@ -887,6 +890,19 @@ function fav(user, args, callback) {
                     matchCount++;
                 }
             }
+
+            react.addNewConfirmation(
+                user.id, 
+                utils.formatWarning(user,'Caution:', 'You are about to '+ 
+                    (remove?'un':'') + 'favorite ' + matchCount + ' cards. Proceed?'), 
+                chanID, 
+                () => {
+                    fav2(user, objIds, remove, all, callback, match);
+                }, 
+                () => {
+                    callback(utils.formatWarning(user,'Action cancelled', 'No cards were '+ (remove?'removed from':'added to') +' your favorites.'));
+                }
+            )
         } else {
             let filteredCards = cards.slice(0);
             // Only fav/unfav cards that are not yet faved/unfaved.
@@ -903,39 +919,46 @@ function fav(user, args, callback) {
             }
             objIds.push(''+match["_id"]);
             matchCount=1;
+            fav2(user, objIds, remove, all, callback, match);
         }
-        
-        mongodb.collection('users').findOne(
-            { "discord_id": user.id }
-        ).then(doc => {
-            for (let j=0; j<doc.cards.length; j++) {
-                if (objIds.includes(''+doc.cards[j]["_id"])) {
-                    doc.cards[j].fav = !remove;
-                }
+    });
+}
+
+// This is a helper function for fav, which gets called to complete the
+// favoriting action.
+function fav2(user, objIds, remove, all, callback, match) {
+    
+    let matchCount = objIds.length;
+    mongodb.collection('users').findOne(
+        { "discord_id": user.id }
+    ).then(doc => {
+        for (let j=0; j<doc.cards.length; j++) {
+            if (objIds.includes(''+doc.cards[j]["_id"])) {
+                doc.cards[j].fav = !remove;
             }
-            mongodb.collection('users').save(doc)
-            .then(e => {
-                let matchOutput;
-                if ( all ) {
-                    matchOutput = matchCount +" cards";
-                } else {
-                    matchOutput = utils.toTitleCase(match.name.replace(/_/g, " "))
-                        + " [" + match.collection + "]";
-                }
-                if(remove) {
-                    callback(utils.formatConfirm(user, "Removed from favorites", 
-                        "you removed **" + matchOutput +  "** "+
-                        "from favorites"));
-                } else {
-                    callback(utils.formatConfirm(user, "Added to favorites", 
-                        "you added **" + matchOutput +  "** to favorites"));
-                }
-            }).catch(e=> {
-                callback(utils.formatError(user, "Command could not be executed \n", e));
-            });
+        }
+        mongodb.collection('users').save(doc)
+        .then(e => {
+            let matchOutput;
+            if ( all ) {
+                matchOutput = matchCount +" cards";
+            } else {
+                matchOutput = utils.toTitleCase(match.name.replace(/_/g, " "))
+                    + " [" + match.collection + "]";
+            }
+            if(remove) {
+                callback(utils.formatConfirm(user, "Removed from favorites", 
+                    "you removed **" + matchOutput +  "** "+
+                    "from favorites"));
+            } else {
+                callback(utils.formatConfirm(user, "Added to favorites", 
+                    "you added **" + matchOutput +  "** to favorites"));
+            }
         }).catch(e=> {
             callback(utils.formatError(user, "Command could not be executed \n", e));
         });
+    }).catch(e=> {
+        callback(utils.formatError(user, "Command could not be executed \n", e));
     });
 }
 
