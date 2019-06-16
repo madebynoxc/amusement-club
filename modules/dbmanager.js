@@ -893,14 +893,14 @@ function fav(user, args, callback) {
 
             react.addNewConfirmation(
                 user.id, 
-                utils.formatWarning(user,'Caution:', 'You are about to '+ 
+                utils.formatWarning(user,'Caution:', 'you are about to '+ 
                     (remove?'un':'') + 'favorite ' + matchCount + ' cards. Proceed?'), 
                 chanID, 
                 () => {
                     fav2(user, objIds, remove, all, callback, match);
                 }, 
                 () => {
-                    callback(utils.formatWarning(user,'Action cancelled', 'No cards were '+ (remove?'removed from':'added to') +' your favorites.'));
+                    callback(utils.formatError(user,'Action cancelled', 'no cards were '+ (remove?'removed from':'added to') +' your favorites.'));
                 }
             )
         } else {
