@@ -9,6 +9,7 @@ module.exports = {
 }
 
 var MongoClient = require('mongodb').MongoClient;
+var ObjectId = require('mongodb').ObjectID;
 var mongodb, client, userCount, dblapi;
 var dailyCol;
 var cooldownList = [];
@@ -40,6 +41,7 @@ const auctions = require('./auctions.js');
 const collections = require('./collections.js');
 const admin = require('./admin.js');
 const guildMod = require('./guild.js');
+const react = require('./reactions.js');
 
 function disconnect() {
     isConnected = false;
@@ -854,37 +856,109 @@ function whohas(user, guild, args, callback) {
 }
 
 function fav(user, args, callback) {
+    // Check for required params.
     if(!args || args.length == 0) return callback("**" + user.username + "**, please specify card query");
+    let chanID = args[0];
+    args.shift();
 
+    // Check for optional params.
     let remove = args[0] == 'remove';
     if(remove) args.shift();
-    let query = utils.getRequestFromFilters(args);
-    getUserCards(user.id, query).toArray((err, objs) => {
-        if(!objs[0]) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
+    let all = args[0] == 'all';
+    if(all) args.shift();
+    if (remove && args.length > 0 && args[0] == 'all') all = true;
 
+    // Find the cards.
+    let query1 = utils.getRequestFromFilters(args);
+    getUserCards(user.id, query1).toArray((err, objs) => {
+        if(!objs[0]) {
+            return callback(utils.formatError(user, "Can't find card", 
+                "can't find card matching that request"));
+        }
         let cards = objs[0].cards;
         let dbUser = objs[0]._id;
-        let matchCount = cards.length;
+        let matchCount = 0;
+        // Only fav unfaved cards
+        let match;
+        let objIds = [];
 
-        if(!remove) cards = cards.filter(c => !c.fav);
-        let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
-        if(!match) 
-            if(matchCount != cards.length)
-                return callback(utils.formatError(user, null, "card is already favorited. Use `->fav remove [card]` to unfavorite"));
-            else return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
+        if ( all ) {
+            for (let i=0; i<cards.length; i++) {
+                // Only fav/unfav cards that are not yet faved/unfaved.
+                if ( !(cards[i]['fav'] ^ remove) ) {
+                    objIds.push(''+cards[i]["_id"]);
+                    matchCount++;
+                }
+            }
 
-        query = {};
-        query.discord_id = user.id;
-        query.cards = { $elemMatch: utils.getCardQuery(match) };
-        
-        mongodb.collection('users').update(
-            query,
-            { $set: { "cards.$.fav": !remove }}
-        ).then(e => {
-            let name = utils.toTitleCase(match.name.replace(/_/g, " "));
-            if(remove) callback(utils.formatConfirm(user, "Removed from favorites", "you removed **" + name + " [" + match.collection + "]** from favorites"));
-            else callback(utils.formatConfirm(user, "Added to favorites", "you added **" + name + " [" + match.collection + "]** to favorites"));
+            react.addNewConfirmation(
+                user.id, 
+                utils.formatWarning(user,'Caution:', 'You are about to '+ 
+                    (remove?'un':'') + 'favorite ' + matchCount + ' cards. Proceed?'), 
+                chanID, 
+                () => {
+                    fav2(user, objIds, remove, all, callback, match);
+                }, 
+                () => {
+                    callback(utils.formatWarning(user,'Action cancelled', 'No cards were '+ (remove?'removed from':'added to') +' your favorites.'));
+                }
+            )
+        } else {
+            let filteredCards = cards.slice(0);
+            // Only fav/unfav cards that are not yet faved/unfaved.
+            filteredCards = filteredCards.filter(c => !(c.fav ^ remove));
+            match = query1['cards.name']? getBestCardSorted(filteredCards, query1['cards.name'])[0] : filteredCards[0];
+            if(!match) {
+                if(cards.length != filteredCards.length) {
+                    return callback(utils.formatError(user, null, 
+                        "card is already favorited. Use `->fav remove [card]` to unfavorite"));
+                } else {
+                    return callback(utils.formatError(user, "Can't find card", 
+                        "can't find card matching that request"));
+                }
+            }
+            objIds.push(''+match["_id"]);
+            matchCount=1;
+            fav2(user, objIds, remove, all, callback, match);
+        }
+    });
+}
+
+// This is a helper function for fav, which gets called to complete the
+// favoriting action.
+function fav2(user, objIds, remove, all, callback, match) {
+    
+    let matchCount = objIds.length;
+    mongodb.collection('users').findOne(
+        { "discord_id": user.id }
+    ).then(doc => {
+        for (let j=0; j<doc.cards.length; j++) {
+            if (objIds.includes(''+doc.cards[j]["_id"])) {
+                doc.cards[j].fav = !remove;
+            }
+        }
+        mongodb.collection('users').save(doc)
+        .then(e => {
+            let matchOutput;
+            if ( all ) {
+                matchOutput = matchCount +" cards";
+            } else {
+                matchOutput = utils.toTitleCase(match.name.replace(/_/g, " "))
+                    + " [" + match.collection + "]";
+            }
+            if(remove) {
+                callback(utils.formatConfirm(user, "Removed from favorites", 
+                    "you removed **" + matchOutput +  "** "+
+                    "from favorites"));
+            } else {
+                callback(utils.formatConfirm(user, "Added to favorites", 
+                    "you added **" + matchOutput +  "** to favorites"));
+            }
+        }).catch(e=> {
+            callback(utils.formatError(user, "Command could not be executed \n", e));
         });
+    }).catch(e=> {
+        callback(utils.formatError(user, "Command could not be executed \n", e));
     });
 }
 

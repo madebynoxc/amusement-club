@@ -246,6 +246,8 @@ async function getCommand(user, channel, guild, message, event, callback) {
                     });
                 }
                 return;
+            case 'favs':
+                cnt.unshift("-fav");
             case 'li':
             case 'ls':
             case 'list':
@@ -374,9 +376,12 @@ async function getCommand(user, channel, guild, message, event, callback) {
                     });
                 }
                 return;
+            case 'unfav':
+                cnt.unshift("remove");
             case 'fav':
                 if(channelType == 1) botOnly(chanID);
                 else {
+                    cnt.unshift(chanID);
                     dbManager.fav(user, cnt, (text) => {
                         callback(text);
                     });
