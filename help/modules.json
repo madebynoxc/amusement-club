@@ -484,7 +484,7 @@
     {
         "type": ["auc", "auction", "auctions"],
         "title": "About auctions",
-        "description": "Auctions are a way to trade your cards introduced in `v1.10`. You can put any card on auction for a fee of 100 🍅 Tomatoes and other users will bid on it. Each card will be on the auction list for 5 hours and sold to the highest bidder. If nobody bids on your card, your card will return to you, but not your 100 🍅 auction fee.",
+        "description": "Auctions are a way to trade your cards introduced in `v1.10`. You can put any card on auction for a fee equal to 10% of your listing price, and then other users can bid on it. Each card will be on the auction list for 5 hours and sold to the highest bidder. If nobody bids on your card, your card will return to you, but the listing fee will not be refunded.",
         "fields": [
             {
                 "title": "IMPORTANT",
