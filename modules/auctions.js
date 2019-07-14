@@ -409,9 +409,9 @@ async function checkAuctionList(client) {
                     client.sendMessage({"to":settings.logchannel, "message":'Could not save card back with new eval data: ' +utils.getFullCard(match)});
                 });
             }
-        //}).catch(function() {
-        //    client.sendMessage({"to":settings.logchannel, "message":'Problem running eval price update for this auction:'+
-        //        "\n"+ JSON.stringify(auc)});
+        }).catch(function() {
+            client.sendMessage({"to":settings.logchannel, "message":'Problem running eval price update for this auction:'+
+                "\n"+ JSON.stringify(auc)});
         });
 
         let yaaymes = "You won an auction for **" + utils.getFullCard(auc.card) + "**!\nCard is now yours.\n";
