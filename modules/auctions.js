@@ -408,6 +408,8 @@ async function checkAuctionList(client) {
                 ccollection.save(match).catch(function() {
                     client.sendMessage({"to":settings.logchannel, "message":'Could not save card back with new eval data: ' +utils.getFullCard(match)});
                 });
+            } else {
+                client.sendMessage({"to":settings.logchannel, "message":'Auction outlier ignored for eval figuring: ' +JSON.stringify(auc)});
             }
         }).catch(function() {
             client.sendMessage({"to":settings.logchannel, "message":'Problem running eval price update for this auction:'+
