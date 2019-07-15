@@ -95,9 +95,13 @@ async function processRequest(user, args, guild, channelID, callback) {
         transaction.to = targetUser.username;
         transaction.to_id = parse.id;
 
+        let ccollection = mongodb.collection('cards');
+        let cardQuery = utils.getCardQuery(match);
         transaction.price = await new Promise(resolve => {
-            dbmanager.getCardValue(match, price => {
-                resolve(Math.round(price));
+            ccollection.findOne(cardQuery).then((match0) => {
+                dbmanager.getCardValue(match0, price => {
+                    resolve(Math.round(price));
+                });
             });
         });
         

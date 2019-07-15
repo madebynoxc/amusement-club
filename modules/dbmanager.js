@@ -719,7 +719,6 @@ function eval(user, args, callback, isPromo) {
             if (!isPromo) return eval(user, args, callback, true);
             else          return callback(utils.formatError(user, null, "no cards found that match your request"));
         }
-
         getCardValue(match, price => {
             let name = utils.getFullCard(match);
             if(price == 0) callback(utils.formatInfo(user, null, "impossible to evaluate **" + name + "** since nobody has it"));
@@ -729,16 +728,22 @@ function eval(user, args, callback, isPromo) {
 }
 
 function getCardValue(card, callback) {
-    mongodb.collection('users').count({"cards":{"$elemMatch": utils.getCardQuery(card)}}).then(amount => {
-        let price = (ratioInc.star[card.level] 
-                    + (card.craft? ratioInc.craft : 0) + (card.animated? ratioInc.gif : 0)) * 100;
-        
-        if(amount > 0){
-            price *= limitPriceGrowth((userCount * 0.035)/amount);
-            return callback(price);
-        }
-        callback(0);
-    });
+    if ( card.hasOwnProperty('eval') ) {
+        //console.log('Using eval from NEW system for '+ card.name +': '+ card.eval +"\nevalSamples:"+ JSON.stringify(card.evalSamples));
+        return callback(card.eval);
+    } else {
+        //console.log('Using eval from OLD system for '+ card.name);
+        mongodb.collection('users').count({"cards":{"$elemMatch": utils.getCardQuery(card)}}).then(amount => {
+           let price = (ratioInc.star[card.level] 
+                           + (card.craft? ratioInc.craft : 0) + (card.animated? ratioInc.gif : 0)) * 100;
+
+           if(amount > 0){
+               price *= limitPriceGrowth((userCount * 0.035)/amount);
+               return callback(price);
+           }
+           callback(0);
+        });
+    }
 }
 
 function limitPriceGrowth(x) { 

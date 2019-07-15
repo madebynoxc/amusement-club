@@ -21,8 +21,9 @@ function connect(db, client, shard) {
     ucollection = db.collection('users');
     tcollection = db.collection('transactions');
 
-    if(shard == 0)
-        setInterval(checkAuctionList, 5000);
+    if(shard == 0) {
+        setInterval(function() {checkAuctionList(client);}, 5000);
+    }
 }
 
 function processRequest(user, args, channelID, callback) {
@@ -225,46 +226,50 @@ async function sell(user, incArgs, channelID, callback) {
             return callback(utils.formatError(user, null, "you can't sell favorite card."
                 + " To remove from favorites use `->fav remove [card query]`"));
 
-        dbManager.getCardValue(match, async (eval) => {
-            let price;
+        let ccollection = mongodb.collection('cards');
+        let cardQuery = utils.getCardQuery(match);
+        ccollection.findOne(cardQuery).then((match0) => {
+            dbManager.getCardValue(match0, async (eval) => {
+                let price;
 
-            if(!args[1])
-                price = Math.floor(eval);
-            else if(!utils.isInt(args[1]))
-                return callback(utils.formatError(user, null, "price should be a number"));
-            else price = parseInt(args[1]);
+                if(!args[1])
+                    price = Math.floor(eval);
+                else if(!utils.isInt(args[1]))
+                    return callback(utils.formatError(user, null, "price should be a number"));
+                else price = parseInt(args[1]);
 
-            let min = Math.round(eval * .5);
-            let dbUser = await ucollection.findOne({discord_id: user.id});
-            let fee = Math.round(price * .1);
+                let min = Math.round(eval * .5);
+                let dbUser = await ucollection.findOne({discord_id: user.id});
+                let fee = Math.round(price * .1);
 
-            if(!dbUser.hero)
-                return callback(utils.formatError(user, null, "you have to have a hero in order to take part in auction"));
+                if(!dbUser.hero)
+                    return callback(utils.formatError(user, null, "you have to have a hero in order to take part in auction"));
 
-            if(price < min)
-                return callback(utils.formatError(user, null, "you can't set price less than **" + min + "**🍅 for this card"));
+                if(price < min)
+                    return callback(utils.formatError(user, null, "you can't set price less than **" + min + "**🍅 for this card"));
 
-            if(price > eval * 4)
-                return callback(utils.formatError(user, null, "you can't set price more than **" + Math.round(eval * 4) + "**🍅 for this card"));
+                if(price > eval * 4)
+                    return callback(utils.formatError(user, null, "you can't set price more than **" + Math.round(eval * 4) + "**🍅 for this card"));
 
-            if(dbUser.exp - fee < 0)
-                return callback(utils.formatError(user, null, "you have to have at least **" + fee + "**🍅 to auction for that price"));
+                if(dbUser.exp - fee < 0)
+                    return callback(utils.formatError(user, null, "you have to have at least **" + fee + "**🍅 to auction for that price"));
 
-            reactions.addNewConfirmation(user.id, formatSell(user, match, price, fee), channelID, async () => {
-                await idlock.acquire("createauction", async () => {
-                    let pullResult = dbManager.pullCard(user.id, match);
-                    match.fav = false;
+                reactions.addNewConfirmation(user.id, formatSell(user, match, price, fee), channelID, async () => {
+                    await idlock.acquire("createauction", async () => {
+                        let pullResult = dbManager.pullCard(user.id, match);
+                        match.fav = false;
 
-                    if(!pullResult) return; 
+                        if(!pullResult) return; 
 
-                    await ucollection.update({discord_id: user.id}, {$inc: {exp: -fee}});
-                    let aucID = await generateBetterID();
-                    await acollection.insert({
-                        id: aucID, finished: false, date: new Date(), price: price, author: user.id, card: match
+                        await ucollection.update({discord_id: user.id}, {$inc: {exp: -fee}});
+                        let aucID = await generateBetterID();
+                        await acollection.insert({
+                            id: aucID, finished: false, date: new Date(), price: price, author: user.id, card: match
+                        });
+
+                        callback(utils.formatConfirm(user, null, "you successfully put **" + utils.getFullCard(match) + "** on auction.\nYour auction ID `" + aucID + "`"));
+                        quests.checkAuction(dbUser, "sell", callback);
                     });
-
-                    callback(utils.formatConfirm(user, null, "you successfully put **" + utils.getFullCard(match) + "** on auction.\nYour auction ID `" + aucID + "`"));
-                    quests.checkAuction(dbUser, "sell", callback);
                 });
             });
         });
@@ -288,26 +293,30 @@ async function info(user, args, channelID, callback) {
     let author = await ucollection.findOne({discord_id: auc.author});
     if(auc.hidebid && user.id != auc.lastbidder) auc.price = "???";
     
-    dbManager.getCardValue(auc.card, (eval) => {
-        let resp = "";
-        resp += "Seller: **" + author.username + "**\n";
-        resp += "Last bid: **" + auc.price + "**`🍅`\n";
-        resp += "Next minimum bid: **" + (auc.hidebid ? "???" : getNextBid(auc) + 1) + "**`🍅`\n"
-        resp += "Card: **" + utils.getFullCard(auc.card) + "**\n";
-        resp += "Card value: **" + Math.floor(eval) + "**`🍅`\n";
-        resp += "[Card link](" + dbManager.getCardURL(auc.card, false) + ")\n";
-        if(user.id == auc.lastbidder && !auc.finished) 
-            resp += "You are currently leading in this auction\n";
-        if(auc.finished) resp += "**This auction has finished**\n";
-        else resp += "Finishes in: **" + getTimeUntilAucEnds(auc) + "**\n";
+    let cardQuery = utils.getCardQuery(auc.card);
+    let ccollection = mongodb.collection('cards');
+    ccollection.findOne(cardQuery).then((match) => {
+        dbManager.getCardValue(match, (eval) => {
+            let resp = "";
+            resp += "Seller: **" + author.username + "**\n";
+            resp += "Last bid: **" + auc.price + "**`🍅`\n";
+            resp += "Next minimum bid: **" + (auc.hidebid ? "???" : getNextBid(auc) + 1) + "**`🍅`\n"
+            resp += "Card: **" + utils.getFullCard(auc.card) + "**\n";
+            resp += "Card value: **" + Math.floor(eval) + "**`🍅`\n";
+            resp += "[Card link](" + dbManager.getCardURL(auc.card, false) + ")\n";
+            if(user.id == auc.lastbidder && !auc.finished) 
+                resp += "You are currently leading in this auction\n";
+            if(auc.finished) resp += "**This auction has finished**\n";
+            else resp += "Finishes in: **" + getTimeUntilAucEnds(auc) + "**\n";
 
-        let emb = utils.formatInfo(null, "Information about auction", resp);
-        emb.image = {url: dbManager.getCardURL(auc.card, false)};
-        callback(emb);
+            let emb = utils.formatInfo(null, "Information about auction", resp);
+            emb.image = {url: dbManager.getCardURL(auc.card, false)};
+            callback(emb);
+        });
     });
 }
 
-async function checkAuctionList() {
+async function checkAuctionList(client) {
     let timeago = new Date();
     timeago.setHours(timeago.getHours() - aucTime);
     //timeago.setMinutes(timeago.getMinutes() - aucTime);
@@ -341,6 +350,76 @@ async function checkAuctionList() {
         transaction.to_id = bidder.discord_id;
         transaction.card = auc.card;
         await tcollection.insert(transaction);
+
+        // Update eval price?
+        let minSamples = 3; // eval will start returning the new eval system's price when it has this many samples.
+        let maxSamples = 10; // the system will remove samples to make room for new ones after this mark is reached.
+		  let lowerBound = .50;
+		  let upperBound = 4;
+        //let tolerance = 1; // a tollerance of .5 will allow deviations up to +/-50% from the current eval.
+        // Note: min and max samples above should not be the same number.
+        let ccollection = mongodb.collection('cards');
+        let cardQuery = utils.getCardQuery(auc.card);
+        ccollection.findOne(cardQuery).then((match) => {
+            if ( !match.hasOwnProperty('evalSamples') )
+                match.evalSamples = [];
+            let isOutlier;
+            if ( match.hasOwnProperty('eval') ) {
+                // How does this auction's price compare to the stored eval price?
+                //let relativeChange = Math.abs(auc.price - match.eval) / match.eval;
+                //let isOutlier = relativeChange < 1-tolerance || relativeChange > 1+tolerance;
+                isOutlier = auc.price < match.eval * lowerBound || auc.price > match.eval * upperBound;
+            } else { 
+                isOutlier = false;
+            }
+            if ( !isOutlier ) { 
+                // Add the new sample price.
+                match.evalSamples.push(auc.price);
+                // Trim the sample array if it's large enough already.
+                while ( match.evalSamples.length > maxSamples )
+                    match.evalSamples.shift(); 
+                client.sendMessage({"to":settings.logchannel, "message":'Updating eval samples for "'+ match.name +'": '+ JSON.stringify(match.evalSamples)});
+                // Only update the eval price if enough sample prices exist.
+                if ( match.evalSamples.length == minSamples ) {
+                    // This card is reaching the threshhold for the first time. Make sure its samples somewhat agree.
+                    client.sendMessage({"to":settings.logchannel, "message":'"'+ match.name +'" has reached '+ minSamples +' auction sales. Checking integrity of samples:'+ "\n"+ JSON.stringify(match.evalSamples)});
+                    let largeDisparity = false;
+                    for(let i=0; i<match.evalSamples.length; i++) {
+                        let othersSum = 0;
+                        for(let j=0; j<match.evalSamples.length; j++) {
+                            if (j!=i)
+                                othersSum += match.evalSamples[j];
+                            //let percentDiff = (match.evalSamples[i] - match.evalSamples[j]) / match.evalSamples[j];
+                            //if ( percentDiff < 1-tolerance || percentDiff > 1+tolerance )
+                            //   largeDisparity = true;
+                        }
+                        let othersAve = othersSum / (minSamples -1);
+                        if ( match.evalSamples[i] < othersAve * lowerBound || match.evalSamples[i] > othersAve * upperBound )
+                            largeDisparity = true;
+                    }
+                    if ( largeDisparity ) {
+                        // This sample set is untrustworthy. Throw it out and wait for new data.
+                        match.evalSamples = [];
+                        client.sendMessage({"to":settings.logchannel, "message":'The samples were thrown out'});
+                    } else {
+                        client.sendMessage({"to":settings.logchannel, "message":'The samples were acceptable'});
+                    }
+                }
+                if ( match.evalSamples.length >= minSamples ) {
+                    // Calculate a new eval average from the samples.
+                    match.eval = Math.round(match.evalSamples.reduce(function(a,b) {return a+b;}) / match.evalSamples.length);
+                    client.sendMessage({"to":settings.logchannel, "message":'Updating eval for "'+ match.name +'": '+ match.eval});
+                }
+                ccollection.save(match).catch(function() {
+                    client.sendMessage({"to":settings.logchannel, "message":'Could not save card back with new eval data: ' +utils.getFullCard(match)});
+                });
+            } else {
+                client.sendMessage({"to":settings.logchannel, "message":'Auction outlier ignored for eval figuring: ' +JSON.stringify(auc)});
+            }
+        }).catch(function() {
+            client.sendMessage({"to":settings.logchannel, "message":'Problem running eval price update for this auction:'+
+                "\n"+ JSON.stringify(auc)});
+        });
 
         let yaaymes = "You won an auction for **" + utils.getFullCard(auc.card) + "**!\nCard is now yours.\n";
         if(tomatoback > 0) yaaymes += "You got **" + tomatoback + "** tomatoes back from that transaction.";
