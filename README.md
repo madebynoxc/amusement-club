@@ -59,7 +59,9 @@ Please make sure you create a file `./settings/ayano.json` which will look like 
     "reportchannel": "",
     "adminID": "",
     "s3accessKeyId": "",
-    "s3secretAccessKey": ""
+    "s3secretAccessKey": "",
+    "logchannel": "",
+    "cardprice": [ 80, 150, 300, 600, 1000]
 }
 ```
 * `token` Discord bot token
@@ -70,6 +72,8 @@ Please make sure you create a file `./settings/ayano.json` which will look like 
 * `adminID` Discord ID of admin user
 * `s3accessKeyId` key ID for requesting card list from a remote storage server
 * `s3secretAccessKey` secret access key for requesting card list from a remote storage server
+* `logchannel` channel for logging important things
+* `cardprice` basic card prices when selling to bot
 
 ### Setting up storage server
 Ayano supports remote storage servers of S3 type (e.g. Amazon S3, DigitalOcean Spaces). For a detailed listing you would have to specify `s3accessKeyId` and `s3secretAccessKey`. You can obtain them in the dashboard of service you are using.
@@ -83,3 +87,8 @@ After setting up everything you can run `ayy update` in the bot commands channel
 * `ayy restart` restarts all shards
 * `ayy update` updates all collections from `cards/` directory on S3 storage server
 * `ayy update promo` updates all collections from `promo/` directory on S3 storage server
+* `ayy rename [card query], [new name]` renames a card
+* `ayy collection [collection query] [new name]` renames a collection
+* `ayy origin [collection query] [new origin]` sets a new collection origin
+* `ayy alias <add|remove> [collection query] [alias]` adds or removes collection alias
+* `ayy help` lists all the commands
