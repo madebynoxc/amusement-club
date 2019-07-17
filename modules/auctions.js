@@ -378,11 +378,11 @@ async function checkAuctionList(client) {
                 // Trim the sample array if it's large enough already.
                 while ( match.evalSamples.length > maxSamples )
                     match.evalSamples.shift(); 
-                client.sendMessage({"to":settings.logchannel, "message":'Updating eval samples for "'+ match.name +'": '+ JSON.stringify(match.evalSamples)});
+                client.sendMessage({"to":settings.logchannel, "message":`Updating eval samples for **${utils.getFullCard(match)}**: ${JSON.stringify(match.evalSamples)}`});
                 // Only update the eval price if enough sample prices exist.
                 if ( match.evalSamples.length == minSamples ) {
                     // This card is reaching the threshhold for the first time. Make sure its samples somewhat agree.
-                    client.sendMessage({"to":settings.logchannel, "message":'"'+ match.name +'" has reached '+ minSamples +' auction sales. Checking integrity of samples:'+ "\n"+ JSON.stringify(match.evalSamples)});
+                    client.sendMessage({"to":settings.logchannel, "message":`**${utils.getFullCard(match)}** has reached **${minSamples}** auction sales. Checking integrity of samples:\n ${JSON.stringify(match.evalSamples)}`});
                     let largeDisparity = false;
                     for(let i=0; i<match.evalSamples.length; i++) {
                         let othersSum = 0;
@@ -400,18 +400,18 @@ async function checkAuctionList(client) {
                     if ( largeDisparity ) {
                         // This sample set is untrustworthy. Throw it out and wait for new data.
                         match.evalSamples = [];
-                        client.sendMessage({"to":settings.logchannel, "message":'The samples were thrown out'});
+                        client.sendMessage({"to":settings.logchannel, "message":'The samples were **thrown out**'});
                     } else {
-                        client.sendMessage({"to":settings.logchannel, "message":'The samples were acceptable'});
+                        client.sendMessage({"to":settings.logchannel, "message":'The samples were **acceptable**'});
                     }
                 }
                 if ( match.evalSamples.length >= minSamples ) {
                     // Calculate a new eval average from the samples.
                     match.eval = Math.round(match.evalSamples.reduce(function(a,b) {return a+b;}) / match.evalSamples.length);
-                    client.sendMessage({"to":settings.logchannel, "message":'Updating eval for "'+ match.name +'": '+ match.eval});
+                    client.sendMessage({"to":settings.logchannel, "message":'Updating eval for **'+  utils.getFullCard(match) +'**: '+ match.eval});
                 }
                 ccollection.save(match).catch(function() {
-                    client.sendMessage({"to":settings.logchannel, "message":'Could not save card back with new eval data: ' +utils.getFullCard(match)});
+                    client.sendMessage({"to":settings.logchannel, "message":'Could not save card back with new eval data: ' + utils.getFullCard(match)});
                 });
             } else {
                 client.sendMessage({"to":settings.logchannel, "message":'Auction outlier ignored for eval figuring: ' +JSON.stringify(auc)});
