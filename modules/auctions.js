@@ -229,7 +229,7 @@ async function sell(user, incArgs, channelID, callback) {
         let ccollection = mongodb.collection('cards');
         let cardQuery = utils.getCardQuery(match);
         ccollection.findOne(cardQuery).then((match0) => {
-            dbManager.getCardValue(match0, async (eval) => {
+            dbManager.getCardValue(match0, match, async (eval) => {
                 let price;
 
                 if(!args[1])
@@ -296,7 +296,7 @@ async function info(user, args, channelID, callback) {
     let cardQuery = utils.getCardQuery(auc.card);
     let ccollection = mongodb.collection('cards');
     ccollection.findOne(cardQuery).then((match) => {
-        dbManager.getCardValue(match, (eval) => {
+        dbManager.getCardValue(match, auc.card, (eval) => {
             let resp = "";
             resp += "Seller: **" + author.username + "**\n";
             resp += "Last bid: **" + auc.price + "**`🍅`\n";
@@ -516,4 +516,3 @@ function sendDM(toID, embed) {
         }
     });
 }
-

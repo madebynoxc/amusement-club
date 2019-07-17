@@ -441,7 +441,7 @@ function getCardInfo(user, args, callback) {
         let card = query['name']? getBestCardSorted(cards, query['name'])[0] : cards[0];
         if(!card) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
-        getCardValue(card, val => {
+        getCardValue(card, card, val => {
             let col = collections.parseCollection(card.collection)[0];
             let info = "";
             info += "**" + utils.getFullCard(card) + "**\n";
@@ -719,7 +719,7 @@ function eval(user, args, callback, isPromo) {
             if (!isPromo) return eval(user, args, callback, true);
             else          return callback(utils.formatError(user, null, "no cards found that match your request"));
         }
-        getCardValue(match, price => {
+        getCardValue(match, match, price => {
             let name = utils.getFullCard(match);
             if(price == 0) callback(utils.formatInfo(user, null, "impossible to evaluate **" + name + "** since nobody has it"));
             else callback(utils.formatInfo(user, null, "the card **" + name + "** is worth **" + Math.floor(price) + "**🍅"));
@@ -727,7 +727,9 @@ function eval(user, args, callback, isPromo) {
     });
 }
 
-function getCardValue(card, callback) {
+function getCardValue(card, fallbackCard, callback) {
+    if ( typeof card == 'undefined' || card == null )
+        card = fallbackCard;
     if ( card.hasOwnProperty('eval') ) {
         //console.log('Using eval from NEW system for '+ card.name +': '+ card.eval +"\nevalSamples:"+ JSON.stringify(card.evalSamples));
         return callback(card.eval);
