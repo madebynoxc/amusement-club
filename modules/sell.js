@@ -99,7 +99,7 @@ async function processRequest(user, args, guild, channelID, callback) {
         let cardQuery = utils.getCardQuery(match);
         transaction.price = await new Promise(resolve => {
             ccollection.findOne(cardQuery).then((match0) => {
-                dbmanager.getCardValue(match0, price => {
+                dbmanager.getCardValue(match0, match, price => {
                     resolve(Math.round(price));
                 });
             });
