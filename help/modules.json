@@ -625,5 +625,20 @@
                 "description": "If you have any questions regarding bot, please ask them [in bot discord](https://discord.gg/kqgAvdX)"
             }
         ]
+    },
+    {
+        "type": ["rate","rating"],
+        "title": "Card Ratings",
+        "description": "Players can rate their cards and view those ratings or even sort by them. Players' ratings are averaged into a global average rating that can be seen with ->info [card]",
+        "fields": [
+            {
+                "title": "->rate [rating] [card]",
+                "description": "Rate one of your cards from 1 to 10."
+            },
+            {
+                "title": "->cards >rating",
+                "description": "Order your cards by rating."
+            }
+        ]
     }
 ]
