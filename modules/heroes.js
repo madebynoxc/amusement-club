@@ -36,7 +36,8 @@ function processRequest(userID, args, guild, channelID, callback) {
                 assign(dbUser, args, channelID, callback);
                 break;
             case "lead":
-                getRating(guild, args[0], callback);
+                if(guild)
+                    getRating(guild, args[0], callback);
                 break;
         }
     });

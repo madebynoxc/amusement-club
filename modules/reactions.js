@@ -41,7 +41,7 @@ function addNewPagination(userID, title, data, channelID) {
 
 function addNewConfirmation(userID, embed, channelID, onConfirm, onDecline, canReact) {
     removeExisting(userID);
-    console.log(canReact);
+    //console.log(canReact);
 
     var mes = {
         "userID": userID, 

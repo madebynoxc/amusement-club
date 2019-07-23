@@ -1,6 +1,7 @@
-# Amusement Club
-[logo]: https://github.com/NoxCaos/amusement-club/blob/master/invite.png
-
+# [Amusement Club](https://amusementclub.xyz)
+## Invite
+If you want to set up this card game on your server, follow [this invite link](https://discordapp.com/oauth2/authorize?client_id=340988108222758934&scope=bot&permissions=379969)
+For self hosting please use a guide below.
 ## Setting up a runtime
 You would need NodeJS 7 or higher and MongoDB 3.4 or higher.
 For a correct runtime you would need to run [API server](https://github.com/yosoro-ent/amusement-api). After that make sure you create your own `./settings/general.json` which will look like this:
@@ -47,3 +48,47 @@ If you have your own S3 host with cards, you can use Ayano to add cards automati
 
 ## Ayano
 Ayano is a bot integrated into Amusement Club to handle shards, restarts, errors and card adding.
+### Config
+Please make sure you create a file `./settings/ayano.json` which will look like this:
+```json
+{
+    "token": "",
+    "startpoint": "./index.js",
+    "mainchannel": "",
+    "botcommchannel": "",
+    "reportchannel": "",
+    "adminID": "",
+    "s3accessKeyId": "",
+    "s3secretAccessKey": "",
+    "logchannel": "",
+    "cardprice": [ 80, 150, 300, 600, 1000]
+}
+```
+* `token` Discord bot token
+* `startpoint` path to file that is used to start Amusement Club
+* `mainchannel` ID of the main channel on your server (used to gree new people)
+* `botcommchannel` ID of the channel that is used for Ayano commands (please note that everyone who has access to the channel can give Ayano commands)
+* `reportchannel` ID of the channel to report user suspicious behaviour 
+* `adminID` Discord ID of admin user
+* `s3accessKeyId` key ID for requesting card list from a remote storage server
+* `s3secretAccessKey` secret access key for requesting card list from a remote storage server
+* `logchannel` channel for logging important things
+* `cardprice` basic card prices when selling to bot
+
+### Setting up storage server
+Ayano supports remote storage servers of S3 type (e.g. Amazon S3, DigitalOcean Spaces). For a detailed listing you would have to specify `s3accessKeyId` and `s3secretAccessKey`. You can obtain them in the dashboard of service you are using.
+
+On the server make sure you have `/cards/` and (optional) `/promo/`. Both folders will have subfolders that are named like collections. Those subfolders will contain `.png`, `.gif` or `.jpg` files for cards. The name of the card should be `rarity_name_with_underscare.extention`. So in the end you will have, for example `/cards/yuruyuri/2_lady_toshinou.png`
+
+After setting up everything you can run `ayy update` in the bot commands channel you specified in the config. Ayano will populate `cards` table in your database as well as `collections` table. After that please head to your `collections` table in the database and and fill up details manually. Note that if you are using `.jpg` cards for collection, you have to make sure that `compressed` is set to `true`.
+### Commands
+* `ayy start` starts up all shards for bot
+* `ayy stop` stops all shards
+* `ayy restart` restarts all shards
+* `ayy update` updates all collections from `cards/` directory on S3 storage server
+* `ayy update promo` updates all collections from `promo/` directory on S3 storage server
+* `ayy rename [card query], [new name]` renames a card
+* `ayy collection [collection query] [new name]` renames a collection
+* `ayy origin [collection query] [new origin]` sets a new collection origin
+* `ayy alias <add|remove> [collection query] [alias]` adds or removes collection alias
+* `ayy help` lists all the commands
