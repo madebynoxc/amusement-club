@@ -417,7 +417,7 @@ function rate(user, rating, args, callback) {
         }
         let cards = objs[0].cards;
         let match = query1['cards.name']? getBestCardSorted(cards, query1['cards.name'])[0] : cards[0];
-        let reRating = false; // Set as true later if user had already rated this card previously.
+        //let reRating = false; // Set as true later if user had already rated this card previously.
         if(!match) {
             return callback(utils.formatError(user, "Can't find card", 
                 "can't find card matching that request"));
@@ -426,12 +426,15 @@ function rate(user, rating, args, callback) {
             { "discord_id": user.id }
         ).then(doc => {
             // Update the user's local rating.
+            let oldRating = 0;
             for (let j=0; j<doc.cards.length; j++) {
                 if (''+doc.cards[j]["_id"] == ''+match["_id"]) {
-                    if ( doc.cards[j]["rating"] ) reRating = true;
+                    if (doc.cards[j]["rating"]) 
+                        oldRating = doc.cards[j]["rating"];
                     doc.cards[j].rating = rating;
                 }
             }
+
             mongodb.collection('users').save(doc)
             .then(e => {
                 matchOutput = utils.toTitleCase(match.name.replace(/_/g, " "))
@@ -441,22 +444,30 @@ function rate(user, rating, args, callback) {
             }).catch(e=> {
                 callback(utils.formatError(user, null, "command could not be executed \n", e));
             });
+
             // Update the global average rating for this card.
-            if ( !reRating ) {
-                let ccollection = mongodb.collection('cards');
+            //if (!reRating) {
+                let col = collections.getByID(match.collection);
+                let ccollection = col.special? mongodb.collection('promocards') : mongodb.collection('cards');
                 let cardQuery = utils.getCardQuery(match);
                 ccollection.findOne(cardQuery).then((match0) => {
-                    if ( !match0.ratingAve ) {
+                    if (!match0.ratingSum) {
+                        match0.ratingSum = 0;
                         match0.ratingAve = 0;
                         match0.ratingCount = 0;
                     }
-                    match0.ratingAve = ((match0.ratingAve * match0.ratingCount) + rating) / (match0.ratingCount+1);
-                    match0.ratingCount++;
+
+                    match0.ratingSum += rating - oldRating;
+                    if(oldRating == 0)
+                        match0.ratingCount++;
+
+                    match0.ratingAve = match0.ratingSum / match0.ratingCount;
+                    
                     ccollection.save(match0).catch(function() {
-                        console.log('Problem saving average rating for card (probably a promo): '+ utils.getFullCard(match0));
+                        console.log('Problem saving average rating for card: '+ utils.getFullCard(match0));
                     });
                 })
-            }
+            //}
         }).catch(e=> {
             callback(utils.formatError(user, null, "command could not be executed \n", e));
         });
@@ -494,12 +505,12 @@ function summon(user, args, callback) {
     });
 }
 
-function getCardInfo(user, args, callback) {
+async function getCardInfo(user, args, callback) {
     if(!args) return callback("**" + user.username + "**, please specify card query");
     let query = utils.getRequestFromFiltersNoPrefix(args);
 
-    mongodb.collection('cards').find(query).toArray((err, cards) => {
-        let card = query['name']? getBestCardSorted(cards, query['name'])[0] : cards[0];
+    let card = await getCard(query);
+        
         if(!card) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
         getCardValue(card, card, val => {
@@ -521,7 +532,17 @@ function getCardInfo(user, args, callback) {
 
             callback(utils.formatInfo(null, null, info));
         });
-    });
+}
+
+async function getCard(query, callback) {
+    let cards = await mongodb.collection('cards').find(query).toArray();
+    if(cards.length == 0) 
+        cards = await mongodb.collection('promocards').find(query).toArray();
+
+    let card = query['name']? getBestCardSorted(cards, query['name'])[0] : cards[0];
+
+    if(callback) callback(card);
+    return card;
 }
 
 function getCardType(card) {

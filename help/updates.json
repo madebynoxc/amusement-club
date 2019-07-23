@@ -4,7 +4,8 @@
         "changes": [
             "Eval now pulls prices from auctions",
             "Added `rating` for personal card ratings",
-            "Added global card rating to `->info`"
+            "Added global card rating to `->info`",
+            "Fixed info for promo cards"
         ]
     },
     {
