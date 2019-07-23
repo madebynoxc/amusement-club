@@ -417,7 +417,6 @@ function rate(user, rating, args, callback) {
         }
         let cards = objs[0].cards;
         let match = query1['cards.name']? getBestCardSorted(cards, query1['cards.name'])[0] : cards[0];
-        let reRating = false; // Set as true later if user had already rated this card previously.
         if(!match) {
             return callback(utils.formatError(user, "Can't find card", 
                 "can't find card matching that request"));
@@ -426,9 +425,16 @@ function rate(user, rating, args, callback) {
             { "discord_id": user.id }
         ).then(doc => {
             // Update the user's local rating.
+            let oldRating;
             for (let j=0; j<doc.cards.length; j++) {
                 if (''+doc.cards[j]["_id"] == ''+match["_id"]) {
-                    if ( doc.cards[j]["rating"] ) reRating = true;
+                    if ( typeof doc.cards[j]["rating"] == 'undefined' || doc.cards[j]["rating"] == null ) {
+                        //console.log('user had not rated this card before');
+                        oldRating = 0;
+                    } else {
+                        //console.log('users old rating: '+ doc.cards[j]['rating']);
+                        oldRating = doc.cards[j]["rating"];
+                    }
                     doc.cards[j].rating = rating;
                 }
             }
@@ -442,21 +448,33 @@ function rate(user, rating, args, callback) {
                 callback(utils.formatError(user, null, "command could not be executed \n", e));
             });
             // Update the global average rating for this card.
-            if ( !reRating ) {
-                let ccollection = mongodb.collection('cards');
-                let cardQuery = utils.getCardQuery(match);
-                ccollection.findOne(cardQuery).then((match0) => {
-                    if ( !match0.ratingAve ) {
-                        match0.ratingAve = 0;
-                        match0.ratingCount = 0;
-                    }
-                    match0.ratingAve = ((match0.ratingAve * match0.ratingCount) + rating) / (match0.ratingCount+1);
-                    match0.ratingCount++;
-                    ccollection.save(match0).catch(function() {
-                        console.log('Problem saving average rating for card (probably a promo): '+ utils.getFullCard(match0));
-                    });
-                })
-            }
+            let ccollection = mongodb.collection('cards');
+            let cardQuery = utils.getCardQuery(match);
+            ccollection.findOne(cardQuery).then((match0) => {
+                if ( typeof match0.ratingAve == 'undefined' || match0.ratingAve == null ) {
+                    //console.log('this is the first time this card has been rated by anyone');
+                    match0.ratingAve = 0;
+                    match0.ratingCount = 0;
+                }
+                //console.log('old ave rating: '+ match0.ratingAve);
+                //console.log('old rating count: '+ match0.ratingCount);
+                let newRatingCount;
+                if (oldRating == 0) {
+                    // user has not rated this card before.
+                    newRatingCount = match0.ratingCount +1;
+                } else {
+                    newRatingCount = match0.ratingCount;
+                }
+                match0.ratingAve = ((match0.ratingAve * match0.ratingCount) -oldRating + rating) / newRatingCount;
+                //console.log('user prev rating: '+ oldRating);
+                //console.log('user new rating '+ rating);
+                //console.log('new rating count' +newRatingCount);
+                //console.log('new ave rating: '+ match0.ratingAve);
+                match0.ratingCount = newRatingCount;
+                ccollection.save(match0).catch(function() {
+                    console.log('Problem saving average rating for card (probably a promo): '+ utils.getFullCard(match0));
+                });
+            })
         }).catch(e=> {
             callback(utils.formatError(user, null, "command could not be executed \n", e));
         });
@@ -510,8 +528,9 @@ function getCardInfo(user, args, callback) {
             info += "Type: **" + getCardType(card) + "**\n";
             info += "Price: **" + Math.round(val) + "** `🍅`\n";
 
-            if (card.ratingAve)
+            if ( card.ratingAve )
                 info += "Average Rating: **" + card.ratingAve + "**\n";
+            //info += "User Ratings: **" + card.ratingCount + "**\n"
 
             if(card.source) {
                 if(card.source.startsWith("http"))
