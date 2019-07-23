@@ -1,6 +1,6 @@
 module.exports = {
     connect, disconnect, claim, addXP, getXP, doesUserHave,
-    getCards, summon, sell, award, getUserName, getCardInfo,
+    getCards, rate, summon, sell, award, getUserName, getCardInfo,
     daily, getQuests, getBestCardSorted, getUserCards,
     leaderboard, difference, dynamicSort, countCardLevels, getCardValue,
     getCardFile, getDefaultChannel, isAdmin, needsCards, getCardURL,
@@ -399,6 +399,66 @@ function getCards(user, args, callback) {
             cards = cards.reverse();
 
         callback(cards, true);
+    });
+}
+
+function rate(user, rating, args, callback) {
+    if(!args) return callback("**" + user.username + "**, please specify card query");
+    if(typeof(rating) != "number" || rating < 1 || rating > 10) {
+        return callback("**" + user.username + "**, Please specify a rating between 1 and 10");
+    }
+    rating = Math.round(rating);
+    let query1 = utils.getRequestFromFilters(args);
+    getUserCards(user.id, query1).toArray((err, objs) => {
+        if(!objs[0]) {
+            return callback(utils.formatError(user, "Can't find card", 
+                "can't find card matching that request"));
+        }
+        let cards = objs[0].cards;
+        let match = query1['cards.name']? getBestCardSorted(cards, query1['cards.name'])[0] : cards[0];
+        let reRating = false; // Set as true later if user had already rated this card previously.
+        if(!match) {
+            return callback(utils.formatError(user, "Can't find card", 
+                "can't find card matching that request"));
+        }
+        mongodb.collection('users').findOne(
+            { "discord_id": user.id }
+        ).then(doc => {
+            // Update the user's local rating.
+            for (let j=0; j<doc.cards.length; j++) {
+                if (''+doc.cards[j]["_id"] == ''+match["_id"]) {
+                    if ( doc.cards[j]["rating"] ) reRating = true;
+                    doc.cards[j].rating = rating;
+                }
+            }
+            mongodb.collection('users').save(doc)
+            .then(e => {
+                matchOutput = utils.toTitleCase(match.name.replace(/_/g, " "))
+                    + " [" + match.collection + "]";
+                callback(utils.formatConfirm(user, "Card Rated", 
+                    "you rated **" + matchOutput +  "** "+ rating +"/10"));
+            }).catch(e=> {
+                callback(utils.formatError(user, "Command could not be executed \n", e));
+            });
+            // Update the global average rating for this card.
+            if ( !reRating ) {
+                let ccollection = mongodb.collection('cards');
+                let cardQuery = utils.getCardQuery(match);
+                ccollection.findOne(cardQuery).then((match0) => {
+                    if ( !match0.ratingAve ) {
+                        match0.ratingAve = 0;
+                        match0.ratingCount = 0;
+                    }
+                    match0.ratingAve = ((match0.ratingAve * match0.ratingCount) + rating) / (match0.ratingCount+1);
+                    match0.ratingCount++;
+                    ccollection.save(match0).catch(function() {
+                        console.log('Problem saving average rating for card (probably a promo): '+ utils.getFullCard(match0));
+                    });
+                })
+            }
+        }).catch(e=> {
+            callback(utils.formatError(user, "Command could not be executed \n", e));
+        });
     });
 }
 
