@@ -403,10 +403,11 @@ function getCards(user, args, callback) {
 }
 
 function rate(user, rating, args, callback) {
-    if(!args) return callback("**" + user.username + "**, please specify card query");
+    if(!args) return callback(utils.formatError(user, null, "please specify card query"));
     if(typeof(rating) != "number" || isNaN(rating)|| rating < 1 || rating > 10) {
-        return callback("**" + user.username + "**, Please specify a rating between 1 and 10 before the card query");
+        return callback(utils.formatError(user, null, "please specify a rating between 1 and 10 before the card query"));
     }
+
     rating = Math.round(rating);
     let query1 = utils.getRequestFromFilters(args);
     getUserCards(user.id, query1).toArray((err, objs) => {
@@ -438,7 +439,7 @@ function rate(user, rating, args, callback) {
                 callback(utils.formatConfirm(user, "Card Rated", 
                     "you rated **" + matchOutput +  "** "+ rating +"/10"));
             }).catch(e=> {
-                callback(utils.formatError(user, "Command could not be executed \n", e));
+                callback(utils.formatError(user, null, "command could not be executed \n", e));
             });
             // Update the global average rating for this card.
             if ( !reRating ) {
@@ -457,7 +458,7 @@ function rate(user, rating, args, callback) {
                 })
             }
         }).catch(e=> {
-            callback(utils.formatError(user, "Command could not be executed \n", e));
+            callback(utils.formatError(user, null, "command could not be executed \n", e));
         });
     });
 }
@@ -508,8 +509,9 @@ function getCardInfo(user, args, callback) {
             info += "Fandom: **" + col.name + "**\n";
             info += "Type: **" + getCardType(card) + "**\n";
             info += "Price: **" + Math.round(val) + "** `🍅`\n";
-            if ( card.ratingAve )
-                info += "Average Rating: **" + card.ratingAve + "** `🍅`\n";
+
+            if (card.ratingAve)
+                info += "Average Rating: **" + card.ratingAve + "**\n";
 
             if(card.source) {
                 if(card.source.startsWith("http"))
