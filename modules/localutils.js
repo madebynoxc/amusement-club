@@ -207,6 +207,7 @@ function getRequestFromFiltersWithPrefix(args, prefix) {
             if(el === "star") query.sortBy[prefix + 'level'] = accend;
             else if(el === "date") query.sortBy = null;
             else if(el === "name") query.sortBy[prefix + 'name'] = accend;
+            else if(el === "rating") query.sortBy[prefix + 'rating'] = accend;
             else if(el.startsWith("col")) query.sortBy[prefix + 'collection'] = accend;
             else if(el === "amount") query.sortBy[prefix + 'amount'] = accend;
             else query.sortBy[prefix + 'level'] = -1;
