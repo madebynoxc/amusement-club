@@ -404,8 +404,8 @@ function getCards(user, args, callback) {
 
 function rate(user, rating, args, callback) {
     if(!args) return callback("**" + user.username + "**, please specify card query");
-    if(typeof(rating) != "number" || rating < 1 || rating > 10) {
-        return callback("**" + user.username + "**, Please specify a rating between 1 and 10");
+    if(typeof(rating) != "number" || isNaN(rating)|| rating < 1 || rating > 10) {
+        return callback("**" + user.username + "**, Please specify a rating between 1 and 10 before the card query");
     }
     rating = Math.round(rating);
     let query1 = utils.getRequestFromFilters(args);
@@ -508,6 +508,8 @@ function getCardInfo(user, args, callback) {
             info += "Fandom: **" + col.name + "**\n";
             info += "Type: **" + getCardType(card) + "**\n";
             info += "Price: **" + Math.round(val) + "** `🍅`\n";
+            if ( card.ratingAve )
+                info += "Average Rating: **" + card.ratingAve + "** `🍅`\n";
 
             if(card.source) {
                 if(card.source.startsWith("http"))
