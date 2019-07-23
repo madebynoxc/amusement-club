@@ -415,17 +415,11 @@ function rate(user, rating, args, callback) {
                 "can't find card matching that request"));
         }
         let cards = objs[0].cards;
-        let dbUser = objs[0]._id;
         let match = query1['cards.name']? getBestCardSorted(cards, query1['cards.name'])[0] : cards[0];
         let reRating = false; // Set as true later if user had already rated this card previously.
         if(!match) {
-            if(cards.length != cards.length) {
-                return callback(utils.formatError(user, null, 
-                    "card is already favorited. Use `->fav remove [card]` to unfavorite"));
-            } else {
-                return callback(utils.formatError(user, "Can't find card", 
-                    "can't find card matching that request"));
-            }
+            return callback(utils.formatError(user, "Can't find card", 
+                "can't find card matching that request"));
         }
         mongodb.collection('users').findOne(
             { "discord_id": user.id }
