@@ -529,8 +529,8 @@ function getCardInfo(user, args, callback) {
             info += "Price: **" + Math.round(val) + "** `🍅`\n";
 
             if ( card.ratingAve )
-                info += "Average Rating: **" + card.ratingAve + "** `🍅`\n";
-            //info += "User Ratings: **" + card.ratingCount + "** `🍅`\n"
+                info += "Average Rating: **" + card.ratingAve + "**\n";
+            //info += "User Ratings: **" + card.ratingCount + "**\n"
 
             if(card.source) {
                 if(card.source.startsWith("http"))
