@@ -263,6 +263,7 @@ async function sell(user, incArgs, channelID, callback) {
 
                         await ucollection.update({discord_id: user.id}, {$inc: {exp: -fee}});
                         let aucID = await generateBetterID();
+                        delete match.rating;
                         await acollection.insert({
                             id: aucID, finished: false, date: new Date(), price: price, author: user.id, card: match
                         });
