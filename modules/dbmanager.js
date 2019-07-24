@@ -451,14 +451,12 @@ function rate(user, rating, args, callback) {
 
             let ccollection = mongodb.collection('cards');
             let cardQuery = utils.getCardQuery(match);
-            ccollection.findOne(cardQuery).then((match0) => {
-                if ( typeof match0.ratingAve == 'undefined' || match0.ratingAve == null ) {
-                    //console.log('this is the first time this card has been rated by anyone');
+            getCard(cardQuery, match0 => {
+                if (typeof match0.ratingAve == 'undefined' || match0.ratingAve == null) {
                     match0.ratingAve = 0;
                     match0.ratingCount = 0;
                 }
-                //console.log('old ave rating: '+ match0.ratingAve);
-                //console.log('old rating count: '+ match0.ratingCount);
+
                 let newRatingCount;
                 if (oldRating == 0) {
                     // user has not rated this card before.
@@ -467,15 +465,12 @@ function rate(user, rating, args, callback) {
                     newRatingCount = match0.ratingCount;
                 }
                 match0.ratingAve = ((match0.ratingAve * match0.ratingCount) -oldRating + rating) / newRatingCount;
-                //console.log('user prev rating: '+ oldRating);
-                //console.log('user new rating '+ rating);
-                //console.log('new rating count' +newRatingCount);
-                //console.log('new ave rating: '+ match0.ratingAve);
+
                 match0.ratingCount = newRatingCount;
                 ccollection.save(match0).catch(function() {
                     console.log('Problem saving average rating for card (probably a promo): '+ utils.getFullCard(match0));
                 });
-            })
+            });
         }).catch(e=> {
             callback(utils.formatError(user, null, "command could not be executed \n", e));
         });
@@ -548,10 +543,8 @@ async function getCard(query, callback) {
     if(cards.length == 0) 
         cards = await mongodb.collection('promocards').find(query).toArray();
 
-    let card = query['name']? getBestCardSorted(cards, query['name'])[0] : cards[0];
-
-    if(callback) callback(card);
-    return card;
+    if(callback) callback(cards[0]);
+    return cards[0];
 }
 
 function getCardType(card) {
