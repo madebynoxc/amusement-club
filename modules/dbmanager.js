@@ -414,7 +414,7 @@ function rate(user, rating, args, callback) {
     if(typeof(rating) != "number" || isNaN(rating)|| rating < 1 || rating > 10) {
         return callback(utils.formatError(user, null, "please specify a rating between 1 and 10 before the card query"));
     }
-    
+
     rating = Math.round(rating);
     let query1 = utils.getRequestFromFilters(args);
     getUserCards(user.id, query1).toArray((err, objs) => {
@@ -530,7 +530,7 @@ async function getCardInfo(user, args, callback) {
             info += "Fandom: **" + col.name + "**\n";
             info += "Type: **" + getCardType(card) + "**\n";
             info += "Price: **" + Math.round(val) + "** `🍅`\n";
-            
+
             if ( card.ratingAve )
                 info += "Average Rating: **" + card.ratingAve + "**\n";
             //info += "User Ratings: **" + card.ratingCount + "**\n"
