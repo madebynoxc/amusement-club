@@ -11,7 +11,7 @@ module.exports = {
 var MongoClient = require('mongodb').MongoClient;
 var ObjectId = require('mongodb').ObjectID;
 var mongodb, client, userCount, dblapi;
-var dailyCol;
+var dailyCol, evalLastDaily;
 var cooldownList = [];
 var modifyingList = [];
 
@@ -74,8 +74,8 @@ function connect(bot, shard, shardCount, callback) {
         //cardmanager.updateCards(db);
 
         if(shard == 0) {
-            let date = new Date();
-            let deletDate = new Date(date.setDate(date.getDate() - 5));
+            let deletDate = new Date();
+            deletDate.setDate(deletDate.getDate() - 5);
             db.collection('transactions').remove({time: {$lt: deletDate}}).then(res => {
                 console.log("Removed old transactions: " + res.result.n);
             });
@@ -85,8 +85,15 @@ function connect(bot, shard, shardCount, callback) {
             });
         }
 
-        db.collection('users').count({'cards.1': {$exists: true}}).then(uc => {
+        // db.collection('users').count({'cards.1': {$exists: true}}).then(uc => {
+        //     userCount = uc;
+        // });
+
+        evalLastDaily = new Date();
+        evalLastDaily.setMonth(evalLastDaily.getMonth() - settings.evalUserMonths);
+        db.collection('users').count({'lastdaily': {$gt: evalLastDaily}}).then(uc => {
             userCount = uc;
+            console.log("Users considered for eval: " + uc);
         });
 
         if(callback) callback();   
@@ -437,6 +444,7 @@ function rate(user, rating, args, callback) {
                     doc.cards[j].rating = rating;
                 }
             }
+
             mongodb.collection('users').save(doc)
             .then(e => {
                 matchOutput = utils.toTitleCase(match.name.replace(/_/g, " "))
@@ -446,17 +454,15 @@ function rate(user, rating, args, callback) {
             }).catch(e=> {
                 callback(utils.formatError(user, "Command could not be executed \n", e));
             });
-            // Update the global average rating for this card.
+
             let ccollection = mongodb.collection('cards');
             let cardQuery = utils.getCardQuery(match);
-            ccollection.findOne(cardQuery).then((match0) => {
-                if ( typeof match0.ratingAve == 'undefined' || match0.ratingAve == null ) {
-                    //console.log('this is the first time this card has been rated by anyone');
+            getCard(cardQuery, match0 => {
+                if (typeof match0.ratingAve == 'undefined' || match0.ratingAve == null) {
                     match0.ratingAve = 0;
                     match0.ratingCount = 0;
                 }
-                //console.log('old ave rating: '+ match0.ratingAve);
-                //console.log('old rating count: '+ match0.ratingCount);
+
                 let newRatingCount;
                 if (oldRating == 0) {
                     // user has not rated this card before.
@@ -465,15 +471,12 @@ function rate(user, rating, args, callback) {
                     newRatingCount = match0.ratingCount;
                 }
                 match0.ratingAve = ((match0.ratingAve * match0.ratingCount) -oldRating + rating) / newRatingCount;
-                //console.log('user prev rating: '+ oldRating);
-                //console.log('user new rating '+ rating);
-                //console.log('new rating count' +newRatingCount);
-                //console.log('new ave rating: '+ match0.ratingAve);
+
                 match0.ratingCount = newRatingCount;
                 ccollection.save(match0).catch(function() {
                     console.log('Problem saving average rating for card (probably a promo): '+ utils.getFullCard(match0));
                 });
-            })
+            });
         }).catch(e=> {
             callback(utils.formatError(user, "Command could not be executed \n", e));
         });
@@ -511,12 +514,12 @@ function summon(user, args, callback) {
     });
 }
 
-function getCardInfo(user, args, callback) {
+async function getCardInfo(user, args, callback) {
     if(!args) return callback("**" + user.username + "**, please specify card query");
     let query = utils.getRequestFromFiltersNoPrefix(args);
 
-    mongodb.collection('cards').find(query).toArray((err, cards) => {
-        let card = query['name']? getBestCardSorted(cards, query['name'])[0] : cards[0];
+    let card = await getCard(query);
+        
         if(!card) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
         getCardValue(card, card, val => {
@@ -538,7 +541,15 @@ function getCardInfo(user, args, callback) {
 
             callback(utils.formatInfo(null, null, info));
         });
-    });
+}
+
+async function getCard(query, callback) {
+    let cards = await mongodb.collection('cards').find(query).toArray();
+    if(cards.length == 0) 
+        cards = await mongodb.collection('promocards').find(query).toArray();
+
+    if(callback) callback(cards[0]);
+    return cards[0];
 }
 
 function getCardType(card) {
@@ -816,15 +827,18 @@ function getCardValue(card, fallbackCard, callback) {
         return callback(card.eval);
     } else {
         //console.log('Using eval from OLD system for '+ card.name);
-        mongodb.collection('users').count({"cards":{"$elemMatch": utils.getCardQuery(card)}}).then(amount => {
-           let price = (ratioInc.star[card.level] 
-                           + (card.craft? ratioInc.craft : 0) + (card.animated? ratioInc.gif : 0)) * 100;
 
-           if(amount > 0){
-               price *= limitPriceGrowth((userCount * 0.035)/amount);
-               return callback(price);
-           }
-           callback(0);
+        mongodb.collection('users').count({
+            "cards":{"$elemMatch": utils.getCardQuery(card)}, 
+            "lastdaily": {$gt: evalLastDaily}}).then(amount => {
+               let price = (ratioInc.star[card.level] 
+                               + (card.craft? ratioInc.craft : 0) + (card.animated? ratioInc.gif : 0)) * 100;
+
+               if(amount > 0){
+                   price *= limitPriceGrowth((userCount * 0.035)/amount);
+                   return callback(price);
+               }
+               callback(0);
         });
     }
 }
