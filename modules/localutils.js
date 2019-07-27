@@ -189,6 +189,7 @@ function getRequestFromFiltersWithPrefix(args, prefix) {
             else if(el === "multi") query[prefix + 'amount'] = {$eq: 1};
             else if(el === "gif") query[prefix + 'animated'] = false;
             else if(el === "fav") query[prefix + 'fav'] = {$in: [null, false]};
+            else if(el === "rated") query[prefix + 'rating'] = {$exists: false};
             else if(el === "new") query[prefix + 'obtained'] = {$lt: date};
             else if(el === "frozen") {
                 var yesterday = new Date();
