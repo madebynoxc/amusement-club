@@ -8,6 +8,7 @@ const fs = require('fs');
 const utils = require('./localutils.js');
 const dbmanager = require('./dbmanager.js');
 const react = require('./reactions.js');
+const settings = require('../settings/general.json');
 
 function connect(db) {
     mongodb = db;
@@ -15,22 +16,34 @@ function connect(db) {
     ucollection = mongodb.collection("users");
 }
 
-function processRequest(user, cmd, args, callback) {
+function processRequest(user, chanID, cmd, args, callback) {
     let req;
     if (cmd !== "trans" && cmd !== "transactions") {
         //Should be got, gets, sent or sends
         req = cmd;
     } else req = args.shift();
 
+    let auditMode = false;
+    let targetUserID = user.id;
+    if ( req == "audit" ) {
+        if ( chanID == settings.auditchannel ) {
+            auditMode = true;
+            targetUserID = args.shift();
+            req = args.shift();
+        } else {
+            return callback(utils.formatError(user, null, "You can't do that here."));
+        }
+    }
+
     switch (req) {
         case "gets":
-            gets(user, callback);
+            gets(user, targetUserID, callback);
             break;
         case "sends":
-            sends(user, callback);
+            sends(user, targetUserID, callback);
             break;
         case "pending":
-            pending(user, callback);
+            pending(user, targetUserID, callback);
             break;
         case "confirm":
             confirm(user, args, callback);
@@ -39,10 +52,10 @@ function processRequest(user, cmd, args, callback) {
             decline(user, args, callback);
             break;
         case "info":
-            info(user, args, callback);
+            info(user, targetUserID, args, callback);
             break;
         default:
-            all(user, callback);
+            all(user, targetUserID, callback);
             break;
     }
 }
@@ -75,13 +88,13 @@ function formatTransactions(res, userid) {
     return resp;
 }
 
-async function info(user, args, callback) {
+async function info(user, targetUserID, args, callback) {
     if(!args || args.length == 0)
         return callback(utils.formatError(user, null, "please specify transaction ID"));
 
-    let transactionId = args[0];
-    let transaction = await collection.findOne({ id: transactionId, $or: [{from_id: user.id}, {to_id: user.id}] });
-    if(!transaction) return callback(utils.formatError(user, null, "can't find transaction with ID '" + transactionId + "'"));
+    let transactionID = args[0];
+    let transaction = await collection.findOne({ id: transactionID, $or: [{from_id: targetUserID}, {to_id: targetUserID}] });
+    if(!transaction) return callback(utils.formatError(user, null, "can't find transaction with ID '" + transactionID + "'"));
     let name = utils.getFullCard(transaction.card);
 
     let mins = utils.getMinutesDifference(transaction.time);
@@ -102,42 +115,42 @@ async function info(user, args, callback) {
     callback(utils.formatInfo(null, "Transaction [" + transaction.id + "] " + timediff, resp));
 }
 
-function gets(user, callback) {
-    collection.find({ to_id: user.id, status: "confirmed" }).sort({ time: -1 }).limit(20).toArray((err, res) => {
+function gets(user, targetUserID, callback) {
+    collection.find({ to_id: targetUserID, status: "confirmed" }).sort({ time: -1 }).limit(20).toArray((err, res) => {
         if (!res || res.length == 0)
             return callback(utils.formatWarning(user, null, "can't find recent transactions recieved."));
 
-        let resp = formatTransactions(res, user.id);
+        let resp = formatTransactions(res, targetUserID);
         callback(utils.formatInfo(null, "Recent transactions", resp));
     });
 }
 
-function sends(user, callback) {
-    collection.find({ from_id: user.id, status: "confirmed" }).sort({ time: -1 }).limit(20).toArray((err, res) => {
+function sends(user, targetUserID, callback) {
+    collection.find({ from_id: targetUserID, status: "confirmed" }).sort({ time: -1 }).limit(20).toArray((err, res) => {
         if (!res || res.length == 0) 
             return callback(utils.formatWarning(user, null, "can't find recent transactions sent."));
         
-        let resp = formatTransactions(res, user.id);
+        let resp = formatTransactions(res, targetUserID);
         callback(utils.formatInfo(null, "Recent transactions", resp));
     });
 }
 
-function pending(user, callback) {
-    collection.find({ to_id: user.id, status: "pending" }).sort({ time: 1 }).limit(20).toArray((err, res) => {
+function pending(user, targetUserID, callback) {
+    collection.find({ to_id: targetUserID, status: "pending" }).sort({ time: 1 }).limit(20).toArray((err, res) => {
         if (!res || res.length == 0) 
             return callback(utils.formatWarning(user, null, "can't find any incoming transactions"));
         
-        let resp = formatTransactions(res, user.id);
+        let resp = formatTransactions(res, targetUserID);
         callback(utils.formatInfo(null, "Incoming transactions", resp));
     });
 }
 
-function all(user, callback) {
-    collection.find({ $or: [{ to_id: user.id }, { from_id: user.id }] }).sort({ time: -1 }).limit(20).toArray((err, res) => {
+function all(user, targetUserID, callback) {
+    collection.find({ $or: [{ to_id: targetUserID }, { from_id: targetUserID }] }).sort({ time: -1 }).limit(20).toArray((err, res) => {
         if (!res || res.length == 0) 
             return callback(utils.formatWarning(user, null, "can't find recent transactions."));
 
-        let resp = formatTransactions(res, user.id);
+        let resp = formatTransactions(res, targetUserID);
         callback(utils.formatInfo(null, "Recent transactions", resp));
     });
 }
@@ -146,9 +159,9 @@ async function confirm(user, args, callback) {
     if(!args || args.length == 0)
         return callback(utils.formatError(user, null, "please specify transaction ID"));
 
-    let transactionId = args[0];
-    let transaction = await collection.findOne({ id: transactionId, status: "pending", $or: [{from_id: user.id}, {to_id: user.id}] });
-    if(!transaction) return callback(utils.formatError(user, null, "can't find transaction with ID '" + transactionId + "'"));
+    let transactionID = args[0];
+    let transaction = await collection.findOne({ id: transactionID, status: "pending", $or: [{from_id: user.id}, {to_id: user.id}] });
+    if(!transaction) return callback(utils.formatError(user, null, "can't find transaction with ID '" + transactionID + "'"));
     
     if(userHandlingList.includes(user.id)) return callback(utils.formatError(user, "Busy", "another transaction is being handled, try again."));
     
@@ -241,9 +254,9 @@ async function decline(user, args, callback) {
     if(!args || args.length == 0)
         return callback(utils.formatError(user, null, "please specify transaction ID"));
 
-    let transactionId = args[0];
-    let transaction = await collection.findOne({ id: transactionId, status: "pending", $or: [{from_id: user.id}, {to_id: user.id}] });
-    if(!transaction) return callback(utils.formatError(user, null, "can't find transaction with ID '" + transactionId + "'"));
+    let transactionID = args[0];
+    let transaction = await collection.findOne({ id: transactionID, status: "pending", $or: [{from_id: user.id}, {to_id: user.id}] });
+    if(!transaction) return callback(utils.formatError(user, null, "can't find transaction with ID '" + transactionID + "'"));
 
     if((transaction.to_id == user.id) || (transaction.from_id == user.id)) {
         react.removeExisting(user.id, true);
