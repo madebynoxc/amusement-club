@@ -245,7 +245,7 @@ async function getCommand(user, channel, guild, message, event, callback) {
             case 'transactions':
                 if(channelType == 1) botOnly(chanID);
                 else {
-                    transactions.processRequest(user, sb, cnt, (text) => {
+                    transactions.processRequest(user, chanID, sb, cnt, (text) => {
                         callback(text);
                     });
                 }
