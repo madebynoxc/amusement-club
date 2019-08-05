@@ -24,7 +24,35 @@ async function processRequest(user, channelID, args, callback) {
         case 'ban':
             banUser(args, callback);
             break;
+        case 'embargo':
+            embargoUser(args, callback);
     }
+}
+
+async function embargoUser(args, callback) {
+    let undo = false;
+    if ( args[0] == 'lift' ) {
+        undo = true;
+        args.shift();
+    }
+    let parse = utils.getUserID(args);
+    if(!parse.id)
+        return callback(utils.formatError(null, null, "please provide user ID"));
+
+    let targetUser = (await ucollection.findOne({ "discord_id": parse.id }));
+    if(!targetUser)
+        return callback(utils.formatError(null, null, `user with that ID was not found`));
+
+    targetUser.embargo = !undo;
+    ucollection.save(targetUser).then(e => {
+        let out = "can no longer participate in auctions or sales.";
+        if ( undo )
+            out = "can once again participate in auctions and sales.";
+        callback(utils.formatConfirm(null, "Embargo Enacted", "**"+ 
+            targetUser.username +"** "+ out));
+    }).catch(e=> {
+        callback(utils.formatError(user, "Command could not be executed \n", e));
+    });
 }
 
 function embed(args, callback) {
