@@ -130,6 +130,10 @@ async function bid(user, args, callback) {
     }
 
     let dbUser = await ucollection.findOne({discord_id: user.id});
+    if ( dbUser.embargo ) {
+        return callback(utils.formatError(user, "Embargo", 
+            "you are not allowed to bid on auctions."));
+    }
     if(!dbUser.hero)
         return callback(utils.formatError(user, null, "you have to have a hero in order to take part in auction"));
 
@@ -241,6 +245,11 @@ async function sell(user, incArgs, channelID, callback) {
                 let min = Math.round(eval * .5);
                 let dbUser = await ucollection.findOne({discord_id: user.id});
                 let fee = Math.round(price * .1);
+
+                if ( dbUser.embargo ) {
+                    return callback(utils.formatError(user, "Embargo", 
+                        "you are not allowed to list cards at auction."));
+                }
 
                 if(!dbUser.hero)
                     return callback(utils.formatError(user, null, "you have to have a hero in order to take part in auction"));

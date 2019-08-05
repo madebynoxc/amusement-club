@@ -23,6 +23,11 @@ async function processRequest(user, args, guild, channelID, callback) {
     let dbUser = await ucollection.findOne({ discord_id: user.id });
     let parse = utils.getUserID(args);
 
+    if ( dbUser.embargo ) {
+        return callback(utils.formatError(user, "Embargo", 
+            "you are not allowed to buy or sell cards."));
+    }
+
     let res = await tcollection.findOne({from_id: dbUser.discord_id, status: "pending", to_id: parse.id});
     if(res) {
         let msg = "";
@@ -88,6 +93,10 @@ async function processRequest(user, args, guild, channelID, callback) {
             return callback(utils.formatError(user, ";~;", "you can't trade with yourself..."));
 
         let targetUser = await ucollection.findOne({discord_id: parse.id});
+        if ( targetUser.embargo ) {
+            return callback(utils.formatError(user, "Embargo", 
+                "the user you are trying to sell to is not allowed to buy cards."));
+        }
         if(!targetUser) return callback(utils.formatError(user, "User not found", "can't find target user. Make sure they already have at least one card."));
 
         if (targetUser.blocklist && targetUser.blocklist.includes(dbUser.discord_id))
