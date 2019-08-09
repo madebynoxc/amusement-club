@@ -1,5 +1,15 @@
 [
     {
+        "version": "1.14.b3",
+        "changes": [
+            "Eval now pulls prices from auctions",
+            "Added `rating` for personal card ratings",
+            "Added global card rating to `->info`",
+            "Fixed info for promo cards",
+            "Eval now only works on active users"
+        ]
+    },
+    {
         "version": "1.13.1",
         "changes": [
             "Better auction IDs",

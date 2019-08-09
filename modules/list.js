@@ -36,6 +36,8 @@ function nameCard(card, newC) {
         let res = utils.getFullCard(card);
         if(card.obtained && card.obtained > newC)
             res = "[new] " + res;
+        if(card.rating)
+            res += " ["+card.rating +"/10]";
         if(card.amount > 1) 
             res += " (x" + card.amount + ")";
         return res;

@@ -1,6 +1,6 @@
 module.exports = {
     connect, disconnect, claim, addXP, getXP, doesUserHave,
-    getCards, summon, sell, award, getUserName, getCardInfo,
+    getCards, rate, summon, sell, award, getUserName, getCardInfo,
     daily, getQuests, getBestCardSorted, getUserCards,
     leaderboard, difference, dynamicSort, countCardLevels, getCardValue,
     getCardFile, getDefaultChannel, isAdmin, needsCards, getCardURL,
@@ -11,7 +11,7 @@ module.exports = {
 var MongoClient = require('mongodb').MongoClient;
 var ObjectId = require('mongodb').ObjectID;
 var mongodb, client, userCount, dblapi;
-var dailyCol;
+var dailyCol, evalLastDaily;
 var cooldownList = [];
 var modifyingList = [];
 
@@ -74,8 +74,8 @@ function connect(bot, shard, shardCount, callback) {
         //cardmanager.updateCards(db);
 
         if(shard == 0) {
-            let date = new Date();
-            let deletDate = new Date(date.setDate(date.getDate() - 5));
+            let deletDate = new Date();
+            deletDate.setDate(deletDate.getDate() - 5);
             db.collection('transactions').remove({time: {$lt: deletDate}}).then(res => {
                 console.log("Removed old transactions: " + res.result.n);
             });
@@ -85,8 +85,15 @@ function connect(bot, shard, shardCount, callback) {
             });
         }
 
-        db.collection('users').count({'cards.1': {$exists: true}}).then(uc => {
+        // db.collection('users').count({'cards.1': {$exists: true}}).then(uc => {
+        //     userCount = uc;
+        // });
+
+        evalLastDaily = new Date();
+        evalLastDaily.setMonth(evalLastDaily.getMonth() - settings.evalUserMonths);
+        db.collection('users').count({'lastdaily': {$gt: evalLastDaily}}).then(uc => {
             userCount = uc;
+            console.log("Users considered for eval: " + uc);
         });
 
         if(callback) callback();   
@@ -402,6 +409,81 @@ function getCards(user, args, callback) {
     });
 }
 
+function rate(user, rating, args, callback) {
+    if(!args) return callback(utils.formatError(user, null, "please specify card query"));
+    if(typeof(rating) != "number" || isNaN(rating)|| rating < 1 || rating > 10) {
+        return callback(utils.formatError(user, null, "please specify a rating between 1 and 10 before the card query"));
+    }
+
+    rating = Math.round(rating);
+    let query1 = utils.getRequestFromFilters(args);
+    getUserCards(user.id, query1).toArray((err, objs) => {
+        if(!objs[0]) {
+            return callback(utils.formatError(user, "Can't find card", 
+                "can't find card matching that request"));
+        }
+        let cards = objs[0].cards;
+        let match = query1['cards.name']? getBestCardSorted(cards, query1['cards.name'])[0] : cards[0];
+        if(!match) {
+            return callback(utils.formatError(user, "Can't find card", 
+                "can't find card matching that request"));
+        }
+        mongodb.collection('users').findOne(
+            { "discord_id": user.id }
+        ).then(doc => {
+            // Update the user's local rating.
+            let oldRating;
+            for (let j=0; j<doc.cards.length; j++) {
+                if (''+doc.cards[j]["_id"] == ''+match["_id"]) {
+                    if ( typeof doc.cards[j]["rating"] == 'undefined' || doc.cards[j]["rating"] == null ) {
+                        //console.log('user had not rated this card before');
+                        oldRating = 0;
+                    } else {
+                        //console.log('users old rating: '+ doc.cards[j]['rating']);
+                        oldRating = doc.cards[j]["rating"];
+                    }
+                    doc.cards[j].rating = rating;
+                }
+            }
+
+            mongodb.collection('users').save(doc)
+            .then(e => {
+                matchOutput = utils.toTitleCase(match.name.replace(/_/g, " "))
+                    + " [" + match.collection + "]";
+                callback(utils.formatConfirm(user, "Card Rated", 
+                    "you rated **" + matchOutput +  "** "+ rating +"/10"));
+            }).catch(e=> {
+                callback(utils.formatError(user, null, "command could not be executed \n", e));
+            });
+
+            let ccollection = mongodb.collection('cards');
+            let cardQuery = utils.getCardQuery(match);
+            getCard(cardQuery, match0 => {
+                if (typeof match0.ratingAve == 'undefined' || match0.ratingAve == null) {
+                    match0.ratingAve = 0;
+                    match0.ratingCount = 0;
+                }
+
+                let newRatingCount;
+                if (oldRating == 0) {
+                    // user has not rated this card before.
+                    newRatingCount = match0.ratingCount +1;
+                } else {
+                    newRatingCount = match0.ratingCount;
+                }
+                match0.ratingAve = ((match0.ratingAve * match0.ratingCount) -oldRating + rating) / newRatingCount;
+
+                match0.ratingCount = newRatingCount;
+                ccollection.save(match0).catch(function() {
+                    console.log('Problem saving average rating for card (probably a promo): '+ utils.getFullCard(match0));
+                });
+            });
+        }).catch(e=> {
+            callback(utils.formatError(user, null, "command could not be executed \n", e));
+        });
+    });
+}
+
 function summon(user, args, callback) {
     if(!args) return callback("**" + user.username + "**, please specify card query");
     let query = utils.getRequestFromFilters(args);
@@ -433,21 +515,25 @@ function summon(user, args, callback) {
     });
 }
 
-function getCardInfo(user, args, callback) {
+async function getCardInfo(user, args, callback) {
     if(!args) return callback("**" + user.username + "**, please specify card query");
     let query = utils.getRequestFromFiltersNoPrefix(args);
 
-    mongodb.collection('cards').find(query).toArray((err, cards) => {
-        let card = query['name']? getBestCardSorted(cards, query['name'])[0] : cards[0];
+    let card = await getCard(query);
+        
         if(!card) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
-        getCardValue(card, val => {
+        getCardValue(card, card, val => {
             let col = collections.parseCollection(card.collection)[0];
             let info = "";
             info += "**" + utils.getFullCard(card) + "**\n";
             info += "Fandom: **" + col.name + "**\n";
             info += "Type: **" + getCardType(card) + "**\n";
             info += "Price: **" + Math.round(val) + "** `🍅`\n";
+
+            if ( card.ratingAve )
+                info += "Average Rating: **" + card.ratingAve + "**\n";
+            //info += "User Ratings: **" + card.ratingCount + "**\n"
 
             if(card.source) {
                 if(card.source.startsWith("http"))
@@ -457,7 +543,15 @@ function getCardInfo(user, args, callback) {
 
             callback(utils.formatInfo(null, null, info));
         });
-    });
+}
+
+async function getCard(query, callback) {
+    let cards = await mongodb.collection('cards').find(query).toArray();
+    if(cards.length == 0) 
+        cards = await mongodb.collection('promocards').find(query).toArray();
+
+    if(callback) callback(cards[0]);
+    return cards[0];
 }
 
 function getCardType(card) {
@@ -719,8 +813,7 @@ function eval(user, args, callback, isPromo) {
             if (!isPromo) return eval(user, args, callback, true);
             else          return callback(utils.formatError(user, null, "no cards found that match your request"));
         }
-
-        getCardValue(match, price => {
+        getCardValue(match, match, price => {
             let name = utils.getFullCard(match);
             if(price == 0) callback(utils.formatInfo(user, null, "impossible to evaluate **" + name + "** since nobody has it"));
             else callback(utils.formatInfo(user, null, "the card **" + name + "** is worth **" + Math.floor(price) + "**🍅"));
@@ -728,17 +821,28 @@ function eval(user, args, callback, isPromo) {
     });
 }
 
-function getCardValue(card, callback) {
-    mongodb.collection('users').count({"cards":{"$elemMatch": utils.getCardQuery(card)}}).then(amount => {
-        let price = (ratioInc.star[card.level] 
-                    + (card.craft? ratioInc.craft : 0) + (card.animated? ratioInc.gif : 0)) * 100;
-        
-        if(amount > 0){
-            price *= limitPriceGrowth((userCount * 0.035)/amount);
-            return callback(price);
-        }
-        callback(0);
-    });
+function getCardValue(card, fallbackCard, callback) {
+    if ( typeof card == 'undefined' || card == null )
+        card = fallbackCard;
+    if ( card.hasOwnProperty('eval') ) {
+        //console.log('Using eval from NEW system for '+ card.name +': '+ card.eval +"\nevalSamples:"+ JSON.stringify(card.evalSamples));
+        return callback(card.eval);
+    } else {
+        //console.log('Using eval from OLD system for '+ card.name);
+
+        mongodb.collection('users').count({
+            "cards":{"$elemMatch": utils.getCardQuery(card)}, 
+            "lastdaily": {$gt: evalLastDaily}}).then(amount => {
+               let price = (ratioInc.star[card.level] 
+                               + (card.craft? ratioInc.craft : 0) + (card.animated? ratioInc.gif : 0)) * 100;
+
+               if(amount > 0){
+                   price *= limitPriceGrowth((userCount * 0.035)/amount);
+                   return callback(price);
+               }
+               callback(0);
+        });
+    }
 }
 
 function limitPriceGrowth(x) { 

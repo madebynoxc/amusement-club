@@ -23,6 +23,13 @@ async function processRequest(user, args, guild, channelID, callback) {
     let dbUser = await ucollection.findOne({ discord_id: user.id });
     let parse = utils.getUserID(args);
 
+    if ( dbUser.embargo ) {
+        return callback(utils.formatError(user, "Embargo", 
+            "you are not allowed to buy or sell cards. "+
+            "Your dealings were found to be in violation of our communiy rules. "+
+            "You can inquire further on our [Bot Discord](https://discord.gg/kqgAvdX)"));
+    }
+
     let res = await tcollection.findOne({from_id: dbUser.discord_id, status: "pending", to_id: parse.id});
     if(res) {
         let msg = "";
@@ -73,6 +80,7 @@ async function processRequest(user, args, guild, channelID, callback) {
         + " To remove from favorites use `->fav remove [card query]`"));
 
     transaction.card = match;
+    delete transaction.card.rating;
     transaction.id = utils.generateRandomId();
 
     if(parse.id) {
@@ -88,16 +96,26 @@ async function processRequest(user, args, guild, channelID, callback) {
 
         let targetUser = await ucollection.findOne({discord_id: parse.id});
         if(!targetUser) return callback(utils.formatError(user, "User not found", "can't find target user. Make sure they already have at least one card."));
-
+        if ( targetUser.embargo ) {
+            return callback(utils.formatError(user, "Embargo", 
+                "the user you are trying to sell to is not allowed to buy cards. "+
+                "Their dealings were found to be in violation of our communiy rules. "+
+                "You can inquire further on our [Bot Discord](https://discord.gg/kqgAvdX)"));
+        }
+        
         if (targetUser.blocklist && targetUser.blocklist.includes(dbUser.discord_id))
         return callback(utils.formatError(dbUser, "Can't send card", "this user blocked trading with you"));
 
         transaction.to = targetUser.username;
         transaction.to_id = parse.id;
 
+        let ccollection = mongodb.collection('cards');
+        let cardQuery = utils.getCardQuery(match);
         transaction.price = await new Promise(resolve => {
-            dbmanager.getCardValue(match, price => {
-                resolve(Math.round(price));
+            ccollection.findOne(cardQuery).then((match0) => {
+                dbmanager.getCardValue(match0, match, price => {
+                    resolve(Math.round(price));
+                });
             });
         });
         

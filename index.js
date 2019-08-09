@@ -206,6 +206,10 @@ async function getCommand(user, channel, guild, message, event, callback) {
             case 'eval':
                 dbManager.eval(user, cnt, callback);
                 return;
+            case 'rate':
+                let rating = Number(cnt.shift());
+                dbManager.rate(user, rating, cnt, callback);
+                return;
             case 'bal': 
             case 'balance': 
                 if(channelType == 1) botOnly(chanID);
@@ -241,7 +245,7 @@ async function getCommand(user, channel, guild, message, event, callback) {
             case 'transactions':
                 if(channelType == 1) botOnly(chanID);
                 else {
-                    transactions.processRequest(user, sb, cnt, (text) => {
+                    transactions.processRequest(user, chanID, sb, cnt, (text) => {
                         callback(text);
                     });
                 }
