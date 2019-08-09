@@ -95,14 +95,14 @@ async function processRequest(user, args, guild, channelID, callback) {
             return callback(utils.formatError(user, ";~;", "you can't trade with yourself..."));
 
         let targetUser = await ucollection.findOne({discord_id: parse.id});
+        if(!targetUser) return callback(utils.formatError(user, "User not found", "can't find target user. Make sure they already have at least one card."));
         if ( targetUser.embargo ) {
             return callback(utils.formatError(user, "Embargo", 
                 "the user you are trying to sell to is not allowed to buy cards. "+
                 "Their dealings were found to be in violation of our communiy rules. "+
                 "You can inquire further on our [Bot Discord](https://discord.gg/kqgAvdX)"));
         }
-        if(!targetUser) return callback(utils.formatError(user, "User not found", "can't find target user. Make sure they already have at least one card."));
-
+        
         if (targetUser.blocklist && targetUser.blocklist.includes(dbUser.discord_id))
         return callback(utils.formatError(dbUser, "Can't send card", "this user blocked trading with you"));
 
