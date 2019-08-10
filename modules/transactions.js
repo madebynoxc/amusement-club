@@ -25,22 +25,24 @@ function processRequest(user, chanID, cmd, args, callback) {
 
     let auditMode = false;
     let targetUserID = user.id;
-    if ( req == "audit" ) {
-        if ( chanID == settings.auditchannel ) {
-            auditMode = true;
-            targetUserID = args.shift();
-            req = args.shift();
-        } else {
-            return callback(utils.formatError(user, null, "You can't do that here."));
+    if ( chanID == settings.auditchannel ) {
+        auditMode = true;
+        if ( req == "audit" ) {
+            let parse = utils.getUserID(args);
+            if(!parse.id)
+                return callback(utils.formatError(null, null, "please provide user ID"));
+            targetUserID = parse.id;
+            //targetUserID = args.shift();
+            //req = args.shift();
         }
     }
 
     switch (req) {
         case "gets":
-            gets(user, targetUserID, callback);
+            gets(user, targetUserID, auditMode, callback);
             break;
         case "sends":
-            sends(user, targetUserID, callback);
+            sends(user, targetUserID, auditMode, callback);
             break;
         case "pending":
             pending(user, targetUserID, callback);
@@ -52,10 +54,10 @@ function processRequest(user, chanID, cmd, args, callback) {
             decline(user, args, callback);
             break;
         case "info":
-            info(user, targetUserID, args, callback);
+            info(user, targetUserID, auditMode, args, callback);
             break;
         default:
-            all(user, targetUserID, callback);
+            all(user, targetUserID, auditMode, callback);
             break;
     }
 }
@@ -88,12 +90,16 @@ function formatTransactions(res, userid) {
     return resp;
 }
 
-async function info(user, targetUserID, args, callback) {
+async function info(user, targetUserID, auditMode, args, callback) {
     if(!args || args.length == 0)
         return callback(utils.formatError(user, null, "please specify transaction ID"));
 
     let transactionID = args[0];
-    let transaction = await collection.findOne({ id: transactionID, $or: [{from_id: targetUserID}, {to_id: targetUserID}] });
+    let transaction;
+    if ( auditMode )
+        transaction = await collection.findOne({ id: transactionID });
+    else
+        transaction = await collection.findOne({ id: transactionID, $or: [{from_id: targetUserID}, {to_id: targetUserID}] });
     if(!transaction) return callback(utils.formatError(user, null, "can't find transaction with ID '" + transactionID + "'"));
     let name = utils.getFullCard(transaction.card);
 
@@ -105,17 +111,28 @@ async function info(user, targetUserID, args, callback) {
     let resp = "Card: **" + name + "**\n";
     resp += "Price: **" + transaction.price + "** 🍅\n";
     resp += "From: **" + transaction.from + "**\n";
+    if ( auditMode )
+        resp+= "(Discord ID: **"+ transaction.from_id +"**)\n";
     resp += "To: **" + (transaction.to? transaction.to : "<BOT>") + "**\n";
+    if ( auditMode && transaction.to )
+        resp+= "(Discord ID: **"+ transaction.to_id +"**)\n";
     if(transaction.status == "auction") resp += "This is an **auction** transaction\n";
     else {
         resp += "On server: **" + transaction.guild + "**\n";
         resp += "Status: **" + transaction.status + "**\n";
     }
+    if ( auditMode && transaction.bids ) {
+        resp += "Bids ("+ transaction.bids.length +", newest first):\n";
+        for(let bid of transaction.bids) {
+            let date = new Date(bid.date);
+            resp += bid.bid +"🍅: <@"+ bid.bidder +"> @ "+ utils.formatDate(date) +"\n";
+        }
+    }
 
     callback(utils.formatInfo(null, "Transaction [" + transaction.id + "] " + timediff, resp));
 }
 
-function gets(user, targetUserID, callback) {
+function gets(user, targetUserID, auditMode, callback) {
     collection.find({ to_id: targetUserID, status: "confirmed" }).sort({ time: -1 }).limit(20).toArray((err, res) => {
         if (!res || res.length == 0)
             return callback(utils.formatWarning(user, null, "can't find recent transactions recieved."));
@@ -125,7 +142,7 @@ function gets(user, targetUserID, callback) {
     });
 }
 
-function sends(user, targetUserID, callback) {
+function sends(user, targetUserID, auditMode, callback) {
     collection.find({ from_id: targetUserID, status: "confirmed" }).sort({ time: -1 }).limit(20).toArray((err, res) => {
         if (!res || res.length == 0) 
             return callback(utils.formatWarning(user, null, "can't find recent transactions sent."));
@@ -145,13 +162,15 @@ function pending(user, targetUserID, callback) {
     });
 }
 
-function all(user, targetUserID, callback) {
+function all(user, targetUserID, auditMode, callback) {
     collection.find({ $or: [{ to_id: targetUserID }, { from_id: targetUserID }] }).sort({ time: -1 }).limit(20).toArray((err, res) => {
         if (!res || res.length == 0) 
             return callback(utils.formatWarning(user, null, "can't find recent transactions."));
 
         let resp = formatTransactions(res, targetUserID);
-        callback(utils.formatInfo(null, "Recent transactions", resp));
+        let auditResp = "";
+        if ( auditMode ) resp = "(for <@"+ targetUserID +">)\n"+ resp;
+        callback(utils.formatInfo(null, "Recent transactions"+ auditResp, resp));
     });
 }
 

@@ -170,12 +170,14 @@ async function bid(user, args, callback) {
         sendDM(auc.author, utils.formatInfo(null, "Yay!", msg));
     }
 
+    auc.bids.unshift({"bid": price, "bidder": user.id, "date": new Date()});
     await acollection.update({_id: auc._id}, {$set: {
         price: price, 
         lastbidder: user.id, 
         hidebid: hidebid, 
         timeshift: auc.timeshift,
-        date: auc.date
+        date: auc.date,
+        bids: auc.bids
     }});
 
     let p = utils.formatConfirm(user, "Bid placed", "you are now leading in auction for **" + utils.getFullCard(auc.card) + "**!");
@@ -278,7 +280,7 @@ async function sell(user, incArgs, channelID, callback) {
                         let aucID = await generateBetterID();
                         delete match.rating;
                         await acollection.insert({
-                            id: aucID, finished: false, date: new Date(), price: price, author: user.id, card: match
+                            id: aucID, finished: false, date: new Date(), price: price, author: user.id, card: match, bids:[]
                         });
 
                         callback(utils.formatConfirm(user, null, "you successfully put **" + utils.getFullCard(match) + "** on auction.\nYour auction ID `" + aucID + "`"));
@@ -350,7 +352,8 @@ async function checkAuctionList(client) {
         from: dbuser.username,
         from_id: dbuser.discord_id,
         status: "auction",
-        time: new Date()
+        time: new Date(),
+        bids: auc.bids
     }
 
     if(auc.lastbidder) {
