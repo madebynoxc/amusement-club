@@ -5,13 +5,13 @@ module.exports = {
     leaderboard, difference, dynamicSort, countCardLevels, getCardValue,
     getCardFile, getDefaultChannel, isAdmin, needsCards, getCardURL,
     removeCardFromUser, addCardToUser, eval, whohas, block, fav, track, getDB,
-    pushCard, pullCard
+    pushCard, pullCard, getCard, getCardDbColName
 }
 
 var MongoClient = require('mongodb').MongoClient;
 var ObjectId = require('mongodb').ObjectID;
 var mongodb, client, userCount, dblapi;
-var dailyCol, evalLastDaily;
+var dailyCol;
 var cooldownList = [];
 var modifyingList = [];
 
@@ -74,8 +74,8 @@ function connect(bot, shard, shardCount, callback) {
         //cardmanager.updateCards(db);
 
         if(shard == 0) {
-            let deletDate = new Date();
-            deletDate.setDate(deletDate.getDate() - 5);
+            let date = new Date();
+            let deletDate = new Date(date.setDate(date.getDate() - 5));
             db.collection('transactions').remove({time: {$lt: deletDate}}).then(res => {
                 console.log("Removed old transactions: " + res.result.n);
             });
@@ -85,15 +85,8 @@ function connect(bot, shard, shardCount, callback) {
             });
         }
 
-        // db.collection('users').count({'cards.1': {$exists: true}}).then(uc => {
-        //     userCount = uc;
-        // });
-
-        evalLastDaily = new Date();
-        evalLastDaily.setMonth(evalLastDaily.getMonth() - settings.evalUserMonths);
-        db.collection('users').count({'lastdaily': {$gt: evalLastDaily}}).then(uc => {
+        db.collection('users').count({'cards.1': {$exists: true}}).then(uc => {
             userCount = uc;
-            console.log("Users considered for eval: " + uc);
         });
 
         if(callback) callback();   
@@ -562,6 +555,13 @@ function getCardType(card) {
     return "ordinary";
 }
 
+function getCardDbColName(card) {
+    let col = "cards";
+    if ( getCardType(card) == "event" )
+        col = "promocards";
+    return col;
+}
+
 //DEPRECATED
 function sell(user, to, args, callback) {
     if(!args || args.length == 0) return callback("**" + user.username + "**, please specify name/collection/level");
@@ -829,18 +829,15 @@ function getCardValue(card, fallbackCard, callback) {
         return callback(card.eval);
     } else {
         //console.log('Using eval from OLD system for '+ card.name);
+        mongodb.collection('users').count({"cards":{"$elemMatch": utils.getCardQuery(card)}}).then(amount => {
+           let price = (ratioInc.star[card.level] 
+                           + (card.craft? ratioInc.craft : 0) + (card.animated? ratioInc.gif : 0)) * 100;
 
-        mongodb.collection('users').count({
-            "cards":{"$elemMatch": utils.getCardQuery(card)}, 
-            "lastdaily": {$gt: evalLastDaily}}).then(amount => {
-               let price = (ratioInc.star[card.level] 
-                               + (card.craft? ratioInc.craft : 0) + (card.animated? ratioInc.gif : 0)) * 100;
-
-               if(amount > 0){
-                   price *= limitPriceGrowth((userCount * 0.035)/amount);
-                   return callback(price);
-               }
-               callback(0);
+           if(amount > 0){
+               price *= limitPriceGrowth((userCount * 0.035)/amount);
+               return callback(price);
+           }
+           callback(0);
         });
     }
 }
