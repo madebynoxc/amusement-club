@@ -12,6 +12,7 @@ module.exports = {
     parseToSeconds,
     msToTime,
     formatDate,
+    pad,
     HEXToVBColor,
     getSourceFormat,
     toTitleCase,
