@@ -173,7 +173,6 @@ function getRequestFromFiltersWithPrefix(args, prefix) {
             else if(el === "gif") query[prefix + 'animated'] = true;
             else if(el === "fav") query[prefix + 'fav'] = true;
             else if(el === "new") query[prefix + 'obtained'] = {$gt: date};
-            //else if(el === "rand") query[prefix + 'obtained'] = {$gt: date};
             else if(el === "frozen") {
                 var yesterday = new Date();
                 yesterday.setDate(yesterday.getDate() - 1);
@@ -246,7 +245,6 @@ function getRequestFromFiltersWithPrefix(args, prefix) {
         } catch(e) {}
     } 
 
-    console.log(JSON.stringify(query));
     return query;
 }
 

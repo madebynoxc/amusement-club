@@ -32,8 +32,6 @@ function processRequest(user, chanID, cmd, args, callback) {
             if(!parse.id)
                 return callback(utils.formatError(null, null, "please provide user ID"));
             targetUserID = parse.id;
-            //targetUserID = args.shift();
-            //req = args.shift();
         }
     }
 
@@ -138,7 +136,8 @@ function gets(user, targetUserID, auditMode, callback) {
             return callback(utils.formatWarning(user, null, "can't find recent transactions recieved."));
 
         let resp = formatTransactions(res, targetUserID);
-        callback(utils.formatInfo(null, "Recent transactions", resp));
+        if ( auditMode ) resp = "(for <@"+ targetUserID +">)\n"+ resp;
+        callback(utils.formatInfo(null, "Recent transactions"+ auditResp, resp));
     });
 }
 
@@ -148,7 +147,8 @@ function sends(user, targetUserID, auditMode, callback) {
             return callback(utils.formatWarning(user, null, "can't find recent transactions sent."));
         
         let resp = formatTransactions(res, targetUserID);
-        callback(utils.formatInfo(null, "Recent transactions", resp));
+        if ( auditMode ) resp = "(for <@"+ targetUserID +">)\n"+ resp;
+        callback(utils.formatInfo(null, "Recent transactions"+ auditResp, resp));
     });
 }
 
