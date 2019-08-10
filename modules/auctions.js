@@ -170,6 +170,8 @@ async function bid(user, args, callback) {
         sendDM(auc.author, utils.formatInfo(null, "Yay!", msg));
     }
 
+    if ( !auc.bids )
+        auc.bids = [];
     auc.bids.unshift({"amount": price, "bidder": user.id, "date": new Date()});
     await acollection.update({_id: auc._id}, {$set: {
         price: price, 
@@ -375,9 +377,8 @@ async function checkAuctionList(client) {
 		  let upperBound = 4;
         //let tolerance = 1; // a tollerance of .5 will allow deviations up to +/-50% from the current eval.
         // Note: min and max samples above should not be the same number.
-        let ccollection = mongodb.collection('cards');
         let cardQuery = utils.getCardQuery(auc.card);
-        ccollection.findOne(cardQuery).then((match) => {
+        dbManager.getCard(cardQuery).then((match) => {
             if ( !match.hasOwnProperty('evalSamples') )
                 match.evalSamples = [];
             let isOutlier;
@@ -427,7 +428,8 @@ async function checkAuctionList(client) {
                     match.eval = Math.round(match.evalSamples.reduce(function(a,b) {return a+b;}) / match.evalSamples.length);
                     client.sendMessage({"to":settings.logchannel, "message":'Updating eval for **'+  utils.getFullCard(match) +'**: '+ match.eval});
                 }
-                ccollection.save(match).catch(function() {
+                let colName = dbManager.getCardDbColName(match);
+                mongodb.collection(colName).save(match).catch(function() {
                     client.sendMessage({"to":settings.logchannel, "message":'Could not save card back with new eval data: ' + utils.getFullCard(match)});
                 });
             } else {

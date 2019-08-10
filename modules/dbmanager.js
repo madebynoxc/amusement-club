@@ -5,7 +5,7 @@ module.exports = {
     leaderboard, difference, dynamicSort, countCardLevels, getCardValue,
     getCardFile, getDefaultChannel, isAdmin, needsCards, getCardURL,
     removeCardFromUser, addCardToUser, eval, whohas, block, fav, track, getDB,
-    pushCard, pullCard
+    pushCard, pullCard, getCard, getCardDbColName
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -560,6 +560,13 @@ function getCardType(card) {
     if(col.special) return "event";
     if(col.battle) return "battle";
     return "ordinary";
+}
+
+function getCardDbColName(card) {
+    let col = "cards";
+    if ( getCardType(card) == "event" )
+        col = "promocards";
+    return col;
 }
 
 //DEPRECATED
