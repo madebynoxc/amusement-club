@@ -125,7 +125,7 @@ async function info(user, targetUserID, auditMode, args, callback) {
         resp += "Bids ("+ transaction.bids.length +", newest first):\n";
         for(let bid of transaction.bids) {
             let date = new Date(bid.date);
-            resp += bid.bid +"🍅: <@"+ bid.bidder +"> @ "+ utils.formatDate(date) +"\n";
+            resp += bid.amount +"🍅: <@"+ bid.bidder +"> @ "+ utils.formatDate(date) +"\n";
         }
     }
 

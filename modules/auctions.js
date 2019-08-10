@@ -170,7 +170,7 @@ async function bid(user, args, callback) {
         sendDM(auc.author, utils.formatInfo(null, "Yay!", msg));
     }
 
-    auc.bids.unshift({"bid": price, "bidder": user.id, "date": new Date()});
+    auc.bids.unshift({"amount": price, "bidder": user.id, "date": new Date()});
     await acollection.update({_id: auc._id}, {$set: {
         price: price, 
         lastbidder: user.id, 
