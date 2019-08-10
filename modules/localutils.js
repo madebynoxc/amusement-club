@@ -11,6 +11,8 @@ module.exports = {
     getRegexString,
     parseToSeconds,
     msToTime,
+    formatDate,
+    pad,
     HEXToVBColor,
     getSourceFormat,
     toTitleCase,
@@ -480,6 +482,25 @@ function diff(first, second, comparator) {
         secondOnly = secondOnly.concat(secondSorted.slice(i2));
     }
     return {firstOnly: firstOnly, secondOnly: secondOnly, both: both}
+}
+
+function formatDate (jsDateOb) {
+    let hr = jsDateOb.getHours();
+    let ampm = "am";
+    if (hr > 12) {
+        hr -= 12;
+        ampm = "pm";
+    }
+    let min = pad(jsDateOb.getMinutes(), 2);
+    return hr +":"+ min + " "+ ampm +" "+ jsDateOb.getDate() +"/"+ jsDateOb.getMonth() 
+        +"/"+ jsDateOb.getFullYear();
+}
+
+// Pad input "n" on the left with "width" number of "padChar" characters.
+function pad(n, width, padChar) {
+    padChar = padChar || '0';
+    n = n + '';
+    return n.length >= width ? n : new Array(width - n.length + 1).join(padChar) + n;
 }
 
 // db.getCollection('users').aggregate([
