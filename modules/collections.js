@@ -1,5 +1,6 @@
 module.exports = {
-    connect, processRequest, getCollections, addCollection, parseCollection, getByID
+    connect, processRequest, getCollections, addCollection, parseCollection, getByID,
+    getRandom
 }
 
 const dbManager = require("./dbmanager.js");
@@ -124,4 +125,12 @@ function parseCollection(str, special = true) {
 
 function getByID(id) {
     return cache.filter(c => c.id == id)[0];
+}
+
+// Return a random collection
+function getRandom() {
+    let r;
+    do { r = cache[Math.floor(Math.random()*cache.length)]; }
+    while ( r.special );
+    return r;
 }

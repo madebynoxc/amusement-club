@@ -100,9 +100,10 @@ function connect(bot, shard, shardCount, callback) {
     });
 }
 
-function claim(user, guild, channelID, arg, callback) {
+async function claim(user, guild, channelID, arg, callback) {
     let ucollection = mongodb.collection('users');
-    ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
+    //ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
+    ucollection.findOne({ discord_id: user.id }).then(async function(dbUser) {
         if(!dbUser)
             return newUser(user, () => claim(user, guild, channelID, arg, callback), callback);
 
@@ -149,6 +150,9 @@ function claim(user, guild, channelID, arg, callback) {
 
         if(guild.blockany)
             any = false;
+
+        query[0].$match.collection = collections.getRandom().id;
+        //console.log(query[0].$match.collection);
 
         if(guild && guild.lock && !any) {
             query[0].$match.collection = guild.lock;
@@ -1425,3 +1429,4 @@ function getRandomJoke(user, callback) {
 function getDB() {
     return mongodb;
 }
+
