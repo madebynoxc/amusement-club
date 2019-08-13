@@ -495,7 +495,7 @@ function formatDate (jsDateOb) {
     let sec = pad(jsDateOb.getSeconds(), 2); 
     let ms = pad(jsDateOb.getMilliseconds(), 3); 
     return hr +":"+ min +":"+ sec +"."+ ms +" "+ ampm +" "+  
-        jsDateOb.getMonth() +"/"+ jsDateOb.getDate() +"/"+ jsDateOb.getFullYear();
+        jsDateOb.getDate() +"/"+ jsDateOb.getMonth() +"/"+ jsDateOb.getFullYear();
 }
 
 // Pad input "n" on the left with "width" number of "padChar" characters.
