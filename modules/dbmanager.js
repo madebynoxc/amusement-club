@@ -168,9 +168,9 @@ async function claim(user, guild, channelID, arg, callback) {
         // Grab a random 3-star card for users with that effect card.
         if(forge.getCardEffect(dbUser, 'claim', false)[0]) {
             res.push( await collection.aggregate([ 
-						 { $match: { level : 3, "collection": collections.getRandom().id } },
-						 { $sample: { size: 1 } } 
-					]).toArray()) ;
+                     { $match: { level : 3, "collection": collections.getRandom().id } },
+                     { $sample: { size: 1 } } 
+                ]).toArray()) ;
             remainingAmount--;
         } 
 
