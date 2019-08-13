@@ -167,22 +167,17 @@ async function claim(user, guild, channelID, arg, callback) {
 
         // Grab a random 3-star card for users with that effect card.
         if(forge.getCardEffect(dbUser, 'claim', false)[0]) {
-            collection.aggregate([ 
-                { $match: { level : 3, "collection": collections.getRandom().id } },
-                { $sample: { size: 1 } } 
-            ]).toArray((err, extra) => {
-                res.push(extra[0]);
-                remainingAmount--;
-            })
+            res.push( await collection.aggregate([ 
+						 { $match: { level : 3, "collection": collections.getRandom().id } },
+						 { $sample: { size: 1 } } 
+					]).toArray()) ;
+            remainingAmount--;
         } 
 
         while ( remainingAmount > 0 ) {
             query[0].$match.collection = collections.getRandom().id;
-
             let cardRes = await collection.aggregate(query).toArray();
             res.push(cardRes[0]);
-            nextClaim = heroes.getHeroEffect(dbUser, 'claim_akari', nextClaim);
-
             remainingAmount--;
         } // end card-claiming loop
         //console.log(JSON.stringify(res));
@@ -212,6 +207,7 @@ async function claim(user, guild, channelID, arg, callback) {
             phrase += "\nUse `->sum [card name]` to summon a card\nOr click on the name to open card image\n";
         }
 
+        nextClaim = heroes.getHeroEffect(dbUser, 'claim_akari', nextClaim);
         if(claimCost/amount >= 400) phrase += "-You are claiming for extremely high price-\n";            
         phrase += "Your next claim will cost **" + nextClaim + "**🍅";
 
