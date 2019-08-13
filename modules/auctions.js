@@ -373,9 +373,8 @@ async function checkAuctionList(client) {
         // Update eval price?
         let minSamples = 3; // eval will start returning the new eval system's price when it has this many samples.
         let maxSamples = 10; // the system will remove samples to make room for new ones after this mark is reached.
-		  let lowerBound = .50;
-		  let upperBound = 4;
-        //let tolerance = 1; // a tollerance of .5 will allow deviations up to +/-50% from the current eval.
+        let lowerBound = .50;
+        let upperBound = 4;
         // Note: min and max samples above should not be the same number.
         let cardQuery = utils.getCardQuery(auc.card);
         dbManager.getCard(cardQuery).then((match) => {
@@ -384,11 +383,14 @@ async function checkAuctionList(client) {
             let isOutlier;
             if ( match.hasOwnProperty('eval') ) {
                 // How does this auction's price compare to the stored eval price?
-                //let relativeChange = Math.abs(auc.price - match.eval) / match.eval;
-                //let isOutlier = relativeChange < 1-tolerance || relativeChange > 1+tolerance;
                 isOutlier = auc.price < match.eval * lowerBound || auc.price > match.eval * upperBound;
             } else { 
                 isOutlier = false;
+            }
+            if ( match.eval && auc.price > 2 * match.eval ) {
+                client.sendMessage({"to":settings.fraudalerts, "message":"Auction with id **"+ auc.id
+                    +"** sold for about **"+ (auc.price/match.eval).toFixed(1) 
+                    +"** times above market-eval price."});
             }
             if ( !isOutlier ) { 
                 // Add the new sample price.
