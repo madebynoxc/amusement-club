@@ -185,7 +185,7 @@ async function claim(user, guild, channelID, arg, callback) {
 
             remainingAmount--;
         } // end card-claiming loop
-        console.log(JSON.stringify(res));
+        //console.log(JSON.stringify(res));
 
         res.sort(dynamicSort('-level'));
 
