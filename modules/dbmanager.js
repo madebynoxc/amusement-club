@@ -532,7 +532,7 @@ async function getCardInfo(user, args, callback) {
             info += "Price: **" + Math.round(val) + "** `🍅`\n";
 
             if ( card.ratingAve )
-                info += "Average Rating: **" + card.ratingAve + "**\n";
+                info += "Average Rating: **" + card.ratingAve.toFixed(2) + "**\n";
             //info += "User Ratings: **" + card.ratingCount + "**\n"
 
             if(card.source) {
