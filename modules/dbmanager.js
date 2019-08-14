@@ -152,15 +152,6 @@ async function claim(user, guild, channelID, arg, callback) {
         if(guild.blockany)
             any = false;
 
-        if(guild && guild.lock && !any) {
-            query[0].$match.collection = guild.lock;
-            query[0].$match.craft = {$in: [null, false]};
-        }
-
-        if(settings.lockChannel && channelID == settings.lockChannel && dailyCol) {
-            query[0].$match.collection = dailyCol;
-            query[0].$match.craft = {$in: [null, false]};
-        }
 
         // This var will store the claimed cards.
         let res = [];
@@ -176,7 +167,15 @@ async function claim(user, guild, channelID, arg, callback) {
         } 
 
         while ( remainingAmount > 0 ) {
-            query[0].$match.collection = collections.getRandom().id;
+            if (guild && guild.lock && !any) {
+                query[0].$match.collection = guild.lock;
+                query[0].$match.craft = {$in: [null, false]};
+            } else if (settings.lockChannel && channelID == settings.lockChannel && dailyCol) {
+                query[0].$match.collection = dailyCol;
+                query[0].$match.craft = {$in: [null, false]};
+            } else {
+                query[0].$match.collection = collections.getRandom().id;
+            }
             let cardRes = await collection.aggregate(query).toArray();
             res.push(cardRes[0]);
             remainingAmount--;
@@ -542,7 +541,7 @@ async function getCardInfo(user, args, callback) {
             info += "Price: **" + Math.round(val) + "** `🍅`\n";
 
             if ( card.ratingAve )
-                info += "Average Rating: **" + card.ratingAve + "**\n";
+                info += "Average Rating: **" + card.ratingAve.toFixed(2) + "**\n";
             //info += "User Ratings: **" + card.ratingCount + "**\n"
 
             if(card.source) {
