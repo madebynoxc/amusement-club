@@ -100,9 +100,10 @@ function connect(bot, shard, shardCount, callback) {
     });
 }
 
-function claim(user, guild, channelID, arg, callback) {
+async function claim(user, guild, channelID, arg, callback) {
     let ucollection = mongodb.collection('users');
-    ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
+    //ucollection.findOne({ discord_id: user.id }).then((dbUser) => {
+    ucollection.findOne({ discord_id: user.id }).then(async function(dbUser) {
         if(!dbUser)
             return newUser(user, () => claim(user, guild, channelID, arg, callback), callback);
 
@@ -133,6 +134,7 @@ function claim(user, guild, channelID, arg, callback) {
             return callback(`**${user.username}**, you can't claim more than **${max}** cards today`);
 
         amount = Math.max(parseInt(amount), 1);
+        remainingAmount = amount; // This will decrement as cards are chosen.
 
         let claimCost = getClaimsCost(dbUser, amount);
         let nextClaim = 50 * (dbUser.dailystats.claim + amount + 1);
@@ -144,89 +146,96 @@ function claim(user, guild, channelID, arg, callback) {
         let collection = mongodb.collection('cards');
         let query = [ 
             { $match: { } },
-            { $sample: { size: amount } } 
+            { $sample: { size: 1 } } 
         ]
 
         if(guild.blockany)
             any = false;
 
-        if(guild && guild.lock && !any) {
-            query[0].$match.collection = guild.lock;
-            query[0].$match.craft = {$in: [null, false]};
+
+        // This var will store the claimed cards.
+        let res = [];
+
+        // Grab a random 3-star card for users with that effect card.
+        if(forge.getCardEffect(dbUser, 'claim', false)[0]) {
+            let tohruGift = await collection.aggregate([ 
+                     { $match: { level : 3, "collection": collections.getRandom().id } },
+                     { $sample: { size: 1 } } 
+                ]).toArray();
+            res.push(tohruGift[0]) ;
+            remainingAmount--;
+        } 
+
+        while ( remainingAmount > 0 ) {
+            if (guild && guild.lock && !any) {
+                query[0].$match.collection = guild.lock;
+                query[0].$match.craft = {$in: [null, false]};
+            } else if (settings.lockChannel && channelID == settings.lockChannel && dailyCol) {
+                query[0].$match.collection = dailyCol;
+                query[0].$match.craft = {$in: [null, false]};
+            } else {
+                query[0].$match.collection = collections.getRandom().id;
+            }
+            let cardRes = await collection.aggregate(query).toArray();
+            res.push(cardRes[0]);
+            remainingAmount--;
+        } // end card-claiming loop
+        //console.log(JSON.stringify(res));
+
+        res.sort(dynamicSort('-level'));
+
+        let phrase = "**" + user.username + "**, you got";
+        if(amount == 1) {
+            let names = [];
+            phrase += " [" + utils.getFullCard(res[0]) + "](" + getCardURL(res[0]) + ")\n";
+            if(res[0].craft) phrase += "This is a **craft card**. Find pair and `->forge` special card of them!\n";
+            if(dbUser.cards && dbUser.cards.filter(c => utils.cardsMatch(c, res[0])).length > 0)
+                phrase += "*you already have this card*\n";
+        } else {
+            phrase += "\n";
+            for (var i = 0; i < res.length; i++) {
+                if(res.length > 10)
+                    phrase += `${(i + 1)}. ${utils.getFullCard(res[i])}`;
+                else
+                    phrase += `${(i + 1)}. [${utils.getFullCard(res[i])}](${getCardURL(res[i])})`;
+
+                if(!dbUser.cards 
+                    || dbUser.cards.filter(c => utils.cardsMatch(c, res[i])).length == 0)
+                    phrase += " **[new]**";
+                phrase += "\n";
+            }
+            phrase += "\nUse `->sum [card name]` to summon a card\nOr click on the name to open card image\n";
         }
 
-        if(settings.lockChannel && channelID == settings.lockChannel && dailyCol) {
-            query[0].$match.collection = dailyCol;
-            query[0].$match.craft = {$in: [null, false]};
+        nextClaim = heroes.getHeroEffect(dbUser, 'claim_akari', nextClaim);
+        if(claimCost/amount >= 400) phrase += "-You are claiming for extremely high price-\n";            
+        phrase += "Your next claim will cost **" + nextClaim + "**🍅";
+
+        let incr = {exp: -claimCost};
+        if(promotions.current > -1) {
+            let prm = promotions.list[promotions.current];
+            let addedpromo = Math.floor(claimCost / 3);
+            incr = {exp: -claimCost, promoexp: addedpromo};
+            phrase += "\n You got additional **" + addedpromo + "** " + prm.currency;
         }
 
-        collection.aggregate([ 
-            { $match: { level : 3 } },
-            { $sample: { size: 1 } } 
-        ]).toArray((err, extra) => {
-            collection.aggregate(query).toArray((err, res) => {
-                let phrase = "**" + user.username + "**, you got";
-                nextClaim = heroes.getHeroEffect(dbUser, 'claim_akari', nextClaim);
+        if(!dbUser.cards) dbUser.cards = [];
+        //res.map(r => dbUser.cards = addCardToUser(dbUser.cards, r));
+        res.map(r => pushCard(user.id, r));
 
-                if(forge.getCardEffect(dbUser, 'claim', false)[0]) {
-                    res.shift();
-                    res.push(extra[0]);
-                } 
+        dbUser.dailystats.claim += amount;
+        heroes.addXP(dbUser, .5 * amount);
+        ucollection.update(
+            { discord_id: user.id },
+            {
+                $set: {dailystats: dbUser.dailystats},
+                $inc: incr
+            }
+        ).then(() => {
+            callback(utils.formatImage(null, null, phrase, getCardURL(res[0], false)));
+            quest.checkClaim(dbUser, callback);
 
-                res.sort(dynamicSort('-level'));
-
-                if(amount == 1) {
-                    let names = [];
-                    phrase += " [" + utils.getFullCard(res[0]) + "](" + getCardURL(res[0]) + ")\n";
-                    if(res[0].craft) phrase += "This is a **craft card**. Find pair and `->forge` special card of them!\n";
-                    if(dbUser.cards && dbUser.cards.filter(c => utils.cardsMatch(c, res[0])).length > 0)
-                        phrase += "*you already have this card*\n";
-                } else {
-                    phrase += "\n";
-                    for (var i = 0; i < res.length; i++) {
-                        if(res.length > 10)
-                            phrase += `${(i + 1)}. ${utils.getFullCard(res[i])}`;
-                        else
-                            phrase += `${(i + 1)}. [${utils.getFullCard(res[i])}](${getCardURL(res[i])})`;
-
-                        if(!dbUser.cards 
-                            || dbUser.cards.filter(c => utils.cardsMatch(c, res[i])).length == 0)
-                            phrase += " **[new]**";
-                        phrase += "\n";
-                    }
-                    phrase += "\nUse `->sum [card name]` to summon a card\nOr click on the name to open card image\n";
-                }
-
-                if(claimCost/amount >= 400) phrase += "-You are claiming for extremely high price-\n";            
-                phrase += "Your next claim will cost **" + nextClaim + "**🍅";
-
-                let incr = {exp: -claimCost};
-                if(promotions.current > -1) {
-                    let prm = promotions.list[promotions.current];
-                    let addedpromo = Math.floor(claimCost / 3);
-                    incr = {exp: -claimCost, promoexp: addedpromo};
-                    phrase += "\n You got additional **" + addedpromo + "** " + prm.currency;
-                }
-
-                if(!dbUser.cards) dbUser.cards = [];
-                //res.map(r => dbUser.cards = addCardToUser(dbUser.cards, r));
-                res.map(r => pushCard(user.id, r));
-
-                dbUser.dailystats.claim += amount;
-                heroes.addXP(dbUser, .5 * amount);
-                ucollection.update(
-                    { discord_id: user.id },
-                    {
-                        $set: {dailystats: dbUser.dailystats},
-                        $inc: incr
-                    }
-                ).then(() => {
-                    callback(utils.formatImage(null, null, phrase, getCardURL(res[0], false)));
-                    quest.checkClaim(dbUser, callback);
-
-                }).catch(e => console.log(e));
-            });
-        });
+        }).catch(e => console.log(e));
     });
 }
 
