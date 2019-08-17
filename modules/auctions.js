@@ -396,11 +396,6 @@ async function checkAuctionList(client) {
             } else { 
                 isOutlier = false;
             }
-            if ( match.eval && auc.price > 2 * match.eval ) {
-                client.sendMessage({"to":settings.fraudalerts, "message":"Auction with id **"+ auc.id
-                    +"** sold for about **"+ (auc.price/match.eval).toFixed(1) 
-                    +"** times above market-eval price."});
-            }
             if ( !isOutlier ) { 
                 // Add the new sample price.
                 match.evalSamples.push(auc.price);
