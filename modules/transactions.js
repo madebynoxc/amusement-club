@@ -222,6 +222,13 @@ async function _confirm(user, transaction, callback) {
             { discord_id: user.id },
             { $inc: {exp: transaction.price} });
 
+        // Remove the seller's rating from the global average?
+        if ( transaction.card.hasOwnProperty('rating') && transaction.card.amount == 1 )
+            await dbmanager.removeCardRatingFromAve(transaction.card);
+
+        // Remove the seller's rating from this instance of the card.
+        delete transaction.card.rating;
+
         await collection.update({ _id: transaction._id }, {$set: {status: "confirmed"}});
         react.removeExisting(user.id, true);
         return callback(utils.formatConfirm(user, "Card sold to bot", "you sold **" + name + "** for **" + transaction.price + "** 🍅"));
@@ -254,6 +261,10 @@ async function _confirm(user, transaction, callback) {
             await collection.update({_id: transaction._id}, {$set: {status: "declined"}});
             return callback(utils.formatError(user, "Unable to sell", "target card was not found in seller's collection"));
         }
+
+        // Remove this user's rating from the global average?
+        if ( transaction.card.hasOwnProperty('rating') && transaction.card.amount == 1 )
+            await dbmanager.removeCardRatingFromAve(transaction.card);
 
         await dbmanager.pushCard(transaction.to_id, transaction.card);
         await ucollection.update(
