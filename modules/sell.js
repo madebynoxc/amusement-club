@@ -80,7 +80,6 @@ async function processRequest(user, args, guild, channelID, callback) {
         + " To remove from favorites use `->fav remove [card query]`"));
 
     transaction.card = match;
-    delete transaction.card.rating;
     transaction.id = utils.generateRandomId();
 
     if(parse.id) {
