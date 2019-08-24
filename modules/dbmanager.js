@@ -465,7 +465,7 @@ function rate(user, rating, args, callback) {
                 callback(utils.formatError(user, null, "command could not be executed \n", e));
             });
 
-            let ccollection = mongodb.collection('cards');
+            let ccollection = mongodb.collection(getCardDbColName(match));
             let cardQuery = utils.getCardQuery(match);
             getCard(cardQuery, match0 => {
                 if (typeof match0.ratingAve == 'undefined' || match0.ratingAve == null) {
