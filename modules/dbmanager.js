@@ -5,7 +5,7 @@ module.exports = {
     leaderboard, difference, dynamicSort, countCardLevels, getCardValue,
     getCardFile, getDefaultChannel, isAdmin, needsCards, getCardURL,
     removeCardFromUser, addCardToUser, eval, whohas, block, fav, track, getDB,
-    pushCard, pullCard, getCard, getCardDbColName, removeCardRatingFromAve
+    pushCard, pullCard, getCard, getCardDbColName
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -42,6 +42,7 @@ const collections = require('./collections.js');
 const admin = require('./admin.js');
 const guildMod = require('./guild.js');
 const react = require('./reactions.js');
+const antifraud = require('./antifraud.js');
 
 function disconnect() {
     isConnected = false;
@@ -72,6 +73,7 @@ function connect(bot, shard, shardCount, callback) {
         guildMod.connect(db, client, shard);
         //dblapi.connect(db, client, shard, shardCount); 
         //cardmanager.updateCards(db);
+        antifraud.connect(db);
 
         if(shard == 0) {
             let deletDate = new Date();
@@ -531,10 +533,9 @@ async function getCardInfo(user, args, callback) {
             info += "Type: **" + getCardType(card) + "**\n";
             info += "Price: **" + Math.round(val) + "** `🍅`\n";
 
-            if ( card.ratingAve ) {
-                info += "Average Rating: **" + card.ratingAve.toFixed(2) + "**\n";
-                //info += "User Ratings: **" + card.ratingCount + "**\n"
-            }
+            if ( card.ratingAve )
+                info += "Average Rating: **" + card.ratingAve + "**\n";
+            //info += "User Ratings: **" + card.ratingCount + "**\n"
 
             if(card.source) {
                 if(card.source.startsWith("http"))
@@ -1426,26 +1427,3 @@ function getRandomJoke(user, callback) {
 function getDB() {
     return mongodb;
 }
-
-async function removeCardRatingFromAve(userCard) {
-    let cardQuery = utils.getCardQuery(userCard);
-    let gmatch = await getCard(cardQuery);
-    let ccollection = mongodb.collection(getCardDbColName(gmatch));
-    if ( gmatch.ratingCount == 1 ) {
-        // No other users rated this card.
-        delete gmatch.ratingAve;
-        delete gmatch.ratingCount;
-        ccollection.save(gmatch).catch(function() {
-            console.log('Problem saving average rating for card: '+ utils.getFullCard(gmatch));
-        });
-    } else {
-        let newRatingCount = gmatch.ratingCount -1;
-        gmatch.ratingAve = ((gmatch.ratingAve * gmatch.ratingCount) -userCard.rating ) / newRatingCount;
-        gmatch.ratingCount = newRatingCount;
-        ccollection.save(gmatch).catch(function() {
-            console.log('Problem saving average rating for card: '+ utils.getFullCard(gmatch));
-        });
-    }
-    return;
-}
-
