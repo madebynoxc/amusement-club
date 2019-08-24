@@ -73,7 +73,7 @@ function connect(bot, shard, shardCount, callback) {
         guildMod.connect(db, client, shard);
         //dblapi.connect(db, client, shard, shardCount); 
         //cardmanager.updateCards(db);
-        antifraud.connect(db);
+        antifraud.connect(db, client, shard);
 
         if(shard == 0) {
             let deletDate = new Date();
@@ -458,7 +458,7 @@ function rate(user, rating, args, callback) {
                 callback(utils.formatError(user, null, "command could not be executed \n", e));
             });
 
-            let ccollection = mongodb.collection('cards');
+            let ccollection = mongodb.collection(getCardDbColName(match));
             let cardQuery = utils.getCardQuery(match);
             getCard(cardQuery, match0 => {
                 if (typeof match0.ratingAve == 'undefined' || match0.ratingAve == null) {

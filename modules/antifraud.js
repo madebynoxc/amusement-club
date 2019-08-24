@@ -15,6 +15,11 @@ const dbmanager = require('./dbmanager.js');
 function connect(db, client, shard) {
     mongodb = db;
     bot = client;
+
+    if(shard == 0) {
+        purgeOldRecords();
+        setInterval(function() {purgeOldRecords();}, 1000 * 60 * 60 * 12);
+    }
 }
 
 function processRequest(user, args, channelID, callback) {
@@ -32,6 +37,7 @@ function processRequest(user, args, channelID, callback) {
 async function report(args, callback) {
     let report = args.shift();
     let out = "";
+    let docs;
     switch(report) {
         case '1':
             out += "Anti-Fraud Report 1\n"+
@@ -63,21 +69,46 @@ async function report(args, callback) {
                     {"$sort": {"sellRate": -1}},
                     {"$limit": 20}
             ]).toArray();
-            let docs = docs1.concat(docs2);
+            docs = docs1.concat(docs2);
             docs = docs.slice(0,20);
             for ( let doc of docs ) {
                 out += parseFloat(doc.sellRate).toFixed(1) +' - '+ doc.sold +' - '+ doc.unsold +' - '+ doc.discord_id +"\n";
             }
             callback(out);
             break;
+        case '2':
+            out += "Anti-Fraud Report 2\n"+
+                "**Auctions that sold considerably above the eval price**\n"+
+                "Times above eval - Auction ID - Date\n"
+            docs = await mongodb.collection('overpricedAucs').aggregate([
+                    {$match:{}},
+                    {"$sort": {"factor": -1}},
+                    {"$limit": 40}
+            ]).toArray();
+            for ( let doc of docs ) {
+                out += parseFloat(doc.factor).toFixed(1) +' - '+ doc.aucId +' - '+ utils.formatDate(doc.date) +"\n";
+            }
+            if ( docs.length == 0 )
+                out += "( no data yet )";
+            callback(out);
+            break;
         default:
             callback("Available reports:\n"+
                     "```1 - Players whose auctions always seem to have a buyer\n"+
-                    "x - Auctions that sold way above the eval price\n"+
+                    "2 - Auctions that sold considerably above the eval price\n"+
                     "x - Auction seller got their card back\n"+
                     "x - Suspected slave accounts\n"+
                     "x - Suspected tomato transfers from alt account\n"+
                     "x - Auc bidders that respond too fast (bots?)```");
             break;
     }
+}
+
+async function purgeOldRecords() {
+    console.log("Removing old anti-fraud records.");
+    mongodb.collection("overpricedAucs")
+        .remove({"date":{$gt:new Date(new Date() -5)}})
+        .catch(function(e) {
+            console.log("problem purging old anti-fraud data from `overpricedAucs`:\n"+ e);
+        });
 }
