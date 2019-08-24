@@ -1,5 +1,10 @@
+/*
+ * This module handles reporting of suspicious player activity.
+ * Reports may only be viewed in the auditchannel specified in settings/general.json.
+ */
+
 module.exports = {
-    processRequest, connect //, checkFraudLogs
+    processRequest, connect
 }
 
 var mongodb;
@@ -10,16 +15,13 @@ const dbmanager = require('./dbmanager.js');
 function connect(db, client, shard) {
     mongodb = db;
     bot = client;
-
-    if(shard == 0) {
-        //setInterval(function() {checkFraudLogs(client);}, 5000);
-    }
 }
 
 function processRequest(user, args, channelID, callback) {
     if ( channelID == settings.auditchannel ) {
         let command = args.shift();
         switch(command) {
+            case 'reports':
             case 'report':
                 report(args, callback);
                 break;
@@ -32,11 +34,24 @@ async function report(args, callback) {
     let out = "";
     switch(report) {
         case '1':
-        case 'aucSellRate':
-            out += "Anti-Fraud Report 1 (aucSellRate)\n"+
-                "**Players who sell too easily at auction**\n";
-            let docs = await mongodb.collection("aucSellRate").aggregate([
-                    {$match:{}},
+            out += "Anti-Fraud Report 1\n"+
+                "**Players who sell too easily at auction**\n"+
+                "sold% - sold - unsold - discord ID\n"
+            let docs1 = await mongodb.collection('aucSellRate').aggregate([
+                    {$match:{"unsold":{$exists:false}, "sold":{$gt:7}}},
+                    {$project: 
+                        {
+                            "discord_id":"$discord_id",
+                            "sellRate": "1",
+                            "sold":"$sold",
+                            "unsold":"0"
+                        }
+                    },
+                    {"$sort": {"sold": -1}},
+                    {"$limit": 20}
+            ]).toArray();
+            let docs2 = await mongodb.collection('aucSellRate').aggregate([
+                    {$match:{"unsold":{$exists:true},"sold":{$gt:7}}},
                     {$project: 
                         {
                             "discord_id":"$discord_id",
@@ -48,10 +63,21 @@ async function report(args, callback) {
                     {"$sort": {"sellRate": -1}},
                     {"$limit": 20}
             ]).toArray();
-            out += JSON.stringify(docs);
+            let docs = docs1.concat(docs2);
+            docs = docs.slice(0,20);
+            for ( let doc of docs ) {
+                out += parseFloat(doc.sellRate).toFixed(1) +' - '+ doc.sold +' - '+ doc.unsold +' - '+ doc.discord_id +"\n";
+            }
             callback(out);
             break;
         default:
-            callback("unknown report requested.");
+            callback("Available reports:\n"+
+                    "```1 - Players whose auctions always seem to have a buyer\n"+
+                    "x - Auctions that sold way above the eval price\n"+
+                    "x - Auction seller got their card back\n"+
+                    "x - Suspected slave accounts\n"+
+                    "x - Suspected tomato transfers from alt account\n"+
+                    "x - Auc bidders that respond too fast (bots?)```");
+            break;
     }
 }

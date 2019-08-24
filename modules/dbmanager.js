@@ -42,6 +42,7 @@ const collections = require('./collections.js');
 const admin = require('./admin.js');
 const guildMod = require('./guild.js');
 const react = require('./reactions.js');
+const antifraud = require('./antifraud.js');
 
 function disconnect() {
     isConnected = false;
@@ -72,6 +73,7 @@ function connect(bot, shard, shardCount, callback) {
         guildMod.connect(db, client, shard);
         //dblapi.connect(db, client, shard, shardCount); 
         //cardmanager.updateCards(db);
+        antifraud.connect(db);
 
         if(shard == 0) {
             let deletDate = new Date();
