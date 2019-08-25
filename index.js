@@ -19,6 +19,7 @@ const auctions = require('./modules/auctions.js');
 const collections = require('./modules/collections.js');
 const admin = require('./modules/admin.js');
 const guilds = require('./modules/guild.js');
+const antifraud = require('./modules/antifraud.js');
 
 var bot, curShard = 0, shards = 0;
 var cooldownList = [];
@@ -451,6 +452,14 @@ async function getCommand(user, channel, guild, message, event, callback) {
                             mes += getUpdateLog(i) + "\n\n";
                     } else mes = getUpdateLog(0);
                     callback(mes);
+                }
+                return;
+            case 'antifraud':
+            case 'whotosmite':
+            case 'fraud':
+                if(channelType == 1) botOnly(chanID);
+                else {
+                    antifraud.processRequest(user, cnt, chanID, callback);
                 }
                 return;
         } 

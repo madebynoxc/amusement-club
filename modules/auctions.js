@@ -236,8 +236,9 @@ async function sell(user, incArgs, channelID, callback) {
             return callback(utils.formatError(user, null, "you can't sell favorite card."
                 + " To remove from favorites use `->fav remove [card query]`"));
 
-        let ccollection = mongodb.collection('cards');
+        let ccollection = mongodb.collection(dbManager.getCardDbColName(match));
         let cardQuery = utils.getCardQuery(match);
+        let userCard = match;
         ccollection.findOne(cardQuery).then((match0) => {
             dbManager.getCardValue(match0, match, async (eval) => {
                 let price;
@@ -275,12 +276,13 @@ async function sell(user, incArgs, channelID, callback) {
                     await idlock.acquire("createauction", async () => {
                         let pullResult = dbManager.pullCard(user.id, match);
                         match.fav = false;
+                        // Add in the amount this seller has for affecting the global ratings later.
+                        match.amount = userCard.amount;
 
                         if(!pullResult) return; 
 
                         await ucollection.update({discord_id: user.id}, {$inc: {exp: -fee}});
                         let aucID = await generateBetterID();
-                        delete match.rating;
                         await acollection.insert({
                             id: aucID, finished: false, date: new Date(), price: price, author: user.id, card: match, bids:[]
                         });
@@ -365,6 +367,13 @@ async function checkAuctionList(client) {
         await ucollection.update({discord_id: auc.lastbidder}, {$inc: {exp: tomatoback}});
         await ucollection.update({discord_id: auc.author}, {$inc: {exp: auc.price}});
 
+        // Remove this user's rating from the global average?
+        if ( auc.card.hasOwnProperty('rating') && auc.card.amount == 1 )
+            dbManager.removeCardRatingFromAve(auc.card);
+
+        // Remove the seller's rating from this instance of the card.
+        delete auc.card.rating;
+
         transaction.to = bidder.username;
         transaction.to_id = bidder.discord_id;
         transaction.card = auc.card;
@@ -373,9 +382,8 @@ async function checkAuctionList(client) {
         // Update eval price?
         let minSamples = 3; // eval will start returning the new eval system's price when it has this many samples.
         let maxSamples = 10; // the system will remove samples to make room for new ones after this mark is reached.
-		  let lowerBound = .50;
-		  let upperBound = 4;
-        //let tolerance = 1; // a tollerance of .5 will allow deviations up to +/-50% from the current eval.
+        let lowerBound = .50;
+        let upperBound = 4;
         // Note: min and max samples above should not be the same number.
         let cardQuery = utils.getCardQuery(auc.card);
         dbManager.getCard(cardQuery).then((match) => {
@@ -384,11 +392,14 @@ async function checkAuctionList(client) {
             let isOutlier;
             if ( match.hasOwnProperty('eval') ) {
                 // How does this auction's price compare to the stored eval price?
-                //let relativeChange = Math.abs(auc.price - match.eval) / match.eval;
-                //let isOutlier = relativeChange < 1-tolerance || relativeChange > 1+tolerance;
                 isOutlier = auc.price < match.eval * lowerBound || auc.price > match.eval * upperBound;
             } else { 
                 isOutlier = false;
+            }
+            if ( match.eval && auc.price > 2 * match.eval ) {
+                //fraud detection
+                mongodb.collection("overpricedAucs").insert({"aucId": auc.id,
+                    "factor": parseFloat(auc.price/match.eval), "date": new Date()});
             }
             if ( !isOutlier ) { 
                 // Add the new sample price.
@@ -446,11 +457,18 @@ async function checkAuctionList(client) {
         sendDM(auc.author, utils.formatConfirm(null, null, 
             "Your auction for card **" + utils.getFullCard(auc.card) + "** finished!\n"
             + "You got **" + auc.price + "**🍅 for it"));
+
+        // Fraud alerts logic
+        mongodb.collection("aucSellRate").update({"discord_id":auc.author},
+              {$inc:{"sold":1}}, {"upsert":true});
     } else {
         await dbManager.pushCard(auc.author, auc.card);
         sendDM(auc.author, utils.formatError(null, null, 
             "Your auction for card **" + utils.getFullCard(auc.card) + "** finished, but nobody bid on it.\n"
             + "You got your card back"));
+        // Fraud alerts logic
+        mongodb.collection("aucSellRate").update({"discord_id":auc.author},
+            {$inc:{"unsold":1}}, {"upsert":true});
     }
 
     await acollection.update({_id: auc._id}, {$set: {finished: true}});
