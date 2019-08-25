@@ -26,7 +26,23 @@ async function processRequest(user, channelID, args, callback) {
             break;
         case 'embargo':
             embargoUser(args, callback);
+        case 'daily':
+            resetDaily(args, callback);
     }
+}
+
+async function resetDaily(args, callback) {
+    let parse = utils.getUserID(args);
+    if(!parse.id)
+        return callback(utils.formatError(null, null, "please provide user ID"));
+
+    let targetUser = (await ucollection.findOne({ "discord_id": parse.id }));
+    if(!targetUser)
+        return callback(utils.formatError(null, null, `user with that ID was not found`));
+
+    await ucollection.update({discord_id: parse.id}, {$unset: {lastdaily: 1}});
+    callback(utils.formatConfirm(null, null, "Daily for **"+ 
+            targetUser.username +"** "+ " was reset"));
 }
 
 async function embargoUser(args, callback) {
