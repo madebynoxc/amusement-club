@@ -1457,4 +1457,3 @@ async function removeCardRatingFromAve(userCard) {
     }
     return;
 }
-
