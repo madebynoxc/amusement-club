@@ -173,6 +173,8 @@ async function claim(user, guild, channelID, arg, callback) {
             } else if (settings.lockChannel && channelID == settings.lockChannel && dailyCol) {
                 query[0].$match.collection = dailyCol;
                 query[0].$match.craft = {$in: [null, false]};
+            } else if ( utils.randomChance(0.005)  ) {
+                query[0].$match.collection = "special";
             } else {
                 query[0].$match.collection = collections.getRandom().id;
             }
