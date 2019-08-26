@@ -12,6 +12,7 @@ module.exports = {
     parseToSeconds,
     msToTime,
     formatDate,
+    formatDateSimple,
     pad,
     HEXToVBColor,
     getSourceFormat,
@@ -497,6 +498,10 @@ function formatDate (jsDateOb) {
     let ms = pad(jsDateOb.getMilliseconds(), 3); 
     return hr +":"+ min +":"+ sec +"."+ ms +" "+ ampm +" "+  
         jsDateOb.getDate() +"/"+ jsDateOb.getMonth() +"/"+ jsDateOb.getFullYear();
+}
+
+function formatDateSimple (jsDateOb) {
+    return jsDateOb.getDate() +"/"+ jsDateOb.getMonth() +"/"+ jsDateOb.getFullYear();
 }
 
 // Pad input "n" on the left with "width" number of "padChar" characters.
