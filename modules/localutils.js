@@ -42,7 +42,8 @@ module.exports = {
     getFullCard,
     formatImage,
     cardComparator,
-    diff
+    diff,
+    randomChance
 }
 
 const fs = require('fs');
@@ -503,6 +504,12 @@ function pad(n, width, padChar) {
     padChar = padChar || '0';
     n = n + '';
     return n.length >= width ? n : new Array(width - n.length + 1).join(padChar) + n;
+}
+
+// Returns true with probability equal to input param "chance"
+// eg: randomChance(0.5) returns true half the time.
+function randomChance(chance) {
+    return Math.random() < chance;
 }
 
 // db.getCollection('users').aggregate([
