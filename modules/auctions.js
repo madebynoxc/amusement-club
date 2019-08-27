@@ -396,6 +396,11 @@ async function checkAuctionList(client) {
             } else { 
                 isOutlier = false;
             }
+            if ( match.eval && auc.price > 2 * match.eval ) {
+                //fraud detection
+                mongodb.collection("overpricedAucs").insert({"aucId": auc.id,
+                    "factor": parseFloat(auc.price/match.eval), "date": new Date()});
+            }
             if ( !isOutlier ) { 
                 // Add the new sample price.
                 match.evalSamples.push(auc.price);
@@ -452,11 +457,18 @@ async function checkAuctionList(client) {
         sendDM(auc.author, utils.formatConfirm(null, null, 
             "Your auction for card **" + utils.getFullCard(auc.card) + "** finished!\n"
             + "You got **" + auc.price + "**🍅 for it"));
+
+        // Fraud alerts logic
+        mongodb.collection("aucSellRate").update({"discord_id":auc.author},
+              {$inc:{"sold":1}}, {"upsert":true});
     } else {
         await dbManager.pushCard(auc.author, auc.card);
         sendDM(auc.author, utils.formatError(null, null, 
             "Your auction for card **" + utils.getFullCard(auc.card) + "** finished, but nobody bid on it.\n"
             + "You got your card back"));
+        // Fraud alerts logic
+        mongodb.collection("aucSellRate").update({"discord_id":auc.author},
+            {$inc:{"unsold":1}}, {"upsert":true});
     }
 
     await acollection.update({_id: auc._id}, {$set: {finished: true}});

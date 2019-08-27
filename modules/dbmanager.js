@@ -42,6 +42,7 @@ const collections = require('./collections.js');
 const admin = require('./admin.js');
 const guildMod = require('./guild.js');
 const react = require('./reactions.js');
+const antifraud = require('./antifraud.js');
 
 function disconnect() {
     isConnected = false;
@@ -72,6 +73,7 @@ function connect(bot, shard, shardCount, callback) {
         guildMod.connect(db, client, shard);
         //dblapi.connect(db, client, shard, shardCount); 
         //cardmanager.updateCards(db);
+        antifraud.connect(db, client, shard);
 
         if(shard == 0) {
             let deletDate = new Date();
@@ -173,6 +175,8 @@ async function claim(user, guild, channelID, arg, callback) {
             } else if (settings.lockChannel && channelID == settings.lockChannel && dailyCol) {
                 query[0].$match.collection = dailyCol;
                 query[0].$match.craft = {$in: [null, false]};
+            } else if ( utils.randomChance(0.005)  ) {
+                query[0].$match.collection = "special";
             } else {
                 query[0].$match.collection = collections.getRandom().id;
             }
@@ -465,7 +469,7 @@ function rate(user, rating, args, callback) {
                 callback(utils.formatError(user, null, "command could not be executed \n", e));
             });
 
-            let ccollection = mongodb.collection('cards');
+            let ccollection = mongodb.collection(getCardDbColName(match));
             let cardQuery = utils.getCardQuery(match);
             getCard(cardQuery, match0 => {
                 if (typeof match0.ratingAve == 'undefined' || match0.ratingAve == null) {
