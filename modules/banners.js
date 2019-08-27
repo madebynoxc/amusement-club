@@ -7,13 +7,13 @@ var mongodb, bannercol;
 const settings = require('../settings/general.json');
 const utils = require('./localutils.js');
 
-function connect(db, client, shard) {
+async function connect(db, client, shard) {
     mongodb = db;
     bot = client;
     bannercol = db.collection('banners');
 }
 
-function processRequest(user, args, channelID, callback) {
+async function processRequest(user, args, channelID, callback) {
     if ( true ) {
         let command = args.shift();
         switch(command) {
@@ -28,6 +28,16 @@ function processRequest(user, args, channelID, callback) {
             case 'del':
                 remove(args, callback);
                 break;
+            case 'alter':
+            case 'modify':
+            case 'edit':
+            case 'change':
+            case 'update':
+                edit(args, callback);
+                break;
+            case 'help':
+                help(args, callback);
+                break;
             default:
                 if ( command && command.toLowerCase() != "list" )
                     args.unshift(command);
@@ -37,6 +47,32 @@ function processRequest(user, args, channelID, callback) {
     } else {
         list([], callback);
     }
+}
+
+async function help(args, callback) {
+    callback("Banner commands:\n"+
+
+            "> `->banner add [id] [start] [end]`\n"+
+            "Creates a new banner."+ 
+            "\"id\" doubles as a name but cannot have spaces\n"+
+            "\"start\" and \"end\" are dates with format DD/MM/YYYY\n\n"+
+
+            "> `->banner edit [banner_id] [field_name] [new_value]`\n"+
+            "Edits an existing banner.\n"+
+            "\"field_name\"s include \"id\", \"start\", \"end\"\n\n"+
+            
+            "> `->banner remove [banner_id]\n\n"+
+            "Deletes an existing banner.\n"+
+
+            "> `->banner list`\n"+
+            "Shows currently active banners.\n\n"+
+
+            "> `->banner list all`\n"+
+            "Shows all banners in the system (past, present, and future)\n\n"+
+
+            "> `->banner addcards [banner_id] [card_query]`\n"+
+            "This command is not yet implemented.\n"+
+            "~~Adds cards that can be claimed in this banner.~~\n\n");
 }
 
 async function remove(args, callback) {
@@ -61,8 +97,8 @@ async function add(args, callback) {
     else {
         bannercol.insert({
             "id": id,
-            "start": new Date(start[2], start[1], start[0]),
-            "end": new Date(end[2], end[1], end[0]),
+            "start": new Date(start[2], (start[1]-1), start[0]),
+            "end": new Date(end[2], (end[1]-1), end[0]),
         }).then(function(){callback("ok")})
         .catch(function(){calback("not ok")});
     }
@@ -97,6 +133,26 @@ async function list(args, callback) {
             }
         }
         callback(out);
+    }
+}
+
+async function edit(args, callback) {
+    let id = args.shift();
+    let targetField = args.shift();
+    let banners = await bannercol.find({}).toArray();
+    if ( !targetField || !banners[0][targetField] )
+        callback("You must specify which field to edit: id, start, or end");
+    else {
+        let newVal = args.shift();
+        if ( targetField == "start" || targetField == "end" ) {
+            newVal = newVal.split(/[-\/]/);
+            newVal = new Date(newVal[2], (newVal[1]-1), newVal[0]);
+        }
+        let setQuery = {};
+        setQuery[targetField] = newVal;
+        bannercol.updateOne({"id":id}, {$set: setQuery})
+            .then(function() { callback("ok"); })
+            .catch(function() { callback("not ok"); })
     }
 }
 

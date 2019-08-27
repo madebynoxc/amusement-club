@@ -501,7 +501,7 @@ function formatDate (jsDateOb) {
 }
 
 function formatDateSimple (jsDateOb) {
-    return jsDateOb.getDate() +"/"+ jsDateOb.getMonth() +"/"+ jsDateOb.getFullYear();
+    return jsDateOb.getDate() +"/"+ (jsDateOb.getMonth()+1) +"/"+ jsDateOb.getFullYear();
 }
 
 // Pad input "n" on the left with "width" number of "padChar" characters.
