@@ -1,6 +1,6 @@
 
 module.exports = {
-    processRequest, connect
+    processRequest, connect, findActive
 }
 
 var mongodb, bannercol;
@@ -51,6 +51,12 @@ async function processRequest(user, args, channelID, callback) {
     } else {
         list([], callback);
     }
+}
+
+async function findActive() {
+    let now = new Date();
+    let query = {"start":{$lt:now}, "end":{$gt:now}};
+    return await bannercol.find(query).toArray();
 }
 
 async function help(args, callback) {

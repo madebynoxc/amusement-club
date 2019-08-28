@@ -114,12 +114,15 @@ async function claim(user, guild, channelID, arg, callback) {
         let any = false;
         let promo = false;
         let amount = 1;
+        let banner = false;
+        let bannersNow = await banners.findActive();
         try { 
             arg.forEach(e => {
                 if(utils.isInt(e)) amount = parseInt(e);
                 else {
                     any = e == 'any';
                     promo = e == 'promo';
+                    banner = utils.obj_array_search(bannersNow, e);
                 }
             }, this);
         } catch(exc){}
