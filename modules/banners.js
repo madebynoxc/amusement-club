@@ -38,6 +38,10 @@ async function processRequest(user, args, channelID, callback) {
             case 'help':
                 help(args, callback);
                 break;
+            case 'info':
+                let bannerId = args.shift();
+                callback(await print(bannerId));
+                break;
             default:
                 if ( command && command.toLowerCase() != "list" )
                     args.unshift(command);
@@ -83,10 +87,8 @@ async function remove(args, callback) {
 }
 
 async function add(args, callback) {
-    //args = args.join(' ').split(',');
-    //for ( let i=0; i<args.length; i++ )
-    //    args[i] = args[i].trim();
     let id = args.shift();
+    let chance = parseFloat(args.shift());
     let start = ""+ args.shift();
     start = start.split(/[-\/]/);
     let end = args.shift();
@@ -97,9 +99,10 @@ async function add(args, callback) {
     else {
         bannercol.insert({
             "id": id,
+            "chance": chance,
             "start": new Date(start[2], (start[1]-1), start[0]),
             "end": new Date(end[2], (end[1]-1), end[0]),
-        }).then(function(){callback("ok")})
+        }).then(async function(banner){callback(await print(id))})
         .catch(function(){calback("not ok")});
     }
 }
@@ -141,18 +144,39 @@ async function edit(args, callback) {
     let targetField = args.shift();
     let banners = await bannercol.find({}).toArray();
     if ( !targetField || !banners[0][targetField] )
-        callback("You must specify which field to edit: id, start, or end");
+        callback("You must specify which field to edit: id, chance, start, or end");
     else {
         let newVal = args.shift();
+        let newId = id;
         if ( targetField == "start" || targetField == "end" ) {
             newVal = newVal.split(/[-\/]/);
             newVal = new Date(newVal[2], (newVal[1]-1), newVal[0]);
+        } else if ( targetField == "chance" ) {
+            newVal = parseFloat(newVal)
+        } else if ( targetField == "id" ) {
+            newId = newVal;
         }
         let setQuery = {};
         setQuery[targetField] = newVal;
         bannercol.updateOne({"id":id}, {$set: setQuery})
-            .then(function() { callback("ok"); })
+            .then(async function(banner) {
+                let out = "Banner Updated:\n";
+                out += await print(newId);
+                callback(out);
+            })
             .catch(function() { callback("not ok"); })
     }
+}
+
+async function addcards(args, callback) {
+    let query = utils.getRequestFromFiltersNoPrefix(args);
+}
+
+async function print(bannerId) {
+    let banner = await bannercol.findOne({"id":bannerId});
+    return "id: **"+ banner.id +"**\n"+ 
+    "chance: **"+ (10*banner.chance) +"%**\n"+ 
+    "start: **"+ utils.formatDateSimple(banner.start) +"**\n"+ 
+    "end: **"+ utils.formatDateSimple(banner.end) +"**"; 
 }
 
