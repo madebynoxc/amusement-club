@@ -1,6 +1,6 @@
 
 module.exports = {
-    processRequest, connect, findActive
+    processRequest, connect, findActive, listText
 }
 
 var mongodb, bannercol;
@@ -124,6 +124,12 @@ async function add(args, callback) {
 }
 
 async function list(args, callback) {
+    callback(await listText(args));
+}
+
+async function listText(args) {
+    if ( typeof(args) == "undefined" )
+       args = [];
     let now = new Date();
     let showAll = args.shift() == "all"
     let query = {"start":{$lt:now}, "end":{$gt:now}};
@@ -151,7 +157,7 @@ async function list(args, callback) {
                     utils.formatDateSimple(banner.end) +"_";
             }
         }
-        callback(out);
+        return out;
     }
 }
 

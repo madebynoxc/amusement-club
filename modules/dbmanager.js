@@ -680,9 +680,9 @@ function newUser(user, nextCall, callback) {
     });
 }
 
-function daily(u, callback) {
+async function daily(u, callback) {
     let collection = mongodb.collection('users');
-    collection.findOne({ discord_id: u.id }).then((user) => {
+    collection.findOne({ discord_id: u.id }).then(async function(user) {
         if(!user)
             return newUser(u, () => daily(u, callback), callback);
 
@@ -728,6 +728,15 @@ function daily(u, callback) {
             msg += "A special promotion is now going until **" + promo.ends + "**!\n"
                 + "You got **" + tgexp + "** " + promo.currency + "\n"
                 + "Use `->claim promo` to get special limited time cards\n";
+        }
+        
+        let bannersNow = await banners.findActive();
+        if ( bannersNow ) {
+            msg += await banners.listText() + "\n";
+            if ( bannersNow.length == 1 )
+                msg += "Use `->claim "+ banner.id +"` for a rate up!\n";
+            else
+                msg += "Use `->claim [banner_name] for a rate up!\n";
         }
 
         let quests = user.hero? quest.getRandomQuests() : [];
