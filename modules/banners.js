@@ -138,9 +138,9 @@ async function listText(args) {
     let banners = await bannercol.find(query).toArray();
     if ( banners.length == 0 )
         if ( showAll )
-            callback("There are no banners in the system, past, present, nor future.");
+            return "There are no banners in the system, past, present, nor future.";
         else
-            callback("There are no banners currently.");
+            return "There are no banners currently.";
     else {
         let out;
         if ( showAll )

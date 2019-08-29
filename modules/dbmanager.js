@@ -731,7 +731,7 @@ async function daily(u, callback) {
         }
         
         let bannersNow = await banners.findActive();
-        if ( bannersNow ) {
+        if ( bannersNow && bannersNow.length > 0 ) {
             msg += await banners.listText() + "\n";
             if ( bannersNow.length == 1 )
                 msg += "Use `->claim "+ banner.id +"` for a rate up!\n";
