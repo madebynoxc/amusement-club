@@ -175,6 +175,7 @@ async function claim(user, guild, channelID, arg, callback) {
         } 
 
         while ( remainingAmount > 0 ) {
+            query[0].$match = {}; // reset the match query for each card
             if (guild && guild.lock && !any) {
                 query[0].$match.collection = guild.lock;
                 query[0].$match.craft = {$in: [null, false]};
@@ -195,6 +196,7 @@ async function claim(user, guild, channelID, arg, callback) {
             } else {
                 query[0].$match.collection = collections.getRandom().id;
             }
+            //console.log(JSON.stringify(query));
             let cardRes = await collection.aggregate(query).toArray();
             res.push(cardRes[0]);
             remainingAmount--;

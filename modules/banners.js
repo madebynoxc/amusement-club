@@ -195,7 +195,8 @@ async function addcards(args, callback) {
     if ( !utils.obj_array_search(banners, id) )
         callback("no banner exists with that ID");
     else {
-        mongodb.collection("cards").update(query,{$set:{"banner":id}})
+        //console.log(JSON.stringify(query));
+        mongodb.collection("cards").updateMany(query,{$set:{"banner":id}})
             .then(function(){callback("ok")})
             .catch(function(){calback("not ok")});
     }
