@@ -116,6 +116,7 @@ async function claim(user, guild, channelID, arg, callback) {
         let amount = 1;
         let banner = false;
         let bannersNow = await banners.findActive();
+        let randomNum = Math.random();
         try { 
             arg.forEach(e => {
                 if(utils.isInt(e)) amount = parseInt(e);
@@ -180,8 +181,17 @@ async function claim(user, guild, channelID, arg, callback) {
             } else if (settings.lockChannel && channelID == settings.lockChannel && dailyCol) {
                 query[0].$match.collection = dailyCol;
                 query[0].$match.craft = {$in: [null, false]};
-            } else if ( utils.randomChance(0.005)  ) {
+            } else if ( banner && utils.randomChance(banner.chance) ) {
+                query[0].$match.banner = banner.id;
+            } else if ( randomNum < 0.005 ) {
                 query[0].$match.collection = "special";
+                // note: if you want to add another random condition,
+                // you need to account for previously tested cases by
+                // adding their probability into the new probability
+                // and check against the same random number.
+                // e.g. to give the player a 5 star card with probability
+                // equal to 0.1%, check if randomNum < 0.006, in a else
+                // if statement after this one.
             } else {
                 query[0].$match.collection = collections.getRandom().id;
             }

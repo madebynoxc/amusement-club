@@ -467,6 +467,8 @@ async function getCommand(user, channel, guild, message, event, callback) {
             case 'banners':
                 if(channelType == 1) botOnly(chanID);
                 else {
+                    if(!dbManager.isAdmin(user.id))
+                        cnt = ["list"];
                     banners.processRequest(user, cnt, chanID, callback);
                 }
                 return;

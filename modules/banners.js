@@ -42,6 +42,14 @@ async function processRequest(user, args, channelID, callback) {
                 let bannerId = args.shift();
                 callback(await print(bannerId));
                 break;
+            case 'addcard':
+            case 'addcards':
+                addcards(args, callback);
+                break;
+            case 'removecard':
+            case 'removecards':
+                removecards(args, callback);
+                break;
             default:
                 if ( command && command.toLowerCase() != "list" )
                     args.unshift(command);
@@ -81,12 +89,14 @@ async function help(args, callback) {
             "Shows all banners in the system (past, present, and future)\n\n"+
 
             "> `->banner addcards [banner_id] [card_query]`\n"+
-            "This command is not yet implemented.\n"+
-            "~~Adds cards that can be claimed in this banner.~~\n\n");
+            "Adds cards to the specified banner.\n"+
+            "If an added card was in a different banner, it will be "+
+            "removed from there.\n\n");
 }
 
 async function remove(args, callback) {
     let id = args.shift();
+    mongodb.collection("cards").update({"banner":id},{$unset:{"banner":""}})
     bannercol.remove({"id": id})
         .then(function(){callback("ok")})
         .catch(function(){calback("not ok")});
@@ -161,6 +171,10 @@ async function edit(args, callback) {
             newVal = parseFloat(newVal)
         } else if ( targetField == "id" ) {
             newId = newVal;
+            if ( await bannercol.findOne({"id":newId}) )
+                return callback("There is already a banner with that ID");
+            await mongodb.collection("cards").update(
+                    {"banner":id}, {$set:{"banner":newId}} );
         }
         let setQuery = {};
         setQuery[targetField] = newVal;
@@ -175,14 +189,39 @@ async function edit(args, callback) {
 }
 
 async function addcards(args, callback) {
+    let id = args.shift();
     let query = utils.getRequestFromFiltersNoPrefix(args);
+    let banners = await mongodb.collection("banners").find({}).toArray();
+    if ( !utils.obj_array_search(banners, id) )
+        callback("no banner exists with that ID");
+    else {
+        mongodb.collection("cards").update(query,{$set:{"banner":id}})
+            .then(function(){callback("ok")})
+            .catch(function(){calback("not ok")});
+    }
+}
+
+async function removecards(args, callback) {
+    let id = args.shift();
+    let query = utils.getRequestFromFiltersNoPrefix(args);
+    let banners = await mongodb.collection("banners").find({}).toArray();
+    if ( !utils.obj_array_search(banners, id) )
+        callback("no banner exists with that ID");
+    else {
+        mongodb.collection("cards").update(query,{$unset:{"banner":""}})
+            .then(function(){callback("ok")})
+            .catch(function(){calback("not ok")});
+    }
 }
 
 async function print(bannerId) {
     let banner = await bannercol.findOne({"id":bannerId});
-    return "id: **"+ banner.id +"**\n"+ 
-    "chance: **"+ (10*banner.chance) +"%**\n"+ 
-    "start: **"+ utils.formatDateSimple(banner.start) +"**\n"+ 
-    "end: **"+ utils.formatDateSimple(banner.end) +"**"; 
+    if ( banner ) {
+        return "id: **"+ banner.id +"**\n"+ 
+        "chance: **"+ (100*banner.chance) +"%**\n"+ 
+        "start: **"+ utils.formatDateSimple(banner.start) +"**\n"+ 
+        "end: **"+ utils.formatDateSimple(banner.end) +"**"; 
+    } else 
+        return "No such banner exists.";
 }
 
