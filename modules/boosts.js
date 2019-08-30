@@ -68,7 +68,7 @@ async function findActive() {
 }
 
 async function help(args, callback) {
-    callback("Banner commands:\n"+
+    callback("Boost commands:\n"+
 
             "> `->boost add [id] [start] [end]`\n"+
             "Creates a new boost."+ 
@@ -144,9 +144,9 @@ async function listText(args) {
     else {
         let out;
         if ( showAll )
-            out = "All Focus-Banners:";
+            out = "All Claim Boosts:";
         else
-            out = "Current Focus-Banners:";
+            out = "Current Claim Boosts:";
         for ( boost of boosts ) {
             if ( showAll ) {
                 out += "\n - **"+ boost.id +"** _starts "+ 
@@ -186,7 +186,7 @@ async function edit(args, callback) {
         setQuery[targetField] = newVal;
         boostcol.updateOne({"id":id}, {$set: setQuery})
             .then(async function(boost) {
-                let out = "Banner Updated:\n";
+                let out = "Boost Updated:\n";
                 out += await print(newId);
                 callback(out);
             })
