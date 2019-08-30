@@ -43,7 +43,7 @@ const admin = require('./admin.js');
 const guildMod = require('./guild.js');
 const react = require('./reactions.js');
 const antifraud = require('./antifraud.js');
-const banners = require('./banners.js');
+const boosts = require('./boosts.js');
 
 function disconnect() {
     isConnected = false;
@@ -75,7 +75,7 @@ function connect(bot, shard, shardCount, callback) {
         //dblapi.connect(db, client, shard, shardCount); 
         //cardmanager.updateCards(db);
         antifraud.connect(db, client, shard);
-        banners.connect(db, client, shard);
+        boosts.connect(db, client, shard);
 
         if(shard == 0) {
             let deletDate = new Date();
@@ -114,8 +114,8 @@ async function claim(user, guild, channelID, arg, callback) {
         let any = false;
         let promo = false;
         let amount = 1;
-        let banner = false;
-        let bannersNow = await banners.findActive();
+        let boost = false;
+        let boostsNow = await boosts.findActive();
         let randomNum = Math.random();
         try { 
             arg.forEach(e => {
@@ -123,7 +123,7 @@ async function claim(user, guild, channelID, arg, callback) {
                 else {
                     any = e == 'any';
                     promo = e == 'promo';
-                    banner = utils.obj_array_search(bannersNow, e);
+                    boost = utils.obj_array_search(boostsNow, e);
                 }
             }, this);
         } catch(exc){}
@@ -182,8 +182,8 @@ async function claim(user, guild, channelID, arg, callback) {
             } else if (settings.lockChannel && channelID == settings.lockChannel && dailyCol) {
                 query[0].$match.collection = dailyCol;
                 query[0].$match.craft = {$in: [null, false]};
-            } else if ( banner && utils.randomChance(banner.chance) ) {
-                query[0].$match.banner = banner.id;
+            } else if ( boost && utils.randomChance(boost.chance) ) {
+                query[0].$match.boost = boost.id;
             } else if ( randomNum < 0.005 ) {
                 query[0].$match.collection = "special";
                 // note: if you want to add another random condition,
@@ -730,13 +730,13 @@ async function daily(u, callback) {
                 + "Use `->claim promo` to get special limited time cards\n";
         }
         
-        let bannersNow = await banners.findActive();
-        if ( bannersNow && bannersNow.length > 0 ) {
-            msg += await banners.listText() + "\n";
-            if ( bannersNow.length == 1 )
-                msg += "Use `->claim "+ banner.id +"` for a rate up!\n";
+        let boostsNow = await boosts.findActive();
+        if ( boostsNow && boostsNow.length > 0 ) {
+            msg += await boosts.listText() + "\n";
+            if ( boostsNow.length == 1 )
+                msg += "Use `->claim "+ boost.id +"` for a rate up!\n";
             else
-                msg += "Use `->claim [banner_name] for a rate up!\n";
+                msg += "Use `->claim [boost_name] for a rate up!\n";
         }
 
         let quests = user.hero? quest.getRandomQuests() : [];
