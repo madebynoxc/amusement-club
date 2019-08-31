@@ -222,7 +222,7 @@ async function removecards(args, callback) {
     if ( !utils.obj_array_search(boosts, id) )
         callback("no boost exists with that ID");
     else {
-        mongodb.collection("cards").update(query,{$unset:{"boost":""}})
+        mongodb.collection("cards").updateMany(query,{$unset:{"boost":""}})
             .then(function(){callback("ok")})
             .catch(function(){calback("not ok")});
     }
