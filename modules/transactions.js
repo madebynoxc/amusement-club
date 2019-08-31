@@ -266,6 +266,9 @@ async function _confirm(user, transaction, callback) {
         if ( transaction.card.hasOwnProperty('rating') && transaction.card.amount == 1 )
             await dbmanager.removeCardRatingFromAve(transaction.card);
 
+        // Remove the seller's rating from this instance of the card.
+        delete transaction.card.rating;
+
         await dbmanager.pushCard(transaction.to_id, transaction.card);
         await ucollection.update(
                 { discord_id: fromUser.discord_id },

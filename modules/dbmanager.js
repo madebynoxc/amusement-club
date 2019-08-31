@@ -43,6 +43,7 @@ const admin = require('./admin.js');
 const guildMod = require('./guild.js');
 const react = require('./reactions.js');
 const antifraud = require('./antifraud.js');
+const boosts = require('./boosts.js');
 
 function disconnect() {
     isConnected = false;
@@ -74,6 +75,7 @@ function connect(bot, shard, shardCount, callback) {
         //dblapi.connect(db, client, shard, shardCount); 
         //cardmanager.updateCards(db);
         antifraud.connect(db, client, shard);
+        boosts.connect(db, client, shard);
 
         if(shard == 0) {
             let deletDate = new Date();
@@ -112,12 +114,16 @@ async function claim(user, guild, channelID, arg, callback) {
         let any = false;
         let promo = false;
         let amount = 1;
+        let boost = false;
+        let boostsNow = await boosts.findActive();
+        let randomNum = Math.random();
         try { 
             arg.forEach(e => {
                 if(utils.isInt(e)) amount = parseInt(e);
                 else {
                     any = e == 'any';
                     promo = e == 'promo';
+                    boost = utils.obj_array_search(boostsNow, e);
                 }
             }, this);
         } catch(exc){}
@@ -169,17 +175,28 @@ async function claim(user, guild, channelID, arg, callback) {
         } 
 
         while ( remainingAmount > 0 ) {
+            query[0].$match = {}; // reset the match query for each card
             if (guild && guild.lock && !any) {
                 query[0].$match.collection = guild.lock;
                 query[0].$match.craft = {$in: [null, false]};
             } else if (settings.lockChannel && channelID == settings.lockChannel && dailyCol) {
                 query[0].$match.collection = dailyCol;
                 query[0].$match.craft = {$in: [null, false]};
-            } else if ( utils.randomChance(0.005)  ) {
+            } else if ( boost && utils.randomChance(boost.chance) ) {
+                query[0].$match.boost = boost.id;
+            } else if ( randomNum < 0.005 ) {
                 query[0].$match.collection = "special";
+                // note: if you want to add another random condition,
+                // you need to account for previously tested cases by
+                // adding their probability into the new probability
+                // and check against the same random number.
+                // e.g. to give the player a 5 star card with probability
+                // equal to 0.1%, check if randomNum < 0.006, in a else
+                // if statement after this one.
             } else {
                 query[0].$match.collection = collections.getRandom().id;
             }
+            //console.log(JSON.stringify(query));
             let cardRes = await collection.aggregate(query).toArray();
             res.push(cardRes[0]);
             remainingAmount--;
@@ -663,9 +680,9 @@ function newUser(user, nextCall, callback) {
     });
 }
 
-function daily(u, callback) {
+async function daily(u, callback) {
     let collection = mongodb.collection('users');
-    collection.findOne({ discord_id: u.id }).then((user) => {
+    collection.findOne({ discord_id: u.id }).then(async function(user) {
         if(!user)
             return newUser(u, () => daily(u, callback), callback);
 
@@ -711,6 +728,15 @@ function daily(u, callback) {
             msg += "A special promotion is now going until **" + promo.ends + "**!\n"
                 + "You got **" + tgexp + "** " + promo.currency + "\n"
                 + "Use `->claim promo` to get special limited time cards\n";
+        }
+        
+        let boostsNow = await boosts.findActive();
+        if ( boostsNow && boostsNow.length > 0 ) {
+            msg += await boosts.listText() + "\n";
+            if ( boostsNow.length == 1 )
+                msg += "Use `->claim "+ boost.id +"` for a rate up!\n";
+            else
+                msg += "Use `->claim [boost_name] for a rate up!\n";
         }
 
         let quests = user.hero? quest.getRandomQuests() : [];

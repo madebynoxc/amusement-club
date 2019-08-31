@@ -12,6 +12,7 @@ module.exports = {
     parseToSeconds,
     msToTime,
     formatDate,
+    formatDateSimple,
     pad,
     HEXToVBColor,
     getSourceFormat,
@@ -43,6 +44,7 @@ module.exports = {
     formatImage,
     cardComparator,
     diff,
+    obj_array_search,
     randomChance
 }
 
@@ -496,7 +498,11 @@ function formatDate (jsDateOb) {
     let sec = pad(jsDateOb.getSeconds(), 2); 
     let ms = pad(jsDateOb.getMilliseconds(), 3); 
     return hr +":"+ min +":"+ sec +"."+ ms +" "+ ampm +" "+  
-        jsDateOb.getDate() +"/"+ jsDateOb.getMonth() +"/"+ jsDateOb.getFullYear();
+        jsDateOb.getDate() +"/"+ (jsDateOb.getMonth()+1) +"/"+ jsDateOb.getFullYear();
+}
+
+function formatDateSimple (jsDateOb) {
+    return jsDateOb.getDate() +"/"+ (jsDateOb.getMonth()+1) +"/"+ jsDateOb.getFullYear();
 }
 
 // Pad input "n" on the left with "width" number of "padChar" characters.
@@ -511,6 +517,24 @@ function pad(n, width, padChar) {
 function randomChance(chance) {
     return Math.random() < chance;
 }
+
+// Search an array of objects for one with the matching field value.
+// If not specified, the target_key defaults to 'id'
+function obj_array_search(array, target_val, target_key)
+{
+    if ( typeof(target_key) == 'undefined' )
+        target_key = 'id';
+    
+    for (var i in array)
+    {
+        var obj = array[i];
+        if ( obj[target_key] == target_val )
+            return obj;
+    }
+    
+    return false;
+}
+
 
 // db.getCollection('users').aggregate([
 // {"$match":{"discord_id":"218871036962275338"}},

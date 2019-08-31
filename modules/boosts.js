@@ -1,0 +1,234 @@
+
+module.exports = {
+    processRequest, connect, findActive, listText
+}
+
+var mongodb, boostcol;
+const settings = require('../settings/general.json');
+const utils = require('./localutils.js');
+
+async function connect(db, client, shard) {
+    mongodb = db;
+    bot = client;
+    boostcol = db.collection('boosts');
+}
+
+async function processRequest(user, args, channelID, callback) {
+    if ( true ) {
+        let command = args.shift();
+        switch(command) {
+            case 'add':
+            case 'new':
+            case 'create':
+            case 'make':
+                add(args, callback);
+                break;
+            case 'remove':
+            case 'delete':
+            case 'del':
+                remove(args, callback);
+                break;
+            case 'alter':
+            case 'modify':
+            case 'edit':
+            case 'change':
+            case 'update':
+                edit(args, callback);
+                break;
+            case 'help':
+                help(args, callback);
+                break;
+            case 'info':
+                let boostId = args.shift();
+                callback(await print(boostId));
+                break;
+            case 'addcard':
+            case 'addcards':
+                addcards(args, callback);
+                break;
+            case 'removecard':
+            case 'removecards':
+                removecards(args, callback);
+                break;
+            default:
+                if ( command && command.toLowerCase() != "list" )
+                    args.unshift(command);
+                list(args, callback);
+                break;
+        }
+    } else {
+        list([], callback);
+    }
+}
+
+async function findActive() {
+    let now = new Date();
+    let query = {"start":{$lt:now}, "end":{$gt:now}};
+    return await boostcol.find(query).toArray();
+}
+
+async function help(args, callback) {
+    callback("Boost commands:\n"+
+
+            "> `->boost add [id] [start] [end]`\n"+
+            "Creates a new boost."+ 
+            "\"id\" doubles as a name but cannot have spaces\n"+
+            "\"start\" and \"end\" are dates with format DD/MM/YYYY\n\n"+
+
+            "> `->boost edit [boost_id] [field_name] [new_value]`\n"+
+            "Edits an existing boost.\n"+
+            "\"field_name\"s include \"id\", \"start\", \"end\"\n\n"+
+            
+            "> `->boost remove [boost_id]\n\n"+
+            "Deletes an existing boost.\n"+
+
+            "> `->boost list`\n"+
+            "Shows currently active boosts.\n\n"+
+
+            "> `->boost list all`\n"+
+            "Shows all boosts in the system (past, present, and future)\n\n"+
+
+            "> `->boost addcards [boost_id] [card_query]`\n"+
+            "Adds cards to the specified boost.\n"+
+            "If an added card was in a different boost, it will be "+
+            "removed from there.\n\n");
+}
+
+async function remove(args, callback) {
+    let id = args.shift();
+    mongodb.collection("cards").update({"boost":id},{$unset:{"boost":""}})
+    boostcol.remove({"id": id})
+        .then(function(){callback("ok")})
+        .catch(function(){calback("not ok")});
+}
+
+async function add(args, callback) {
+    let id = args.shift();
+    let chance = parseFloat(args.shift());
+    let start = ""+ args.shift();
+    start = start.split(/[-\/]/);
+    let end = args.shift();
+    end = end.split(/[-\/]/);
+    let dupCheck = await boostcol.find({"id":id}).toArray();
+    if ( dupCheck.length > 0 )
+        callback("A boost with that ID already exists");
+    else {
+        boostcol.insert({
+            "id": id,
+            "chance": chance,
+            "start": new Date(start[2], (start[1]-1), start[0]),
+            "end": new Date(end[2], (end[1]-1), end[0]),
+        }).then(async function(boost){callback(await print(id))})
+        .catch(function(){calback("not ok")});
+    }
+}
+
+async function list(args, callback) {
+    callback(await listText(args));
+}
+
+async function listText(args) {
+    if ( typeof(args) == "undefined" )
+       args = [];
+    let now = new Date();
+    let showAll = args.shift() == "all"
+    let query = {"start":{$lt:now}, "end":{$gt:now}};
+    if ( showAll )
+        query = {};
+    let boosts = await boostcol.find(query).toArray();
+    if ( boosts.length == 0 )
+        if ( showAll )
+            return "There are no boosts in the system, past, present, nor future.";
+        else
+            return "There are no boosts currently.";
+    else {
+        let out;
+        if ( showAll )
+            out = "All Claim Boosts:";
+        else
+            out = "Current Claim Boosts:";
+        for ( boost of boosts ) {
+            if ( showAll ) {
+                out += "\n - **"+ boost.id +"** _starts "+ 
+                    utils.formatDateSimple(boost.start) +"_, _ends "+
+                    utils.formatDateSimple(boost.end) +"_";
+            } else {
+                out += "\n - **"+ boost.id +"**  _ends "+ 
+                    utils.formatDateSimple(boost.end) +"_";
+            }
+        }
+        return out;
+    }
+}
+
+async function edit(args, callback) {
+    let id = args.shift();
+    let targetField = args.shift();
+    let boosts = await boostcol.find({}).toArray();
+    if ( !targetField || !boosts[0][targetField] )
+        callback("You must specify which field to edit: id, chance, start, or end");
+    else {
+        let newVal = args.shift();
+        let newId = id;
+        if ( targetField == "start" || targetField == "end" ) {
+            newVal = newVal.split(/[-\/]/);
+            newVal = new Date(newVal[2], (newVal[1]-1), newVal[0]);
+        } else if ( targetField == "chance" ) {
+            newVal = parseFloat(newVal)
+        } else if ( targetField == "id" ) {
+            newId = newVal;
+            if ( await boostcol.findOne({"id":newId}) )
+                return callback("There is already a boost with that ID");
+            await mongodb.collection("cards").update(
+                    {"boost":id}, {$set:{"boost":newId}} );
+        }
+        let setQuery = {};
+        setQuery[targetField] = newVal;
+        boostcol.updateOne({"id":id}, {$set: setQuery})
+            .then(async function(boost) {
+                let out = "Boost Updated:\n";
+                out += await print(newId);
+                callback(out);
+            })
+            .catch(function() { callback("not ok"); })
+    }
+}
+
+async function addcards(args, callback) {
+    let id = args.shift();
+    let query = utils.getRequestFromFiltersNoPrefix(args);
+    let boosts = await mongodb.collection("boosts").find({}).toArray();
+    if ( !utils.obj_array_search(boosts, id) )
+        callback("no boost exists with that ID");
+    else {
+        //console.log(JSON.stringify(query));
+        mongodb.collection("cards").updateMany(query,{$set:{"boost":id}})
+            .then(function(){callback("ok")})
+            .catch(function(){calback("not ok")});
+    }
+}
+
+async function removecards(args, callback) {
+    let id = args.shift();
+    let query = utils.getRequestFromFiltersNoPrefix(args);
+    let boosts = await mongodb.collection("boosts").find({}).toArray();
+    if ( !utils.obj_array_search(boosts, id) )
+        callback("no boost exists with that ID");
+    else {
+        mongodb.collection("cards").update(query,{$unset:{"boost":""}})
+            .then(function(){callback("ok")})
+            .catch(function(){calback("not ok")});
+    }
+}
+
+async function print(boostId) {
+    let boost = await boostcol.findOne({"id":boostId});
+    if ( boost ) {
+        return "id: **"+ boost.id +"**\n"+ 
+        "chance: **"+ (100*boost.chance) +"%**\n"+ 
+        "start: **"+ utils.formatDateSimple(boost.start) +"**\n"+ 
+        "end: **"+ utils.formatDateSimple(boost.end) +"**"; 
+    } else 
+        return "No such boost exists.";
+}
+

@@ -20,6 +20,7 @@ const collections = require('./modules/collections.js');
 const admin = require('./modules/admin.js');
 const guilds = require('./modules/guild.js');
 const antifraud = require('./modules/antifraud.js');
+const boosts = require('./modules/boosts.js');
 
 var bot, curShard = 0, shards = 0;
 var cooldownList = [];
@@ -460,6 +461,15 @@ async function getCommand(user, channel, guild, message, event, callback) {
                 if(channelType == 1) botOnly(chanID);
                 else {
                     antifraud.processRequest(user, cnt, chanID, callback);
+                }
+                return;
+            case 'boost':
+            case 'boosts':
+                if(channelType == 1) botOnly(chanID);
+                else {
+                    if(!dbManager.isAdmin(user.id))
+                        cnt = ["list"];
+                    boosts.processRequest(user, cnt, chanID, callback);
                 }
                 return;
         } 
