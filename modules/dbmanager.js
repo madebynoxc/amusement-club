@@ -435,6 +435,9 @@ function getCards(user, args, callback) {
         if(args.includes('>date'))
             cards = cards.reverse();
 
+        mongodb.collection('users').update({"discord_id":user.id},
+                {$set:{"lastQueriedCard":JSON.stringify(utils.getCardQuery(cards[0]))}});
+
         callback(cards, true);
     });
 }
