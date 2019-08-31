@@ -70,17 +70,11 @@ async function findActive() {
 async function help(args, callback) {
     callback("Boost commands:\n"+
 
-            "> `->boost add [id] [start] [end]`\n"+
+            "> `->boost add [id] [chance] [start] [end]`\n"+
             "Creates a new boost."+ 
-            "\"id\" doubles as a name but cannot have spaces\n"+
+            "\"id\" doubles as a name but cannot have spaces.\n"+
+            "\"chance\" is a decimal number between 0 and 1.\n"+
             "\"start\" and \"end\" are dates with format DD/MM/YYYY\n\n"+
-
-            "> `->boost edit [boost_id] [field_name] [new_value]`\n"+
-            "Edits an existing boost.\n"+
-            "\"field_name\"s include \"id\", \"start\", \"end\"\n\n"+
-            
-            "> `->boost remove [boost_id]\n\n"+
-            "Deletes an existing boost.\n"+
 
             "> `->boost list`\n"+
             "Shows currently active boosts.\n\n"+
@@ -88,10 +82,23 @@ async function help(args, callback) {
             "> `->boost list all`\n"+
             "Shows all boosts in the system (past, present, and future)\n\n"+
 
+            "> `->boost info [boost_id]`\n"+
+            "Shows all info for the specified boost.\n\n"+
+
+            "> `->boost edit [boost_id] [field_name] [new_value]`\n"+
+            "Edits an existing boost.\n"+
+            "\"field_name\"s include \"id\", \"chance\", \"start\", \"end\"\n\n"+
+            
+            "> `->boost remove [boost_id]\n"+
+            "Deletes an existing boost.\n\n"+
+
             "> `->boost addcards [boost_id] [card_query]`\n"+
             "Adds cards to the specified boost.\n"+
             "If an added card was in a different boost, it will be "+
-            "removed from there.\n\n");
+            "removed from there.\n\n"+
+
+            "> `->boost removecards [boost_id] [card_query]`\n"+
+            "Removes cards from the specified boost.\n\n");
 }
 
 async function remove(args, callback) {
