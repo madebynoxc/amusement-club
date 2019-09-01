@@ -116,7 +116,6 @@ async function claim(user, guild, channelID, arg, callback) {
         let amount = 1;
         let boost = false;
         let boostsNow = await boosts.findActive();
-        let randomNum = Math.random();
         try { 
             arg.forEach(e => {
                 if(utils.isInt(e)) amount = parseInt(e);
@@ -175,6 +174,7 @@ async function claim(user, guild, channelID, arg, callback) {
         } 
 
         while ( remainingAmount > 0 ) {
+            let randomNum = Math.random();
             query[0].$match = {}; // reset the match query for each card
             if (guild && guild.lock && !any) {
                 query[0].$match.collection = guild.lock;
