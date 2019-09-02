@@ -105,8 +105,8 @@ async function remove(args, callback) {
     let id = args.shift();
     mongodb.collection("cards").update({"boost":id},{$unset:{"boost":""}})
     boostcol.remove({"id": id})
-        .then(function(){callback("ok")})
-        .catch(function(){calback("not ok")});
+        .then(function(){callback("Boost removed")})
+        .catch(function(){calback("An error occured")});
 }
 
 async function add(args, callback) {
@@ -210,8 +210,8 @@ async function addcards(args, callback) {
     else {
         //console.log(JSON.stringify(query));
         mongodb.collection("cards").updateMany(query,{$set:{"boost":id}})
-            .then(function(){callback("ok")})
-            .catch(function(){calback("not ok")});
+            .then(function(res){callback("Added "+ res.modifiedCount +" cards.")})
+            .catch(function(){calback("Problem adding cards.")});
     }
 }
 
@@ -223,8 +223,8 @@ async function removecards(args, callback) {
         callback("no boost exists with that ID");
     else {
         mongodb.collection("cards").updateMany(query,{$unset:{"boost":""}})
-            .then(function(){callback("ok")})
-            .catch(function(){calback("not ok")});
+            .then(function(res){callback("Removed "+ res.modifiedCount +" cards.")})
+            .catch(function(){calback("An error occurred")});
     }
 }
 
