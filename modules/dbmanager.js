@@ -196,8 +196,9 @@ async function claim(user, guild, channelID, arg, callback) {
             } else {
                 query[0].$match.collection = collections.getRandom().id;
             }
-            //console.log(JSON.stringify(query));
             let cardRes = await collection.aggregate(query).toArray();
+            if ( cardRes.length == 0 )
+                client.sendMessage({"to":settings.logchannel, "message":`Card claim query returned empty result: ${JSON.stringify(query)}`});
             res.push(cardRes[0]);
             remainingAmount--;
         } // end card-claiming loop
