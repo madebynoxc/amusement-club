@@ -14,9 +14,8 @@ async function connect(db, client, shard) {
 }
 
 async function processRequest(user, args, channelID, callback) {
-    if ( true ) {
-        let command = args.shift();
-        switch(command) {
+    let command = args.shift().toLowerCase();
+    switch(command) {
             case 'add':
             case 'new':
             case 'create':
@@ -51,13 +50,10 @@ async function processRequest(user, args, channelID, callback) {
                 removecards(args, callback);
                 break;
             default:
-                if ( command && command.toLowerCase() != "list" )
+                if(command && command != "list")
                     args.unshift(command);
                 list(args, callback);
                 break;
-        }
-    } else {
-        list([], callback);
     }
 }
 
@@ -89,7 +85,7 @@ async function help(args, callback) {
             "Edits an existing boost.\n"+
             "\"field_name\"s include \"id\", \"chance\", \"start\", \"end\"\n\n"+
             
-            "> `->boost remove [boost_id]\n"+
+            "> `->boost remove [boost_id]`\n"+
             "Deletes an existing boost.\n\n"+
 
             "> `->boost addcards [boost_id] [card_query]`\n"+
@@ -105,8 +101,8 @@ async function remove(args, callback) {
     let id = args.shift();
     mongodb.collection("cards").update({"boost":id},{$unset:{"boost":""}})
     boostcol.remove({"id": id})
-        .then(function(){callback("Boost removed")})
-        .catch(function(){calback("An error occured")});
+        .then(() => callback(utils.formatConfirm(null, null, "Boost was removed")))
+        .catch(e => calback(utils.formatError(null, "An error occured", e)));
 }
 
 async function add(args, callback) {
@@ -117,8 +113,8 @@ async function add(args, callback) {
     let end = args.shift();
     end = end.split(/[-\/]/);
     let dupCheck = await boostcol.find({"id":id}).toArray();
-    if ( dupCheck.length > 0 )
-        callback("A boost with that ID already exists");
+    if (dupCheck.length > 0)
+        callback(utils.formatError(null, "An error occured", "A boost with that ID already exists"));
     else {
         boostcol.insert({
             "id": id,
@@ -126,31 +122,33 @@ async function add(args, callback) {
             "start": new Date(start[2], (start[1]-1), start[0]),
             "end": new Date(end[2], (end[1]-1), end[0]),
         }).then(async function(boost){callback(await print(id))})
-        .catch(function(){calback("not ok")});
+        .catch(e => calback(utils.formatError(null, "An error occured", e)));
     }
 }
 
 async function list(args, callback) {
-    callback(await listText(args));
+    callback(utils.formatConfirm(null, "Currently active boosts", await listText(args)));
 }
 
 async function listText(args) {
-    if ( typeof(args) == "undefined" )
+    if (typeof(args) == "undefined")
        args = [];
+
     let now = new Date();
     let showAll = args.shift() == "all"
     let query = {"start":{$lt:now}, "end":{$gt:now}};
-    if ( showAll )
+    if (showAll)
         query = {};
+
     let boosts = await boostcol.find(query).toArray();
-    if ( boosts.length == 0 )
-        if ( showAll )
+    if (boosts.length == 0)
+        if (showAll)
             return "There are no boosts in the system, past, present, nor future.";
         else
             return "There are no boosts currently.";
     else {
         let out;
-        if ( showAll )
+        if (showAll)
             out = "All Claim Boosts:";
         else
             out = "Current Claim Boosts:";
@@ -173,7 +171,7 @@ async function edit(args, callback) {
     let targetField = args.shift();
     let boosts = await boostcol.find({}).toArray();
     if ( !targetField || !boosts[0][targetField] )
-        callback("You must specify which field to edit: id, chance, start, or end");
+        callback(utils.formatError(null, null, "You must specify which field to edit: id, chance, start, or end"));
     else {
         let newVal = args.shift();
         let newId = id;
@@ -184,20 +182,21 @@ async function edit(args, callback) {
             newVal = parseFloat(newVal)
         } else if ( targetField == "id" ) {
             newId = newVal;
-            if ( await boostcol.findOne({"id":newId}) )
-                return callback("There is already a boost with that ID");
+            if ( await boostcol.findOne({"id": newId}) )
+                return callback(utils.formatError(null, null, "There is already a boost with that ID"));
             await mongodb.collection("cards").update(
                     {"boost":id}, {$set:{"boost":newId}} );
         }
+
         let setQuery = {};
         setQuery[targetField] = newVal;
         boostcol.updateOne({"id":id}, {$set: setQuery})
             .then(async function(boost) {
                 let out = "Boost Updated:\n";
                 out += await print(newId);
-                callback(out);
+                callback(utils.formatInfo(null, null, out));
             })
-            .catch(function() { callback("not ok"); })
+            .catch(() => callback(utils.formatError(null, "An error occured", e)));
     }
 }
 
@@ -206,12 +205,12 @@ async function addcards(args, callback) {
     let query = utils.getRequestFromFiltersNoPrefix(args);
     let boosts = await mongodb.collection("boosts").find({}).toArray();
     if ( !utils.obj_array_search(boosts, id) )
-        callback("no boost exists with that ID");
+        callback(utils.formatError(null, null, "No boost exists with that ID"));
     else {
         //console.log(JSON.stringify(query));
         mongodb.collection("cards").updateMany(query,{$set:{"boost":id}})
-            .then(function(res){callback("Added "+ res.modifiedCount +" cards.")})
-            .catch(function(){calback("Problem adding cards.")});
+            .then(res => callback(utils.formatConfirm(null, null, `Added **${res.modifiedCount}** cards.`)))
+            .catch(e => calback(utils.formatError(null, "An error occured", e)));
     }
 }
 
@@ -220,22 +219,23 @@ async function removecards(args, callback) {
     let query = utils.getRequestFromFiltersNoPrefix(args);
     let boosts = await mongodb.collection("boosts").find({}).toArray();
     if ( !utils.obj_array_search(boosts, id) )
-        callback("no boost exists with that ID");
+        callback(utils.formatError(null, null, "No boost exists with that ID"));
     else {
         mongodb.collection("cards").updateMany(query,{$unset:{"boost":""}})
-            .then(function(res){callback("Removed "+ res.modifiedCount +" cards.")})
-            .catch(function(){calback("An error occurred")});
+            .then(res => callback(utils.formatConfirm(null, null, `Removed **${res.modifiedCount}** cards.`)))
+            .catch(e => calback(utils.formatError(null, "An error occured", e)));
     }
 }
 
 async function print(boostId) {
-    let boost = await boostcol.findOne({"id":boostId});
-    if ( boost ) {
-        return "id: **"+ boost.id +"**\n"+ 
-        "chance: **"+ (100*boost.chance) +"%**\n"+ 
-        "start: **"+ utils.formatDateSimple(boost.start) +"**\n"+ 
-        "end: **"+ utils.formatDateSimple(boost.end) +"**"; 
+    let boost = await boostcol.findOne({"id": boostId});
+    if (boost) {
+        return utils.formatInfo(null, "Information about " + boostId, 
+            `id: **${boost.id}**\n` + 
+            `chance: **${(100*boost.chance)}%**\n` + 
+            `start: **${utils.formatDateSimple(boost.start)}**\n` + 
+            `end: **${utils.formatDateSimple(boost.end)}**`); 
     } else 
-        return "No such boost exists.";
+        return utils.formatError(null, null, "No boost exists with that ID");
 }
 
