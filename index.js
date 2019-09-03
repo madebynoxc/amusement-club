@@ -155,7 +155,7 @@ async function getCommand(user, channel, guild, message, event, callback) {
 
         switch(sb) {
             case 'help': 
-                helpMod.processRequest(user, channel, cnt, callback);
+                helpMod.processRequest(user, channel, cnt, curg.prefix, callback);
                 return;
             case 'vote': 
                 vote.processRequest(user, channel, cnt, callback);

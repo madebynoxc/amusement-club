@@ -18,7 +18,7 @@ function connect(db, client) {
     bot = client;
 }
 
-function processRequest(user, channel, args, callback) {
+function processRequest(user, channel, args, prefix, callback) {
     var help;
     var req = args.shift();
 
@@ -26,20 +26,20 @@ function processRequest(user, channel, args, callback) {
     else help = helpAll.filter(h => h.type.includes(req))[0];
 
     if(help)
-        sendDM(user, getEmbed(help), channel, callback);
+        sendDM(user, getEmbed(help, prefix), channel, callback);
 
     else if(channel) 
-        callback("Can't find module/command **" + req  + "**. Run `->help` to see the list");
+        callback("Can't find module/command **" + req  + "**. Run `" + prefix + "help` to see the list");
 }
 
-function getEmbed(o) {
-    let e = utils.formatInfo(null, o.title, o.description);
+function getEmbed(o, prefix) {
+    let e = utils.formatInfo(null, o.title, o.description.replace(/->/g, prefix));
     e.thumbnail = { url: "https://i.imgur.com/zCsJQVm.jpg" };
     e.fields = [];
     o.fields.map((element) => {
-       e.fields.push({ name: element.title, value: element.description }); 
+       e.fields.push({ name: element.title, value: element.description.replace(/->/g, prefix)}); 
     }, this);
-    e.footer = { text: "Amusement Club | kqgAvdX | v" + changelog[0].version + " | by NoxCaos#4905" };
+    e.footer = { text: "Amusement Club | xQAxThF | v" + changelog[0].version + " | by NoxCaos#4905" };
     return e;
 }
 

@@ -3,7 +3,8 @@
        "version": "1.14.5b3",
         "changes": [
             "Added claim boost",
-            "Fixed random for card claim"
+            "Fixed random for card claim",
+            "Help command includes server prefix"
         ] 
     },
     {
