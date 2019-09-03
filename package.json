@@ -13,6 +13,7 @@
     "aws-sdk": "^2.311.0",
     "dblapi.js": "^2.2.0",
     "discord.io": "github:Woor/discord.io#gateway_v6",
+    "eris": "^0.10.1",
     "forever-monitor": "^1.7.1",
     "js-levenshtein": "^1.1.2",
     "lodash": "^4.17.15",
