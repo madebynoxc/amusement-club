@@ -34,9 +34,6 @@ async function processRequest(user, args, channelID, callback) {
             case 'update':
                 edit(args, callback);
                 break;
-            case 'help':
-                help(args, callback);
-                break;
             case 'info':
                 let boostId = args.shift();
                 callback(await print(boostId));
@@ -61,40 +58,6 @@ async function findActive() {
     let now = new Date();
     let query = {"start":{$lt:now}, "end":{$gt:now}};
     return await boostcol.find(query).toArray();
-}
-
-async function help(args, callback) {
-    callback("Boost commands:\n"+
-
-            "> `->boost add [id] [chance] [start] [end]`\n"+
-            "Creates a new boost."+ 
-            "\"id\" doubles as a name but cannot have spaces.\n"+
-            "\"chance\" is a decimal number between 0 and 1.\n"+
-            "\"start\" and \"end\" are dates with format DD/MM/YYYY\n\n"+
-
-            "> `->boost list`\n"+
-            "Shows currently active boosts.\n\n"+
-
-            "> `->boost list all`\n"+
-            "Shows all boosts in the system (past, present, and future)\n\n"+
-
-            "> `->boost info [boost_id]`\n"+
-            "Shows all info for the specified boost.\n\n"+
-
-            "> `->boost edit [boost_id] [field_name] [new_value]`\n"+
-            "Edits an existing boost.\n"+
-            "\"field_name\"s include \"id\", \"chance\", \"start\", \"end\"\n\n"+
-            
-            "> `->boost remove [boost_id]`\n"+
-            "Deletes an existing boost.\n\n"+
-
-            "> `->boost addcards [boost_id] [card_query]`\n"+
-            "Adds cards to the specified boost.\n"+
-            "If an added card was in a different boost, it will be "+
-            "removed from there.\n\n"+
-
-            "> `->boost removecards [boost_id] [card_query]`\n"+
-            "Removes cards from the specified boost.\n\n");
 }
 
 async function remove(args, callback) {

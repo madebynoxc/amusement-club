@@ -1,5 +1,12 @@
 [
     {
+       "version": "1.14.5b3",
+        "changes": [
+            "Added claim boost",
+            "Fixed random for card claim"
+        ] 
+    },
+    {
        "version": "1.14f1",
         "changes": [
             "Eval now pulls prices from auctions",

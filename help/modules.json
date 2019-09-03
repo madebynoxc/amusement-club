@@ -640,5 +640,50 @@
                 "description": "Order your cards by rating."
             }
         ]
+    },
+    {
+        "type": ["boost"],
+        "title": "Claim Boosts",
+        "description": "Claim Boosts are temporary card drop rate boosts for certain set of cards. You can claim cards from the set with increased probability by using command indicated in your `->daily`",
+        "fields": []
+    },
+    {
+        "type": ["_boost"],
+        "title": "Boosts (admin mode)",
+        "description": "Boost commands:",
+        "fields": [
+            {
+                "title": "->boost add [id] [chance] [start] [end]",
+                "description": "Creates a new boost. 'id': doubles as a name but cannot have spaces.\n'chance': is a decimal number between 0 and 1.\n'start' and 'end': are dates with format DD/MM/YYYY"
+            },
+            {
+                "title": "->boost list",
+                "description": "Shows currently active boosts."
+            },
+            {
+                "title": "->boost list all",
+                "description": "Shows all boosts in the system (past, present, and future)."
+            },
+            {
+                "title": "->boost info [boost_id]",
+                "description": "Shows all info for the specified boost."
+            },
+            {
+                "title": "->boost edit [boost_id] [field_name] [new_value]",
+                "description": "Edits an existing boost.\n'id', 'chance', 'start', 'end'"
+            },
+            {
+                "title": "->boost remove [boost_id]",
+                "description": "Deletes an existing boost."
+            },
+            {
+                "title": "->boost addcards [boost_id] [card_query]",
+                "description": "Adds cards to the specified boost.\nIf an added card was in a different boost, it will be removed from there."
+            },
+            {
+                "title": "->boost removecards [boost_id] [card_query]",
+                "description": "Removes cards from the specified boost."
+            }
+        ]
     }
 ]
