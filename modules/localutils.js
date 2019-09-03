@@ -150,7 +150,7 @@ function sortByStars(cards) {
     return cards;
 }
 
-async function getRequestFromFiltersWithPrefix(args, prefix) {
+function getRequestFromFiltersWithPrefix(args, prefix) {
     prefix = prefix || "";
     let query = {sortBy: { }};
     let keywords = [];
@@ -164,7 +164,7 @@ async function getRequestFromFiltersWithPrefix(args, prefix) {
 
     //console.log(args);
     if(!args || args.length == 0) return query;
-    args.forEach(async function(element) {
+    args.forEach(function(element) {
         element = element.trim();
         if(isInt(element) && parseInt(element) <= 5 && parseInt(element) > 0)
             levelInclude.push(parseInt(element));
@@ -218,14 +218,6 @@ async function getRequestFromFiltersWithPrefix(args, prefix) {
             else if(el === "amount") query.sortBy[prefix + 'amount'] = accend;
             else query.sortBy[prefix + 'level'] = -1;
 
-        } else if (element[0] == '.' ) {
-            let userdat = await mongodb.collection('users').findOne(
-                    {"discord_id":"209129332331905024"},
-                    {"lastQueriedCard":1});
-            if ( userdat && userdat.lastQueriedCard ) {
-                let lastQuery = JSON.parse(userdat.lastQueriedCard);
-                query = lastQuery;
-            }
         } else keywords.push(element.trim());
     }, this);
 
@@ -269,7 +261,7 @@ function getRequestFromFiltersNoPrefix(args) {
     return c;
 }
 
-async function getCardQuery(card) {
+function getCardQuery(card) {
     return {
         name: new RegExp('^' + card.name + '$', 'i'),
         collection: card.collection,

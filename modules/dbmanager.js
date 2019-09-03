@@ -5,7 +5,8 @@ module.exports = {
     leaderboard, difference, dynamicSort, countCardLevels, getCardValue,
     getCardFile, getDefaultChannel, isAdmin, needsCards, getCardURL,
     removeCardFromUser, addCardToUser, eval, whohas, block, fav, track, getDB,
-    pushCard, pullCard, getCard, getCardDbColName, removeCardRatingFromAve
+    pushCard, pullCard, getCard, getCardDbColName, removeCardRatingFromAve,
+    getLastQueriedCard
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -434,9 +435,8 @@ function getCards(user, args, callback) {
         let cards = objs[0].cards;
         if(args.includes('>date'))
             cards = cards.reverse();
-
-        mongodb.collection('users').update({"discord_id":user.id},
-                {$set:{"lastQueriedCard":JSON.stringify(utils.getCardQuery(cards[0]))}});
+        
+        setLastQueriedCard(user,cards[0]);
 
         callback(cards, true);
     });
@@ -517,9 +517,18 @@ function rate(user, rating, args, callback) {
     });
 }
 
-function summon(user, args, callback) {
+async function summon(user, args, callback) {
     if(!args) return callback("**" + user.username + "**, please specify card query");
-    let query = utils.getRequestFromFilters(args);
+    let query = {};
+    if ( args[0] == "." ) {
+        query1 = await getLastQueriedCard(user);
+        query['cards.name'] = query1.name;
+        query['cards.level'] = query1.level;
+        query['cards.collection'] = query1.collection;
+        console.log(query);
+    }
+    if ( !query )
+        query = utils.getRequestFromFilters(args);
     getUserCards(user.id, query).toArray((err, objs) => {
         if(!objs || !objs[0]) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
@@ -555,6 +564,8 @@ async function getCardInfo(user, args, callback) {
     let card = await getCard(query);
         
         if(!card) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
+        
+        setLastQueriedCard(user,card);
 
         getCardValue(card, card, val => {
             let col = collections.parseCollection(card.collection)[0];
@@ -1491,3 +1502,26 @@ async function removeCardRatingFromAve(userCard) {
     return;
 }
 
+async function getLastQueriedCard(user) {
+    console.log("getting last queried card");
+    let lastQuery = false;
+    let userdat = await mongodb.collection('users').findOne(
+            {"discord_id": user.id},
+            {"lastQueriedCard": 1});
+    if ( userdat && userdat.lastQueriedCard ) {
+        lastQuery = userdat.lastQueriedCard;
+        //lastQuery.name = new RegExp('^' + lastQuery.name + '$', 'i');
+        console.log(lastQuery);
+    }
+    return lastQuery;
+}
+
+async function setLastQueriedCard(user,card) {
+    let lastQuery = {};
+    lastQuery.name = card['name'];
+    lastQuery.level = card['level'];
+    lastQuery.collection = card['collection'];
+    console.log(lastQuery);
+    mongodb.collection('users').update({"discord_id":user.id},
+            {$set:{"lastQueriedCard":lastQuery}});
+}
