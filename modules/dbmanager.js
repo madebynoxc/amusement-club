@@ -6,7 +6,7 @@ module.exports = {
     getCardFile, getDefaultChannel, isAdmin, needsCards, getCardURL,
     removeCardFromUser, addCardToUser, eval, whohas, block, fav, track, getDB,
     pushCard, pullCard, getCard, getCardDbColName, removeCardRatingFromAve,
-    getLastQueriedCard
+    getLastQueriedCard, setLastQueriedCard
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -426,7 +426,9 @@ function getQuests(user, callback) {
     });
 }
 
-function getCards(user, args, callback) {
+async function getCards(user, args, callback) {
+    if ( args[0] == "." )
+        args = utils.getCardArgs(await getLastQueriedCard(user));
     let query = utils.getRequestFromFilters(args);
     getUserCards(user.id, query).toArray((err, objs) => {
         if(!objs || !objs[0]) 
@@ -442,13 +444,15 @@ function getCards(user, args, callback) {
     });
 }
 
-function rate(user, rating, args, callback) {
+async function rate(user, rating, args, callback) {
     if(!args) return callback(utils.formatError(user, null, "please specify card query"));
     if(typeof(rating) != "number" || isNaN(rating)|| rating < 1 || rating > 10) {
         return callback(utils.formatError(user, null, "please specify a rating between 1 and 10 before the card query"));
     }
 
     rating = Math.round(rating);
+    if ( args[0] == "." )
+        args = utils.getCardArgs(await getLastQueriedCard(user));
     let query1 = utils.getRequestFromFilters(args);
     getUserCards(user.id, query1).toArray((err, objs) => {
         if(!objs[0]) {
@@ -456,6 +460,7 @@ function rate(user, rating, args, callback) {
                 "can't find card matching that request"));
         }
         let cards = objs[0].cards;
+        setLastQueriedCard(user,cards[0]);
         let match = query1['cards.name']? getBestCardSorted(cards, query1['cards.name'])[0] : cards[0];
         if(!match) {
             return callback(utils.formatError(user, "Can't find card", 
@@ -519,16 +524,9 @@ function rate(user, rating, args, callback) {
 
 async function summon(user, args, callback) {
     if(!args) return callback("**" + user.username + "**, please specify card query");
-    let query = {};
-    if ( args[0] == "." ) {
-        query1 = await getLastQueriedCard(user);
-        query['cards.name'] = query1.name;
-        query['cards.level'] = query1.level;
-        query['cards.collection'] = query1.collection;
-        console.log(query);
-    }
-    if ( !query )
-        query = utils.getRequestFromFilters(args);
+    if ( args[0] == "." )
+        args = utils.getCardArgs(await getLastQueriedCard(user));
+    let query = utils.getRequestFromFilters(args);
     getUserCards(user.id, query).toArray((err, objs) => {
         if(!objs || !objs[0]) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
@@ -537,6 +535,7 @@ async function summon(user, args, callback) {
         let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : getRandomCard(cards);
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
 
+        setLastQueriedCard(user,match);
         let alert = "**" + user.username + "** summons ";
 
         if(match.animated && match.imgur) {
@@ -559,6 +558,8 @@ async function summon(user, args, callback) {
 
 async function getCardInfo(user, args, callback) {
     if(!args) return callback("**" + user.username + "**, please specify card query");
+    if ( args[0] == "." )
+        args = utils.getCardArgs(await getLastQueriedCard(user));
     let query = utils.getRequestFromFiltersNoPrefix(args);
 
     let card = await getCard(query);
@@ -825,7 +826,7 @@ function award(uID, amout, callback) {
 
 //{'cards.name':/Holy_Qua/},{$set:{'cards.$.name':'holy_quaternity'}}
 
-function difference(discUser, parse, callback) {
+async function difference(discUser, parse, callback) {
     let targetID = parse.id;
     let args = parse.input;
     if(discUser.id == targetID) 
@@ -833,6 +834,8 @@ function difference(discUser, parse, callback) {
 
     if(!targetID) return;
 
+    if ( args[0] == "." )
+        args = utils.getCardArgs(await getLastQueriedCard(discUser));
     let query = utils.getRequestFromFilters(args);
     getUserCards(discUser.id, {}).toArray((err, objs) => {
         let cardsU1 = (objs && objs[0])? objs[0].cards : [];
@@ -860,13 +863,15 @@ function difference(discUser, parse, callback) {
     });
 }
 
-function eval(user, args, callback, isPromo) {
+async function eval(user, args, callback, isPromo) {
     if(!args[0]) return;
     if(args.includes('-multi'))
         return callback(utils.formatError(user, "Request error", "flag `-multi` is not valid for this request"));
 
     let ccollection = isPromo ? mongodb.collection('promocards') : mongodb.collection('cards');
 
+    if ( args[0] == "." )
+        args = utils.getCardArgs(await getLastQueriedCard(user));
     let query = utils.getRequestFromFiltersNoPrefix(args);
     ccollection.find(query).toArray((err, res) => {
         let match = query.name? getBestCardSorted(res, query.name)[0] : res[0];
@@ -874,6 +879,7 @@ function eval(user, args, callback, isPromo) {
             if (!isPromo) return eval(user, args, callback, true);
             else          return callback(utils.formatError(user, null, "no cards found that match your request"));
         }
+        setLastQueriedCard(user,match);
         getCardValue(match, match, price => {
             let name = utils.getFullCard(match);
             if(price == 0) callback(utils.formatInfo(user, null, "impossible to evaluate **" + name + "** since nobody has it"));
@@ -929,9 +935,11 @@ function removeCard(target, collection) {
     }
 }
 
-function doesUserHave(user, tgID, args, callback) {
+async function doesUserHave(user, tgID, args, callback) {
     if(!tgID) return;
 
+    if ( args[0] == "." )
+        args = utils.getCardArgs(await getLastQueriedCard(user));
     let query = utils.getRequestFromFilters(args);
     getUserCards(tgID, query).toArray((err, objs) => {
         if(!objs[0]) 
@@ -940,6 +948,7 @@ function doesUserHave(user, tgID, args, callback) {
         let cards = objs[0].cards;
         let match = query['cards.name']? getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
+        setLastQueriedCard(user,match);
 
         let cardname = utils.toTitleCase(match.name.replace(/_/g, " "));
         if(match.fav == true)
@@ -983,8 +992,10 @@ function needsCards(user, args, callback) {
     });
 }
 
-function whohas(user, guild, args, callback) {
+async function whohas(user, guild, args, callback) {
     let ucollection = mongodb.collection('users');
+    if ( args[0] == "." )
+        args = utils.getCardArgs(await getLastQueriedCard(user));
     let query = utils.getRequestFromFiltersNoPrefix(args);
     ucollection.find(
         {"cards":{"$elemMatch":query}}
@@ -1020,7 +1031,7 @@ function whohas(user, guild, args, callback) {
     });  
 }
 
-function fav(user, args, callback) {
+async function fav(user, args, callback) {
     // Check for required params.
     if(!args || args.length == 0) return callback("**" + user.username + "**, please specify card query");
     let chanID = args[0];
@@ -1034,6 +1045,8 @@ function fav(user, args, callback) {
     if (remove && args.length > 0 && args[0] == 'all') all = true;
 
     // Find the cards.
+    if ( args[0] == "." )
+        args = utils.getCardArgs(await getLastQueriedCard(user));
     let query1 = utils.getRequestFromFilters(args);
     getUserCards(user.id, query1).toArray((err, objs) => {
         if(!objs[0]) {
@@ -1504,16 +1517,15 @@ async function removeCardRatingFromAve(userCard) {
 
 async function getLastQueriedCard(user) {
     console.log("getting last queried card");
-    let lastQuery = false;
+    let card = false;
     let userdat = await mongodb.collection('users').findOne(
             {"discord_id": user.id},
             {"lastQueriedCard": 1});
     if ( userdat && userdat.lastQueriedCard ) {
-        lastQuery = userdat.lastQueriedCard;
-        //lastQuery.name = new RegExp('^' + lastQuery.name + '$', 'i');
-        console.log(lastQuery);
+        card = userdat.lastQueriedCard;
+        console.log("lastQueriedCard: "+ JSON.stringify(card));
     }
-    return lastQuery;
+    return card;
 }
 
 async function setLastQueriedCard(user,card) {
@@ -1521,7 +1533,7 @@ async function setLastQueriedCard(user,card) {
     lastQuery.name = card['name'];
     lastQuery.level = card['level'];
     lastQuery.collection = card['collection'];
-    console.log(lastQuery);
+    console.log("setting lastQueriedCard: "+ JSON.stringify(lastQuery));
     mongodb.collection('users').update({"discord_id":user.id},
             {$set:{"lastQueriedCard":lastQuery}});
 }
