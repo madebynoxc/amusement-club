@@ -205,6 +205,7 @@ async function claim(user, guild, channelID, arg, callback) {
         //console.log(JSON.stringify(res));
 
         res.sort(dynamicSort('-level'));
+        setLastQueriedCard(user,res[0]);
 
         let phrase = "**" + user.username + "**, you got";
         if(amount == 1) {
@@ -1048,7 +1049,7 @@ async function fav(user, args, callback) {
     if ( args[0] == "." )
         args = utils.getCardArgs(await getLastQueriedCard(user));
     let query1 = utils.getRequestFromFilters(args);
-    getUserCards(user.id, query1).toArray((err, objs) => {
+    getUserCards(user.id, query1).toArray(async function(err, objs) {
         if(!objs[0]) {
             return callback(utils.formatError(user, "Can't find card", 
                 "can't find card matching that request"));
@@ -1095,6 +1096,7 @@ async function fav(user, args, callback) {
                         "can't find card matching that request"));
                 }
             }
+            await setLastQueriedCard(user,match);
             objIds.push(''+match["_id"]);
             matchCount=1;
             fav2(user, objIds, remove, all, callback, match);
@@ -1516,14 +1518,13 @@ async function removeCardRatingFromAve(userCard) {
 }
 
 async function getLastQueriedCard(user) {
-    console.log("getting last queried card");
     let card = false;
     let userdat = await mongodb.collection('users').findOne(
             {"discord_id": user.id},
             {"lastQueriedCard": 1});
     if ( userdat && userdat.lastQueriedCard ) {
         card = userdat.lastQueriedCard;
-        console.log("lastQueriedCard: "+ JSON.stringify(card));
+        //console.log("Got lastQueriedCard: "+ JSON.stringify(card));
     }
     return card;
 }
@@ -1533,7 +1534,11 @@ async function setLastQueriedCard(user,card) {
     lastQuery.name = card['name'];
     lastQuery.level = card['level'];
     lastQuery.collection = card['collection'];
-    console.log("setting lastQueriedCard: "+ JSON.stringify(lastQuery));
-    mongodb.collection('users').update({"discord_id":user.id},
-            {$set:{"lastQueriedCard":lastQuery}});
+    mongodb.collection('users').update({"discord_id":user.id}, {$set:{"lastQueriedCard":lastQuery}})
+        .then(function(){
+            //console.log("lastQueriedCard for user "+ user.username +" ("+ user.id +") updated to:\n"+ JSON.stringify(lastQuery));
+        }).catch(function(err) {
+            console.log("Problem updating lastQueriedCard for user "+ user.username +" ("+ user.id +") to:\n"+ JSON.stringify(lastQuery));
+            console.log(err);
+        })
 }

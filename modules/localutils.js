@@ -541,6 +541,8 @@ function obj_array_search(array, target_val, target_key)
 // getRequestFromFiltersWithPrefix
 function getCardArgs(card) {
     args = [];
+    if ( !card )
+        return args;
     args.push(card.name);
     args.push('-'+ card.collection);
     args.push(''+ card.level);

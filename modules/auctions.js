@@ -216,6 +216,8 @@ async function sell(user, incArgs, channelID, callback) {
         return callback("**" + user.username + "**, please specify card query and price seperated by `,`\n"
             + "Or do not specify price to use eval");
 
+    if ( args[0] == "." )
+        args[0] = utils.getCardArgs(await dbManager.getLastQueriedCard(user)).join(' ');
     let query = utils.getRequestFromFilters(args[0].split(' '));
     dbManager.getUserCards(user.id, query).toArray((err, objs) => {
         if(!objs || !objs[0]) 
@@ -232,6 +234,7 @@ async function sell(user, incArgs, channelID, callback) {
 
         let match = query['cards.name'] ? dbManager.getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
         if(!match) return callback(utils.formatError(user, "Can't find card", "can't find card matching that request"));
+        dbManager.setLastQueriedCard(user,match);
         if (match.fav && match.amount == 1) 
             return callback(utils.formatError(user, null, "you can't sell favorite card."
                 + " To remove from favorites use `->fav remove [card query]`"));
