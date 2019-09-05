@@ -177,14 +177,14 @@ async function claim(user, guild, channelID, arg, callback) {
         while ( remainingAmount > 0 ) {
             let randomNum = Math.random();
             query[0].$match = {}; // reset the match query for each card
-            if (guild && guild.lock && !any) {
+            if ( boost && utils.randomChance(boost.chance) ) {
+                query[0].$match.boost = boost.id;
+            } else if (guild && guild.lock && !any) {
                 query[0].$match.collection = guild.lock;
                 query[0].$match.craft = {$in: [null, false]};
             } else if (settings.lockChannel && channelID == settings.lockChannel && dailyCol) {
                 query[0].$match.collection = dailyCol;
                 query[0].$match.craft = {$in: [null, false]};
-            } else if ( boost && utils.randomChance(boost.chance) ) {
-                query[0].$match.boost = boost.id;
             } else if ( randomNum < 0.005 ) {
                 query[0].$match.collection = "special";
                 // note: if you want to add another random condition,

@@ -683,6 +683,10 @@
             {
                 "title": "->boost removecards [boost_id] [card_query]",
                 "description": "Removes cards from the specified boost."
+            },
+            {
+                "title": "->boost listcards [boost_id]",
+                "description": "Shows a list of all cards included in the specified boost."
             }
         ]
     }
