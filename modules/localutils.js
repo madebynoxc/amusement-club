@@ -37,6 +37,7 @@ module.exports = {
     getRequestFromFiltersWithPrefix,
     getUserID,
     getRatio,
+    getCardArgs,
     getCardQuery,
     generateRandomId,
     generateNextId,
@@ -164,7 +165,7 @@ function getRequestFromFiltersWithPrefix(args, prefix) {
 
     //console.log(args);
     if(!args || args.length == 0) return query;
-    args.forEach(element => {
+    args.forEach(function(element) {
         element = element.trim();
         if(isInt(element) && parseInt(element) <= 5 && parseInt(element) > 0)
             levelInclude.push(parseInt(element));
@@ -535,6 +536,19 @@ function obj_array_search(array, target_val, target_key)
     return false;
 }
 
+// Given a card object, returns an array of arguments, such as would be
+// input by the user for a card query and used as input for 
+// getRequestFromFiltersWithPrefix
+function getCardArgs(card) {
+    args = [];
+    if ( !card )
+        return args;
+    args.push(card.name);
+    args.push('-'+ card.collection);
+    args.push(''+ card.level);
+    //console.log('getCardArgs is returning: '+ JSON.stringify(args));
+    return args;
+}
 
 // db.getCollection('users').aggregate([
 // {"$match":{"discord_id":"218871036962275338"}},

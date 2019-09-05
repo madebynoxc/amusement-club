@@ -58,6 +58,8 @@ async function processRequest(user, args, guild, channelID, callback) {
         transaction.guild_id = guild.id;
     }
 
+    if ( parse.input == "." )
+        parse.input = utils.getCardArgs(await dbmanager.getLastQueriedCard(user));
     let query = utils.getRequestFromFilters(parse.input);
 
     let objs = await dbmanager.getUserCards(user.id, query).toArray();
@@ -74,6 +76,7 @@ async function processRequest(user, args, guild, channelID, callback) {
 
     let match = query['cards.name'] ? dbmanager.getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
     if(!match) return callback(utils.formatError(user, "Can't find cards", "can't find any card matching that request"));
+    dbmanager.setLastQueriedCard(user,match);
 
     if (match.fav && match.amount == 1) 
         return callback(utils.formatError(user, null, "you can't sell favorite card."
