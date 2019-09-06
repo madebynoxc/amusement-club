@@ -67,6 +67,7 @@ function getInfo(user, name, callback, image = false) {
 }
 
 async function craftCard(user, args, callback) {
+    // Note: "user" here, is the DB doc, not the discord user object.
     var cards = args.join(' ').split(/\s*,\s*/g);
     if(!cards || cards.length < 2)
         return callback("Minimum **2** cards or items required for forge\nDon't forget to put `,` between names"
@@ -81,6 +82,8 @@ async function craftCard(user, args, callback) {
             name = cards[i].substr(1); 
 
         let filters = name.split(" ");
+        if ( filters[0] == "." )
+            filters = utils.getCardArgs(user.lastQueriedCard);
         let query = utils.getRequestFromFilters(filters);
         let userCards = await dbManager.getUserCards(user.discord_id, query).toArray();
         let card;
@@ -243,6 +246,7 @@ function craftOrdinary(user, cards, callback) {
         ).then(u => { 
             //if(bonus[0] > 0) m += "\nAdded " + bonus[0] + "🍅 Tomatoes from card effect";
             callback(m);
+            dbManager.setLastQueriedCard({"id":user.discord_id},c);
         }).catch(e => {logger.error(e)});
     });
 }

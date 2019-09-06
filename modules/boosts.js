@@ -6,6 +6,9 @@ module.exports = {
 var mongodb, boostcol;
 const settings = require('../settings/general.json');
 const utils = require('./localutils.js');
+const react = require('./reactions.js');
+const dbmanager = require('./dbmanager.js');
+const cardList = require('./list.js');
 
 async function connect(db, client, shard) {
     mongodb = db;
@@ -14,7 +17,9 @@ async function connect(db, client, shard) {
 }
 
 async function processRequest(user, args, channelID, callback) {
-    let command = args.shift().toLowerCase();
+    let command = args.shift();
+    if (command)
+        command = command.toLowerCase();
     switch(command) {
             case 'add':
             case 'new':
@@ -42,9 +47,15 @@ async function processRequest(user, args, channelID, callback) {
             case 'addcards':
                 addcards(args, callback);
                 break;
+            case 'deletecard':
+            case 'deletecards':
             case 'removecard':
             case 'removecards':
                 removecards(args, callback);
+                break;
+            case 'listcards':
+            case 'showcards':
+                listcards(user, args, channelID, callback);
                 break;
             default:
                 if(command && command != "list")
@@ -187,6 +198,19 @@ async function removecards(args, callback) {
         mongodb.collection("cards").updateMany(query,{$unset:{"boost":""}})
             .then(res => callback(utils.formatConfirm(null, null, `Removed **${res.modifiedCount}** cards.`)))
             .catch(e => calback(utils.formatError(null, "An error occured", e)));
+    }
+}
+
+async function listcards(user, args, chanID, callback) {
+    let id = args.shift();
+    let boost = await boostcol.findOne({"id":id});
+    if ( !boost )
+        callback(utils.formatError(null, null, "No boost exists with that ID"));
+    else {
+        let cards = await mongodb.collection("cards").find({"boost":boost.id}).toArray();
+        react.addNewPagination(user.id, 
+            "Cards in the \""+ boost.id +"\" boost (" + cards.length + " results):", 
+            cardList.getPages(cards), chanID);
     }
 }
 
