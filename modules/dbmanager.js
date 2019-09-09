@@ -244,8 +244,9 @@ async function claim(user, guild, channelID, arg, callback) {
         }
 
         if(!dbUser.cards) dbUser.cards = [];
-        //res.map(r => dbUser.cards = addCardToUser(dbUser.cards, r));
-        res.map(r => pushCard(user.id, r));
+        for ( r of res ) {
+            await pushCard(user.id, r)
+        }
 
         dbUser.dailystats.claim += amount;
         heroes.addXP(dbUser, .5 * amount);
