@@ -169,9 +169,15 @@ async function getCommand(user, channel, guild, message, event, callback) {
                 if(channelType == 0) callback('Claiming is available only on servers');
                 else if(channelType == 1) botOnly(chanID);
                 else {
-                    await dbManager.claim(user, curg, chanID, cnt, (text, img) => {
-                        callback(text, img);
-                    });
+                    bot.sendMessage({to: chanID, 
+                        message: 'Loading your cards...'}, async function(err, resp) {
+                            if(resp) { 
+                                await dbManager.claim(user, curg, chanID, cnt, (text, img) => {
+                                    bot.deleteMessage({channelID: chanID, messageID: resp.id}); 
+                                    callback(text, img);
+                                });
+                            }
+                        });
                 }
                 return;
             case 'server': 
