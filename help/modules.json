@@ -496,11 +496,11 @@
             },
             {
                 "title": "Selling a card",
-                "description": "Command:`->auc sell [card title], [amount]` will list your card on auction. The lowest possible price is 1/2 of eval, while the highest is 4x eval.\n"
+                "description": "Command:`->auc sell [card title], [amount]` will list your card on auction. Instead of an amount, you may enter a percent of eval in decimal form (e.g. \"0.5\" or \"2.5\" etc). The lowest possible price is 0.5x eval, while the highest is 4.0x eval. If no amount is given, the eval price is used.\n"
             },            
             {
                 "title": "Bidding on a card", 
-                "description": "Command: `->auc bid [id] [amount]` For example `->auc bid ktgs4 500` will bid 500 🍅 on auction with ID `ktgs4`. You can not bid on your own auction.\n**IMPORTANT**: Place your bids carefully! Your tomatoes will be taken automatically when you place a bid. It will be returned to you when you have been outbid.\n"
+                "description": "Command: `->auc bid [id] [amount]` For example `->auc bid ktgs4 500` will bid 500 🍅 on auction with ID `ktgs4`. You can not bid on your own auction. If no amount is given, the minimum bid amount will be used.\n**IMPORTANT**: Place your bids carefully! Your tomatoes will be taken automatically when you place a bid. It will be returned to you when you have been outbid.\n"
             },
             {
                 "title": "Finding information on a bid",
