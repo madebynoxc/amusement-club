@@ -525,10 +525,10 @@ function getTimeUntilAucEnds(auc) {
     const base = timeUntilEndMs / (1000 * 60);
     const hours = Math.floor(base / 60);
     const minutes = Math.floor(base % 60);
-    const seconds = Math.floor((base * 60) % 60);
+    //const seconds = Math.floor((base * 60) % 60);
     return  hours > 0? `${hours}h ${minutes}m`  :
-                minutes > 0  ? `${minutes}m ${seconds}s`:
-                `${seconds}s`;
+                minutes > 0  ? `${minutes}m`:
+                '< 1m';
 }
 
 async function generateBetterID() {
