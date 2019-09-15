@@ -22,6 +22,7 @@ module.exports = {
     getHoursDifference,
     getDaysDifference,
     getFullTimeDifference,
+    isFloat,
     isInt,
     sortByStars,
     containsCard,
@@ -129,6 +130,14 @@ function getSecondsDifference(tg) {
 function getFullTimeDifference(tg) {
     let mil = new Date() - tg;
     return msToTime(mil);
+}
+
+function isFloat(value) {
+    if (typeof(value) != "string")
+        throw("localUtils.isFloat must be passed a string parameter");
+    let str = ""+value;
+    return !isNaN(value) && 
+        str.indexOf('.') !== -1;
 }
 
 function isInt(value) {

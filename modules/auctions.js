@@ -97,14 +97,13 @@ async function list(user, args, channelID, callback) {
 }
 
 async function bid(user, args, callback) {
-    if(!args || args.length < 2)
-        return callback("**" + user.username + "**, please specify auction ID and bid amount");
+    if(!args)
+        return callback("**" + user.username + "**, please specify auction ID");
 
-    if(!utils.isInt(args[1]))
+    if(args[1] && !utils.isInt(args[1]))
         return callback(utils.formatError(user, null, "price should be a number"));
 
     args[0] = args[0].replace(",", "");
-    let price = parseInt(args[1]);
     let auc = await acollection.findOne({id: args[0]});
     if(!auc)
         return callback(utils.formatError(user, null, "auction `" + args[0] + "` not found"));
@@ -116,8 +115,9 @@ async function bid(user, args, callback) {
         return callback(utils.formatError(user, null, "auction `" + args[0] + "` already finished"));
 
     let aucPrice = getNextBid(auc);
-    if(price <= aucPrice)  {
-        let bidresp = "your bid for this auction should be more than **" + aucPrice + "**🍅";
+    let price = args[1] ? parseInt(args[1]) : aucPrice;
+    if(price < aucPrice)  {
+        let bidresp = "your bid for this auction should be at least **" + aucPrice + "**🍅";
         if(auc.hidebid) bidresp = "your bid is **too low!** Bid amount is hidden by hero effect.";
         return callback(utils.formatError(user, null, bidresp));
     }
@@ -246,11 +246,16 @@ async function sell(user, incArgs, channelID, callback) {
             dbManager.getCardValue(match0, match, async (eval) => {
                 let price;
 
-                if(!args[1])
+                if(!args[1]) {
                     price = Math.floor(eval);
-                else if(!utils.isInt(args[1]))
+                } else if(utils.isFloat(args[1])) {
+                    let multiple = parseFloat(args[1]);
+                    price = Math.round(multiple * Math.floor(eval));
+                } else if(utils.isInt(args[1])) {
+                    price = parseInt(args[1]);
+                } else {
                     return callback(utils.formatError(user, null, "price should be a number"));
-                else price = parseInt(args[1]);
+                }
 
                 let min = Math.round(eval * .5);
                 let dbUser = await ucollection.findOne({discord_id: user.id});
@@ -520,10 +525,10 @@ function getTimeUntilAucEnds(auc) {
     const base = timeUntilEndMs / (1000 * 60);
     const hours = Math.floor(base / 60);
     const minutes = Math.floor(base % 60);
-    const seconds = Math.floor((base * 60) % 60);
+    //const seconds = Math.floor((base * 60) % 60);
     return  hours > 0? `${hours}h ${minutes}m`  :
-                minutes > 0  ? `${minutes}m ${seconds}s`:
-                `${seconds}s`;
+                minutes > 0  ? `${minutes}m`:
+                '< 1m';
 }
 
 async function generateBetterID() {
