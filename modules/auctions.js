@@ -97,7 +97,7 @@ async function list(user, args, channelID, callback) {
 }
 
 async function bid(user, args, callback) {
-    if(!args)
+    if(!args || args.length <1)
         return callback("**" + user.username + "**, please specify auction ID");
 
     if(args[1] && !utils.isInt(args[1]))
