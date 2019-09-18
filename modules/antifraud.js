@@ -61,7 +61,7 @@ async function report(args, callback) {
                     {$project: 
                         {
                             "discord_id":"$discord_id",
-                            "sellRate": {$divide: ["$sold", "$unsold"]},
+                            "sellRate": {$divide: ["$sold", {$add: ["$sold", "$unsold"]}]},
                             "sold":"$sold",
                             "unsold":"$unsold"
                         }
@@ -72,7 +72,7 @@ async function report(args, callback) {
             docs = docs1.concat(docs2);
             docs = docs.slice(0,20);
             for ( let doc of docs ) {
-                out += parseFloat(doc.sellRate).toFixed(1) +' - '+ doc.sold +' - '+ doc.unsold +' - '+ doc.discord_id +"\n";
+                out += parseFloat(doc.sellRate).toFixed(1) *100 +'% - '+ doc.sold +' - '+ doc.unsold +' - <@'+ doc.discord_id +">\n";
             }
             callback(out);
             break;
@@ -107,8 +107,9 @@ async function report(args, callback) {
 async function purgeOldRecords() {
     console.log("Removing old anti-fraud records.");
     mongodb.collection("overpricedAucs")
-        .remove({"date":{$gt:new Date(new Date() -5)}})
+        .remove({"date":{$lt:new Date(new Date() -5)}})
         .catch(function(e) {
             console.log("problem purging old anti-fraud data from `overpricedAucs`:\n"+ e);
         });
 }
+
