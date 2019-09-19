@@ -132,8 +132,18 @@ async function listText(args) {
                     utils.formatDateSimple(boost.start) +"_, _ends "+
                     utils.formatDateSimple(boost.end) +"_";
             } else {
-                out += "\n - **"+ boost.id +"**  _ends "+ 
-                    utils.formatDateSimple(boost.end) +"_";
+                let hoursLeft = Math.floor((boost.end - now)/(1000*60*60));
+                let timeLeft;
+                if ( hoursLeft == 0 )
+                    timeLeft = "less than an hour";
+                else if ( hoursLeft <= 24 )
+                    timeLeft = hoursLeft +" hours";
+                else {
+                    let daysLeft = Math.floor(hoursLeft / 24);
+                    hoursLeft = Math.floor(hoursLeft % 24);
+                    timeLeft = daysLeft +" days, "+ hoursLeft +" hours";
+                }
+                out += "\n - **"+ boost.id +"**  _ends in "+ timeLeft +"_";
             }
         }
         return out;
