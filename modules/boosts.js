@@ -201,6 +201,7 @@ async function addcards(args, callback) {
 async function removecards(args, callback) {
     let id = args.shift();
     let query = utils.getRequestFromFiltersNoPrefix(args);
+    query["boost"] = id;
     let boosts = await mongodb.collection("boosts").find({}).toArray();
     if ( !utils.obj_array_search(boosts, id) )
         callback(utils.formatError(null, null, "No boost exists with that ID"));
