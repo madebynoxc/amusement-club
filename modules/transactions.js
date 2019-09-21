@@ -269,6 +269,22 @@ async function _confirm(user, transaction, callback) {
         // Remove the seller's rating from this instance of the card.
         delete transaction.card.rating;
 
+        // See if the card buyer recently auctioned this card (anti-fraud report 3)
+        collection.findOne({
+            "from_id": toUser.discord_id, 
+            "status": "auction",
+            "card.name": transaction.card.name,
+            "card.level": transaction.card.level,
+            "card.collection": transaction.card.collection
+        })
+        .then( function(foundTrans) {
+            if (foundTrans)
+                mongodb.collection("aucReneges").insertOne({
+                    "auction":foundTrans,
+                    "buyBack":transaction
+                });
+        });
+
         await dbmanager.pushCard(transaction.to_id, transaction.card);
         await ucollection.update(
                 { discord_id: fromUser.discord_id },
