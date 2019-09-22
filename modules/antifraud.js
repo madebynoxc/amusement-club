@@ -119,7 +119,7 @@ async function report(args, callback) {
 async function purgeOldRecords() {
     console.log("Removing old anti-fraud records.");
     mongodb.collection("overpricedAucs")
-        .remove({"date":{$lt:new Date(new Date() -5)}})
+        .remove({"date":{$lt:new Date(new Date() -(1000*60*60*24*7))}})
         .catch(function(e) {
             console.log("problem purging old anti-fraud data from `overpricedAucs`:\n"+ e);
         });
