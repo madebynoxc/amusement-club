@@ -61,7 +61,7 @@ async function report(args, callback) {
                     {$project: 
                         {
                             "discord_id":"$discord_id",
-                            "sellRate": {$divide: ["$sold", "$unsold"]},
+                            "sellRate": {$divide: ["$sold", {$add: ["$sold", "$unsold"]}]},
                             "sold":"$sold",
                             "unsold":"$unsold"
                         }
@@ -72,7 +72,7 @@ async function report(args, callback) {
             docs = docs1.concat(docs2);
             docs = docs.slice(0,20);
             for ( let doc of docs ) {
-                out += parseFloat(doc.sellRate).toFixed(1) +' - '+ doc.sold +' - '+ doc.unsold +' - '+ doc.discord_id +"\n";
+                out += parseFloat(doc.sellRate).toFixed(1) *100 +'% - '+ doc.sold +' - '+ doc.unsold +' - <@'+ doc.discord_id +">\n";
             }
             callback(out);
             break;
@@ -92,11 +92,23 @@ async function report(args, callback) {
                 out += "( no data yet )";
             callback(out);
             break;
+        case '3':
+            out += "Anti-Fraud Report 3\n"+
+                "**Auction seller got their card back**\n"+
+                "Player - Auction ID - Buyback Trans ID\n"
+            docs = await mongodb.collection('aucReneges').find().toArray();
+            for ( let doc of docs ) {
+                out += '<@'+ doc.auction.from_id +'> - '+ doc.auction.id +' - '+ doc.buyBack.id +"\n";
+            }
+            if ( docs.length == 0 )
+                out += "( no data yet )";
+            callback(out);
+            break;
         default:
             callback("Available reports:\n"+
                     "```1 - Players whose auctions always seem to have a buyer\n"+
                     "2 - Auctions that sold considerably above the eval price\n"+
-                    "x - Auction seller got their card back\n"+
+                    "3 - Auction seller got their card back\n"+
                     "x - Suspected slave accounts\n"+
                     "x - Suspected tomato transfers from alt account\n"+
                     "x - Auc bidders that respond too fast (bots?)```");
@@ -107,8 +119,9 @@ async function report(args, callback) {
 async function purgeOldRecords() {
     console.log("Removing old anti-fraud records.");
     mongodb.collection("overpricedAucs")
-        .remove({"date":{$gt:new Date(new Date() -5)}})
+        .remove({"date":{$lt:new Date(new Date() -5)}})
         .catch(function(e) {
             console.log("problem purging old anti-fraud data from `overpricedAucs`:\n"+ e);
         });
 }
+

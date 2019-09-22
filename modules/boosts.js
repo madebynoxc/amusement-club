@@ -132,8 +132,18 @@ async function listText(args) {
                     utils.formatDateSimple(boost.start) +"_, _ends "+
                     utils.formatDateSimple(boost.end) +"_";
             } else {
-                out += "\n - **"+ boost.id +"**  _ends "+ 
-                    utils.formatDateSimple(boost.end) +"_";
+                let hoursLeft = Math.floor((boost.end - now)/(1000*60*60));
+                let timeLeft;
+                if ( hoursLeft == 0 )
+                    timeLeft = "less than an hour";
+                else if ( hoursLeft <= 24 )
+                    timeLeft = hoursLeft +" hours";
+                else {
+                    let daysLeft = Math.floor(hoursLeft / 24);
+                    hoursLeft = Math.floor(hoursLeft % 24);
+                    timeLeft = daysLeft +" days, "+ hoursLeft +" hours";
+                }
+                out += "\n - **"+ boost.id +"**  _ends in "+ timeLeft +"_";
             }
         }
         return out;
@@ -191,6 +201,7 @@ async function addcards(args, callback) {
 async function removecards(args, callback) {
     let id = args.shift();
     let query = utils.getRequestFromFiltersNoPrefix(args);
+    query["boost"] = id;
     let boosts = await mongodb.collection("boosts").find({}).toArray();
     if ( !utils.obj_array_search(boosts, id) )
         callback(utils.formatError(null, null, "No boost exists with that ID"));

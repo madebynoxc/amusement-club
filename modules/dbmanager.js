@@ -142,7 +142,7 @@ async function claim(user, guild, channelID, arg, callback) {
             return callback(`**${user.username}**, you can't claim more than **${max}** cards today`);
 
         amount = Math.max(parseInt(amount), 1);
-        remainingAmount = amount; // This will decrement as cards are chosen.
+        let remainingAmount = amount; // This will decrement as cards are chosen.
 
         let claimCost = getClaimsCost(dbUser, amount);
         let nextClaim = 50 * (dbUser.dailystats.claim + amount + 1);
