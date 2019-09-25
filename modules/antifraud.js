@@ -141,7 +141,7 @@ async function pruneOldRecords() {
         });
     console.log("Pruning data for fraud report 3");
     mongodb.collection(report3col)
-        .remove({"buyBack.time":{$lt:new Date(new Date() -(1000*60*60*24*7))}})
+        .remove({"buyBack.time":{$lt:new Date(new Date() -(1000*60*60*24*10))}})
         .catch(function(e) {
             console.log("problem pruning old anti-fraud data from `overpricedAucs`:\n"+ e);
         });
