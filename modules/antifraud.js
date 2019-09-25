@@ -11,14 +11,19 @@ var mongodb;
 const settings = require('../settings/general.json');
 const utils = require('./localutils.js');
 const dbmanager = require('./dbmanager.js');
+const report1col = 'aucSellRate';
+const report2col = 'overpricedAucs';
+const report3col = 'aucReneges';
 
 function connect(db, client, shard) {
     mongodb = db;
     bot = client;
 
     if(shard == 0) {
-        purgeOldRecords();
-        setInterval(function() {purgeOldRecords();}, 1000 * 60 * 60 * 12);
+        purgeReport1Records();
+        pruneOldRecords();
+        setInterval(function() {purgeReport1Records();}, 1000 * 60 * 60 * 24 * 7);
+        setInterval(function() {pruneOldRecords();}, 1000 * 60 * 60 * 12);
     }
 }
 
@@ -43,7 +48,7 @@ async function report(args, callback) {
             out += "Anti-Fraud Report 1\n"+
                 "**Players who sell too easily at auction**\n"+
                 "sold% - sold - unsold - discord ID\n"
-            let docs1 = await mongodb.collection('aucSellRate').aggregate([
+            let docs1 = await mongodb.collection(report1col).aggregate([
                     {$match:{"unsold":{$exists:false}, "sold":{$gt:7}}},
                     {$project: 
                         {
@@ -56,7 +61,7 @@ async function report(args, callback) {
                     {"$sort": {"sold": -1}},
                     {"$limit": 20}
             ]).toArray();
-            let docs2 = await mongodb.collection('aucSellRate').aggregate([
+            let docs2 = await mongodb.collection(report1col).aggregate([
                     {$match:{"unsold":{$exists:true},"sold":{$gt:7}}},
                     {$project: 
                         {
@@ -80,7 +85,7 @@ async function report(args, callback) {
             out += "Anti-Fraud Report 2\n"+
                 "**Auctions that sold considerably above the eval price**\n"+
                 "Times above eval - Auction ID - Date\n"
-            docs = await mongodb.collection('overpricedAucs').aggregate([
+            docs = await mongodb.collection(report2col).aggregate([
                     {$match:{}},
                     {"$sort": {"factor": -1}},
                     {"$limit": 40}
@@ -96,7 +101,7 @@ async function report(args, callback) {
             out += "Anti-Fraud Report 3\n"+
                 "**Auction seller got their card back**\n"+
                 "Player - Auction ID - Buyback Trans ID\n"
-            docs = await mongodb.collection('aucReneges').find().toArray();
+            docs = await mongodb.collection(report3col).find().toArray();
             for ( let doc of docs ) {
                 out += '<@'+ doc.auction.from_id +'> - '+ doc.auction.id +' - '+ doc.buyBack.id +"\n";
             }
@@ -116,12 +121,30 @@ async function report(args, callback) {
     }
 }
 
-async function purgeOldRecords() {
-    console.log("Removing old anti-fraud records.");
-    mongodb.collection("overpricedAucs")
-        .remove({"date":{$lt:new Date(new Date() -(1000*60*60*24*7))}})
+// Removes all records in report one. Called periodically.
+async function purgeReport1Records() {
+    console.log("Purging data for fraud report 1");
+    mongodb.collection(report1col)
+        .remove()
         .catch(function(e) {
-            console.log("problem purging old anti-fraud data from `overpricedAucs`:\n"+ e);
+            console.log("problem purging old anti-fraud data from `aucSellRate`:\n"+ e);
         });
 }
+
+// Reports with date metadata have their records pruned by this function.
+async function pruneOldRecords() {
+    console.log("Pruning data for fraud report 2");
+    mongodb.collection(report2col)
+        .remove({"date":{$lt:new Date(new Date() -(1000*60*60*24*7))}})
+        .catch(function(e) {
+            console.log("problem pruning old anti-fraud data from `overpricedAucs`:\n"+ e);
+        });
+    console.log("Pruning data for fraud report 3");
+    mongodb.collection(report3col)
+        .remove({"buyBack.time":{$lt:new Date(new Date() -(1000*60*60*24*7))}})
+        .catch(function(e) {
+            console.log("problem pruning old anti-fraud data from `overpricedAucs`:\n"+ e);
+        });
+}
+
 
