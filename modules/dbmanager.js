@@ -1404,14 +1404,14 @@ function isAdmin(sender) {
 
 async function pushCard(userID, card) {
     let ucollection = mongodb.collection('users');
+    let success = true;
     let command = await ucollection.update(
         { discord_id: userID, cards: {$elemMatch: utils.getCardQuery(card)} }, 
         { $inc: {"cards.$.amount": 1} });
 
     if(!command.result.ok)
-        return false;
-
-    if(command.result.nModified == 0) {
+        success = false;
+    else if(command.result.nModified == 0) {
         card.obtained = new Date();
         card.amount = 1;
         command = await ucollection.update(
@@ -1419,10 +1419,38 @@ async function pushCard(userID, card) {
             { $push: { cards: card } });
 
         if(command.result.nModified == 0 || !command.result.ok)
-            return false;
+            success = false;
     }
 
-    return true;
+    if (success) {
+        // Check if this card completes the user's collection.
+        let reqCol = mongodb.collection(getCardDbColName(card));
+        let colCardCount = await reqCol.count({collection: card.collection});
+        let userCards = await getUserCards(userID, { "cards.collection": card.collection }).toArray();
+        let userCardCount = userCards[0]? userCards[0].cards.length : 0;
+        if ( userCardCount == colCardCount ) {
+             let completedColsRes = await mongodb.collection('users').findOne(
+                     { "discord_id": userID, "completedCols": {$exists: true} },
+                     { "completedCols":true });
+             let completedCols = completedColsRes ? completedColsRes.completedCols : [];
+             //console.log(JSON.stringify(completedCols));
+             let completedCol = utils.obj_array_search(completedCols, card.collection, 'colID');
+             //console.log(JSON.stringify(completedCol));
+             if ( !completedCol ) {
+                 completedCol = {"colID": card.collection, "timesCompleted":0, "reset":true};
+                 completedCols.push(completedCol);
+             }
+             if ( completedCol.reset === true ) {
+                 completedCol.reset = false;
+                 completedCol.timesCompleted++;
+                 mongodb.collection('users').updateOne({"discord_id": userID}, 
+                         {$set: {"completedCols": completedCols}});
+                 console.log("reset collection?");
+             }
+        }
+    }
+
+    return success;
 }
 
 async function pullCard(userID, card) {
