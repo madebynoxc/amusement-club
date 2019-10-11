@@ -369,6 +369,9 @@ async function checkAuctionList(client) {
     }
 
     if(auc.lastbidder) {
+        // Remove the seller's rating from this instance of the card.
+        delete auc.card.rating;
+
         let bidder = await ucollection.findOne({discord_id: auc.lastbidder});
         await dbManager.pushCard(auc.lastbidder, auc.card);
         let tomatoback = Math.floor(forge.getCardEffect(bidder, 'auc', auc.price)[0]);
@@ -378,9 +381,6 @@ async function checkAuctionList(client) {
         // Remove this user's rating from the global average?
         if ( auc.card.hasOwnProperty('rating') && auc.card.amount == 1 )
             dbManager.removeCardRatingFromAve(auc.card);
-
-        // Remove the seller's rating from this instance of the card.
-        delete auc.card.rating;
 
         transaction.to = bidder.username;
         transaction.to_id = bidder.discord_id;
