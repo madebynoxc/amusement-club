@@ -61,7 +61,7 @@ async function list(userID, filters, channelID, callback) {
             data.push("");
 
         let stars = await prestigeCount(userID, c.id);
-        data[Math.floor(count/15)] += c.id + " ✯".repeat(stars) + "\n";
+        data[Math.floor(count/15)] += c.id + " "+ "✯".repeat(stars) + "\n";
         count++;
     };
     
@@ -167,7 +167,7 @@ async function reset(userID, name, chanID, callback) {
 
 // reset part two. called if the confirmation message is accepted.
 async function reset2(userID, col, callback) {
-    if ( userHasAllCards(userID, col.id) ) {
+    if ( await userHasAllCards(userID, col.id) ) {
         let userDoc = await mongodb.collection('users').findOne({"discord_id": userID});
 
         // Take one copy of each card in this collection from the user.
@@ -176,18 +176,19 @@ async function reset2(userID, col, callback) {
                 if ( userDoc.cards[j].amount > 1 )
                     userDoc.cards[j].amount--;
                 else
-                    delete userDoc.cards[j];
+                    userDoc.cards.splice(j,1);
             }
         }
 
-        // Update "timesCompleted"
+        // Update "timesCompleted" and "notified"
         let completedCol = utils.obj_array_search(userDoc.completedCols, col.id, 'colID');
         completedCol.timesCompleted++;
+        completedCol.notified = false;
 
         // Save changes.
         await mongodb.collection('users').save(userDoc);
 
-        callback(utils.formatConfirm(null,"Success","Your `"+ col.id +"` collection has been reset. You can collect the cards again and try to earn even more prestige stars!"));
+        callback(utils.formatConfirm(null,"Success","Your _"+ col.name +"_ collection has been reset. You can collect the cards again and try to earn even more prestige stars!"));
     } else {
         callback(utils.formatError(null,"Oops!","You must complete this collection before you can reset it."));
     }
@@ -211,7 +212,7 @@ async function prestigeCount(userID, colID) {
 }
 
 async function userHasAllCards(userID, colID) {
-    let col = cardCollection.findOne({"id": colID});
+    let col = utils.obj_array_search(cache, colID);
     if ( !col ) return false;
     let reqCol = col.special? mongodb.collection('promocards') : cardCollection;
     let colCardCount = await reqCol.count({collection: colID});
