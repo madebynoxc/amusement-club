@@ -47,7 +47,8 @@ module.exports = {
     cardComparator,
     diff,
     obj_array_search,
-    randomChance
+    randomChance,
+    sendDM
 }
 
 const fs = require('fs');
@@ -566,3 +567,18 @@ function getCardArgs(card) {
 // {"$group": {_id: 0, cards: {"$push": "$cards"}}},
 // {"$project": {cards: '$cards', _id: 0}}
 // ])
+
+function sendDM(toID, embed) {
+    bot.createDMChannel(toID, (createErr, newChannel) => {
+        if(newChannel) {
+            bot.sendMessage({to: newChannel.id, embed: embed}, 
+                (err, resp) => {
+                if(err) {
+                    console.log("[Auc] Failed to send message to created DM channel");
+                    //console.error(err);
+                }
+            });
+        }
+    });
+}
+

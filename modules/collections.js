@@ -1,6 +1,6 @@
 module.exports = {
     connect, processRequest, getCollections, addCollection, parseCollection, getByID,
-    getRandom
+    getRandom, prestigeCount, userHasAllCards 
 }
 
 const dbManager = require("./dbmanager.js");
@@ -30,13 +30,17 @@ function processRequest(userID, args, channelID, callback) {
                 });
             }
             break;
+        case "reset":
+            if(args.length > 0)
+                reset(userID, args.join(''), channelID, callback);
+            break;
         default:
             args.unshift(req);
             list(userID, args, channelID, callback);
     }
 }
 
-function list(userID, filters, channelID, callback) {
+async function list(userID, filters, channelID, callback) {
     let listed = [];
 
     if(filters)
@@ -51,13 +55,15 @@ function list(userID, filters, channelID, callback) {
     let data = [];
     let count = 0;
 
-    listed.sort(dbManager.dynamicSort("id")).map(c => {
+    //listed.sort(dbManager.dynamicSort("id")).map(async function(c) {
+    for ( c of listed.sort(dbManager.dynamicSort("id")) ) {
         if(count % 15 == 0)
             data.push("");
 
-        data[Math.floor(count/15)] += c.id + "\n";
+        let stars = await prestigeCount(userID, c.id);
+        data[Math.floor(count/15)] += c.id + " ✯".repeat(stars) + "\n";
         count++;
-    });
+    };
     
     react.addNewPagination(userID, 
         "Found collections (" + listed.length + " overall):", data, channelID);
@@ -74,6 +80,7 @@ async function getInfo(userID, name, callback) {
         {"$match": {collection: col.id}},
         {"$sample": {size: 1}}
     ]).toArray();
+    let stars = await prestigeCount(userID, col.id);
 
     dbManager.getUserCards(userID, { "cards.collection": col.id }).toArray((err, objs) => {
         let userCardCount = objs[0]? objs[0].cards.length : 0;
@@ -82,6 +89,8 @@ async function getInfo(userID, name, callback) {
 
         resp += "Overall cards: **" + colCardCount + "**\n";
         resp += "You have: **" + userCardCount + " (" + Math.floor((userCardCount/colCardCount) * 100) + "%)**\n";
+        if ( stars > 0 )
+            resp += "Prestige: ✯".repeat(stars) +"\n";
         resp += "Aliases: **" + col.aliases.join(" **|** ") + "**\n";
         //resp += col.compressed? "Uses JPG\n" : "Uses PNG\n";
         if(col.origin)
@@ -135,5 +144,79 @@ function getRandom() {
     do { r = cache[Math.floor(Math.random()*cache.length)]; }
     while ( r.special || r.id == "special");
     return r;
+}
+
+// user-initiated collection reset
+async function reset(userID, name, chanID, callback) {
+    let col = parseCollection(name)[0];
+    if(!col)
+        return callback(utils.formatError(null, "Can't find collection matching that request"));
+    react.addNewConfirmation(
+        userID, 
+        utils.formatWarning(null,'Caution:', '<@'+ userID +'>, you are about to '+ 
+            'trade in one copy of each card you own in the '+ col.name +' collection for a prestige star. Proceed?'), 
+        chanID, 
+        () => {
+            reset2(userID, col, callback);
+        }, 
+        () => {
+            callback(utils.formatError(null,'Aborted', '<@'+ userID +'>, Your collection was not reset.'));
+        }
+    )
+}
+
+// reset part two. called if the confirmation message is accepted.
+async function reset2(userID, col, callback) {
+    if ( userHasAllCards(userID, col.id) ) {
+        let userDoc = await mongodb.collection('users').findOne({"discord_id": userID});
+
+        // Take one copy of each card in this collection from the user.
+        for (let j=0; j<userDoc.cards.length; j++) {
+            if ( userDoc.cards[j].collection == col.id ) {
+                if ( userDoc.cards[j].amount > 1 )
+                    userDoc.cards[j].amount--;
+                else
+                    delete userDoc.cards[j];
+            }
+        }
+
+        // Update "timesCompleted"
+        let completedCol = utils.obj_array_search(userDoc.completedCols, col.id, 'colID');
+        completedCol.timesCompleted++;
+
+        // Save changes.
+        await mongodb.collection('users').save(userDoc);
+
+        callback(utils.formatConfirm(null,"Success","Your `"+ col.id +"` collection has been reset. You can collect the cards again and try to earn even more prestige stars!"));
+    } else {
+        callback(utils.formatError(null,"Oops!","You must complete this collection before you can reset it."));
+    }
+}
+
+// Returns the number of prestige stars the given user has for the given col.
+async function prestigeCount(userID, colID) {
+    let stars = 0;
+    let completedColsRes = await mongodb.collection('users').findOne(
+            { "discord_id": userID, "completedCols": {$exists: true} },
+            { "completedCols":true });
+    if ( completedColsRes && completedColsRes.completedCols ) {
+        let completedCols = completedColsRes.completedCols;
+        //console.log(JSON.stringify(completedCols));
+        let completedCol = utils.obj_array_search(completedCols, colID, 'colID');
+        //console.log(JSON.stringify(completedCol));
+        if ( completedCol )
+            stars = completedCol.timesCompleted;
+    }
+    return stars;
+}
+
+async function userHasAllCards(userID, colID) {
+    let col = cardCollection.findOne({"id": colID});
+    if ( !col ) return false;
+    let reqCol = col.special? mongodb.collection('promocards') : cardCollection;
+    let colCardCount = await reqCol.count({collection: colID});
+    let userCards = await dbManager.getUserCards(userID, { "cards.collection": colID }).toArray();
+    let userCardCount = userCards[0]? userCards[0].cards.length : 0;
+    return userCardCount >= colCardCount;
 }
 

@@ -245,7 +245,7 @@ async function claim(user, guild, channelID, arg, callback) {
 
         if(!dbUser.cards) dbUser.cards = [];
         for ( r of res ) {
-            await pushCard(user.id, r)
+            await pushCard(user.id, r, channelID)
         }
 
         dbUser.dailystats.claim += amount;
@@ -1402,7 +1402,7 @@ function isAdmin(sender) {
     return settings.admins.includes(sender);
 }
 
-async function pushCard(userID, card) {
+async function pushCard(userID, card, chanID=false) {
     let ucollection = mongodb.collection('users');
     let success = true;
     let command = await ucollection.update(
@@ -1424,28 +1424,29 @@ async function pushCard(userID, card) {
 
     if (success) {
         // Check if this card completes the user's collection.
-        let reqCol = mongodb.collection(getCardDbColName(card));
-        let colCardCount = await reqCol.count({collection: card.collection});
-        let userCards = await getUserCards(userID, { "cards.collection": card.collection }).toArray();
-        let userCardCount = userCards[0]? userCards[0].cards.length : 0;
-        if ( userCardCount == colCardCount ) {
-             let completedColsRes = await mongodb.collection('users').findOne(
-                     { "discord_id": userID, "completedCols": {$exists: true} },
-                     { "completedCols":true });
-             let completedCols = completedColsRes ? completedColsRes.completedCols : [];
-             //console.log(JSON.stringify(completedCols));
-             let completedCol = utils.obj_array_search(completedCols, card.collection, 'colID');
-             //console.log(JSON.stringify(completedCol));
-             if ( !completedCol ) {
-                 completedCol = {"colID": card.collection, "timesCompleted":0, "reset":true};
-                 completedCols.push(completedCol);
-             }
-             if ( completedCol.reset === true ) {
-                 completedCol.reset = false;
-                 completedCol.timesCompleted++;
-                 mongodb.collection('users').updateOne({"discord_id": userID}, 
-                         {$set: {"completedCols": completedCols}});
-                 console.log("reset collection?");
+        if ( await collections.userHasAllCards(userID, card.collection) ) {
+            let completedColsRes = await mongodb.collection('users').findOne(
+                    { "discord_id": userID, "completedCols": {$exists: true} },
+                    { "completedCols":true });
+            let completedCols = completedColsRes ? completedColsRes.completedCols : [];
+            //console.log(JSON.stringify(completedCols));
+            let completedCol = utils.obj_array_search(completedCols, card.collection, 'colID');
+            //console.log(JSON.stringify(completedCol));
+            if ( !completedCol ) {
+                completedCol = {"colID": card.collection, "timesCompleted":0, "notified":false};
+                completedCols.push(completedCol);
+            }
+            if ( completedCol.notified === false ) {
+                let msg = "<@"+ userID +">, You just completed the _"+ card.collection +"_ collection!\n"+
+                    "You now have the option to reset this collection in exchange for a prestige star. One copy of each card will be consumed, if you do. To proceed, type:\n"+
+                   "`->col reset "+ card.collection +"`";
+                if ( chanID )
+                    client.sendMessage({"to":chanID, "embed":utils.formatConfirm(null, "Collection completed!", msg)});
+                else
+                    utils.sendDM(userID, utils.formatConfirm(null, "Collection completed!", msg));
+                completedCol.notified = true;
+                mongodb.collection('users').updateOne({"discord_id": userID}, 
+                        {$set: {"completedCols": completedCols}});
              }
         }
     }
