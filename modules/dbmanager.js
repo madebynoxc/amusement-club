@@ -6,7 +6,7 @@ module.exports = {
     getCardFile, getDefaultChannel, isAdmin, needsCards, getCardURL,
     removeCardFromUser, addCardToUser, eval, whohas, block, fav, track, getDB,
     pushCard, pullCard, getCard, getCardDbColName, removeCardRatingFromAve,
-    getLastQueriedCard, setLastQueriedCard
+    getLastQueriedCard, setLastQueriedCard, topClout
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -815,6 +815,39 @@ function leaderboard(arg, guild, callback) {
     });
 }
 
+async function topClout(arg, guild, callback) {
+    let rows = [];
+    let completedColsRes = await mongodb.collection('users').find(
+            { "completedCols": {$exists: true} },
+            { "username":true, "discord_id":true, "completedCols":true }).toArray();
+    for ( user of completedColsRes ) {
+        if ( guild.members[user.discord_id] ) {
+            let clout = 0;
+            for ( completedCol of user.completedCols ) 
+                clout += completedCol.timesCompleted;
+            rows.push({"score":clout, "text": '**'+ user.username +'** ('+ clout +' ✯)\n'});
+        }
+    }
+    // sort rows by score
+    for ( let i in rows ) {
+        for ( let j in rows ) {
+            if ( rows[j].score < rows[i].score ) {
+                let jj = {"score":rows[j].score, "text":rows[j].text};
+                let ii = {"score":rows[i].score, "text":rows[i].text};
+                rows[i] = jj;
+                rows[j] = ii;
+            }
+        }
+    }
+    let out = '';
+    for ( let r of rows ) {
+        if ( r.score > 0 )
+            out += r.text;
+    }
+    callback(utils.formatInfo(null, "Players with the most clout on this server:", out));
+}
+
+
 function award(uID, amout, callback) {
     let collection = mongodb.collection('users');
     collection.findOne({ discord_id: uID }).then((user) => {
@@ -1438,7 +1471,7 @@ async function pushCard(userID, card, chanID=false) {
             }
             if ( completedCol.notified === false ) {
                 let msg = "<@"+ userID +">, You just completed the _"+ card.collection +"_ collection!\n"+
-                    "You now have the option to reset this collection in exchange for a prestige star. One copy of each card will be consumed, if you do. To proceed, type:\n"+
+                    "You now have the option to reset this collection in exchange for a clout star. One copy of each card will be consumed, if you do. To proceed, type:\n"+
                    "`->col reset "+ card.collection +"`";
                 if ( chanID )
                     client.sendMessage({"to":chanID, "embed":utils.formatConfirm(null, "Collection completed!", msg)});

@@ -329,14 +329,16 @@ async function getCommand(user, channel, guild, message, event, callback) {
                     callback(user.username + ", 'award' is admin-only command");
                 }
                 return;
+            case 'top':
             case 'lead':
             case 'leaderboard':
             case 'leaderboards':
                 if(channelType == 0) callback("You can't check leaderboards in DMs");
                 else {
-                    dbManager.leaderboard(cnt, guild, (text) =>{
-                        callback(text);
-                    });
+                    if ( cnt[0] && cnt[0].toLowerCase() == 'clout')
+                        dbManager.topClout(cnt, guild, callback);
+                    else
+                        dbManager.leaderboard(cnt, guild, callback);
                 }
                 return;
             case 'has':

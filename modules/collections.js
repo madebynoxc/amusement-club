@@ -1,6 +1,6 @@
 module.exports = {
     connect, processRequest, getCollections, addCollection, parseCollection, getByID,
-    getRandom, prestigeCount, userHasAllCards 
+    getRandom, getClout, userHasAllCards 
 }
 
 const dbManager = require("./dbmanager.js");
@@ -60,8 +60,8 @@ async function list(userID, filters, channelID, callback) {
         if(count % 15 == 0)
             data.push("");
 
-        let stars = await prestigeCount(userID, c.id);
-        data[Math.floor(count/15)] += c.id + " "+ "✯".repeat(stars) + "\n";
+        let clout = await getClout(userID, c.id);
+        data[Math.floor(count/15)] += c.id + " "+ "✯".repeat(clout) + "\n";
         count++;
     };
     
@@ -80,7 +80,7 @@ async function getInfo(userID, name, callback) {
         {"$match": {collection: col.id}},
         {"$sample": {size: 1}}
     ]).toArray();
-    let stars = await prestigeCount(userID, col.id);
+    let clout = await getClout(userID, col.id);
 
     dbManager.getUserCards(userID, { "cards.collection": col.id }).toArray((err, objs) => {
         let userCardCount = objs[0]? objs[0].cards.length : 0;
@@ -89,8 +89,8 @@ async function getInfo(userID, name, callback) {
 
         resp += "Overall cards: **" + colCardCount + "**\n";
         resp += "You have: **" + userCardCount + " (" + Math.floor((userCardCount/colCardCount) * 100) + "%)**\n";
-        if ( stars > 0 )
-            resp += "Prestige: ✯".repeat(stars) +"\n";
+        if ( clout > 0 )
+            resp += "Clout: "+ "✯".repeat(clout) +"\n";
         resp += "Aliases: **" + col.aliases.join(" **|** ") + "**\n";
         //resp += col.compressed? "Uses JPG\n" : "Uses PNG\n";
         if(col.origin)
@@ -154,7 +154,7 @@ async function reset(userID, name, chanID, callback) {
     react.addNewConfirmation(
         userID, 
         utils.formatWarning(null,'Caution:', '<@'+ userID +'>, you are about to '+ 
-            'trade in one copy of each card you own in the '+ col.name +' collection for a prestige star. Proceed?'), 
+            'trade in one copy of each card you own in the '+ col.name +' collection for a clout star. Proceed?'), 
         chanID, 
         () => {
             reset2(userID, col, callback);
@@ -188,15 +188,15 @@ async function reset2(userID, col, callback) {
         // Save changes.
         await mongodb.collection('users').save(userDoc);
 
-        callback(utils.formatConfirm(null,"Success","Your _"+ col.name +"_ collection has been reset. You can collect the cards again and try to earn even more prestige stars!"));
+        callback(utils.formatConfirm(null,"Success","Your _"+ col.name +"_ collection has been reset. You can collect the cards again and try to earn even more clout stars!"));
     } else {
         callback(utils.formatError(null,"Oops!","You must complete this collection before you can reset it."));
     }
 }
 
-// Returns the number of prestige stars the given user has for the given col.
-async function prestigeCount(userID, colID) {
-    let stars = 0;
+// Returns the number of clout stars the given user has for the given col.
+async function getClout(userID, colID) {
+    let clout = 0;
     let completedColsRes = await mongodb.collection('users').findOne(
             { "discord_id": userID, "completedCols": {$exists: true} },
             { "completedCols":true });
@@ -206,9 +206,9 @@ async function prestigeCount(userID, colID) {
         let completedCol = utils.obj_array_search(completedCols, colID, 'colID');
         //console.log(JSON.stringify(completedCol));
         if ( completedCol )
-            stars = completedCol.timesCompleted;
+            clout = completedCol.timesCompleted;
     }
-    return stars;
+    return clout;
 }
 
 async function userHasAllCards(userID, colID) {
