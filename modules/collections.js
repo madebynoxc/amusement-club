@@ -186,7 +186,14 @@ async function reset2(userID, col, callback) {
         }
 
         // Update "timesCompleted" and "notified"
-        let completedCol = utils.obj_array_search(userDoc.completedCols, col.id, 'colID');
+        if ( !userDoc.completedCols )
+            userDoc.completedCols = [];
+        let completedCols = userDoc.completedCols;
+        let completedCol = utils.obj_array_search(completedCols, col.id, 'colID');
+        if ( !completedCol ) {
+            completedCol = {"colID": col.id, "timesCompleted":0, "notified":false};
+            completedCols.push(completedCol);
+        }
         completedCol.timesCompleted++;
         completedCol.notified = false;
 
