@@ -843,10 +843,8 @@ async function topClout(arg, guild, callback) {
     let maxRows = 15;
     let rowsAdded = 0;
     for ( let r of rows ) {
-        if ( r.score > 0 && rowsAdded < maxRows ) {
-            out += r.text;
-            rowsAdded++;
-        }
+        if ( r.score > 0 && rowsAdded < maxRows )
+            out += ++rowsAdded +'. '+ r.text;
     }
     callback(utils.formatInfo(null, "Players with the most clout on this server:", out));
 }
