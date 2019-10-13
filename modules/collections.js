@@ -151,6 +151,11 @@ async function reset(userID, name, chanID, callback) {
     let col = parseCollection(name)[0];
     if(!col)
         return callback(utils.formatError(null, "Can't find collection matching that request"));
+    let reqCol = col.special? mongodb.collection('promocards') : cardCollection;
+    if ( await reqCol.count({collection: col.id}) < 100 ) {
+        return callback(utils.formatError(null,'Problem', '<@'+ userID +'>, you cannot '+
+                    'gain prestige for a collection that has fewer than 100 cards.'));
+    }
     react.addNewConfirmation(
         userID, 
         utils.formatWarning(null,'Caution:', '<@'+ userID +'>, you are about to '+ 
