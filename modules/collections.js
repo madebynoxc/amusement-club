@@ -151,6 +151,11 @@ async function reset(userID, name, chanID, callback) {
     let col = parseCollection(name)[0];
     if(!col)
         return callback(utils.formatError(null, "Can't find collection matching that request"));
+    let reqCol = col.special? mongodb.collection('promocards') : cardCollection;
+    if ( await reqCol.count({collection: col.id}) < 100 ) {
+        return callback(utils.formatError(null,'Problem', '<@'+ userID +'>, you cannot '+
+                    'gain prestige for a collection that has fewer than 100 cards.'));
+    }
     react.addNewConfirmation(
         userID, 
         utils.formatWarning(null,'Caution:', '<@'+ userID +'>, you are about to '+ 
@@ -181,7 +186,14 @@ async function reset2(userID, col, callback) {
         }
 
         // Update "timesCompleted" and "notified"
-        let completedCol = utils.obj_array_search(userDoc.completedCols, col.id, 'colID');
+        if ( !userDoc.completedCols )
+            userDoc.completedCols = [];
+        let completedCols = userDoc.completedCols;
+        let completedCol = utils.obj_array_search(completedCols, col.id, 'colID');
+        if ( !completedCol ) {
+            completedCol = {"colID": col.id, "timesCompleted":0, "notified":false};
+            completedCols.push(completedCol);
+        }
         completedCol.timesCompleted++;
         completedCol.notified = false;
 

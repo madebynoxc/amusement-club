@@ -1464,9 +1464,7 @@ async function pushCard(userID, card, chanID=false) {
                     { "discord_id": userID, "completedCols": {$exists: true} },
                     { "completedCols":true });
             let completedCols = completedColsRes ? completedColsRes.completedCols : [];
-            //console.log(JSON.stringify(completedCols));
             let completedCol = utils.obj_array_search(completedCols, card.collection, 'colID');
-            //console.log(JSON.stringify(completedCol));
             if ( !completedCol ) {
                 completedCol = {"colID": card.collection, "timesCompleted":0, "notified":false};
                 completedCols.push(completedCol);
