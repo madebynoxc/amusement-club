@@ -159,7 +159,7 @@ async function bid(user, args, callback) {
         else msg += "To remain in the auction, you should bid more than **" + getNextBid(auc) + "**🍅\n"
         msg += "Use `->auc bid " + auc.id + " [new bid]`\n";
         msg += "This auction will end in **" + getTimeUntilAucEnds(auc) + "**";
-        sendDM(auc.lastbidder, utils.formatWarning(null, "Oh no!", msg));
+        utils.sendDM(auc.lastbidder, utils.formatWarning(null, "Oh no!", msg));
     } else {
         auc.price = price;
         let strprice = hidebid? "???" : price;
@@ -167,7 +167,7 @@ async function bid(user, args, callback) {
 
         if(hidebid) msg += "The bid is hidden by hero effect.\n";
         msg += "This auction will end in **" + getTimeUntilAucEnds(auc) + "**";
-        sendDM(auc.author, utils.formatInfo(null, "Yay!", msg));
+        utils.sendDM(auc.author, utils.formatInfo(null, "Yay!", msg));
     }
 
     if ( !auc.bids )
@@ -461,8 +461,8 @@ async function checkAuctionList(client) {
 
         let yaaymes = "You won an auction for **" + utils.getFullCard(auc.card) + "**!\nCard is now yours.\n";
         if(tomatoback > 0) yaaymes += "You got **" + tomatoback + "** tomatoes back from that transaction.";
-        sendDM(auc.lastbidder, utils.formatConfirm(null, "Yaaay!", yaaymes));
-        sendDM(auc.author, utils.formatConfirm(null, null, 
+        utils.sendDM(auc.lastbidder, utils.formatConfirm(null, "Yaaay!", yaaymes));
+        utils.sendDM(auc.author, utils.formatConfirm(null, null, 
             "Your auction for card **" + utils.getFullCard(auc.card) + "** finished!\n"
             + "You got **" + auc.price + "**🍅 for it"));
 
@@ -471,7 +471,7 @@ async function checkAuctionList(client) {
               {$inc:{"sold":1}}, {"upsert":true});
     } else {
         await dbManager.pushCard(auc.author, auc.card);
-        sendDM(auc.author, utils.formatError(null, null, 
+        utils.sendDM(auc.author, utils.formatError(null, null, 
             "Your auction for card **" + utils.getFullCard(auc.card) + "** finished, but nobody bid on it.\n"
             + "You got your card back"));
         // Fraud alerts logic
@@ -548,16 +548,3 @@ function getNextBid(auc) {
     //return auc.price + 25;
 }
 
-function sendDM(toID, embed) {
-    bot.createDMChannel(toID, (createErr, newChannel) => {
-        if(newChannel) {
-            bot.sendMessage({to: newChannel.id, embed: embed}, 
-                (err, resp) => {
-                if(err) {
-                    console.log("[Auc] Failed to send message to created DM channel");
-                    //console.error(err);
-                }
-            });
-        }
-    });
-}

@@ -6,7 +6,7 @@ module.exports = {
     getCardFile, getDefaultChannel, isAdmin, needsCards, getCardURL,
     removeCardFromUser, addCardToUser, eval, whohas, block, fav, track, getDB,
     pushCard, pullCard, getCard, getCardDbColName, removeCardRatingFromAve,
-    getLastQueriedCard, setLastQueriedCard
+    getLastQueriedCard, setLastQueriedCard, topClout
 }
 
 var MongoClient = require('mongodb').MongoClient;
@@ -245,7 +245,7 @@ async function claim(user, guild, channelID, arg, callback) {
 
         if(!dbUser.cards) dbUser.cards = [];
         for ( r of res ) {
-            await pushCard(user.id, r)
+            await pushCard(user.id, r, channelID)
         }
 
         dbUser.dailystats.claim += amount;
@@ -814,6 +814,41 @@ function leaderboard(arg, guild, callback) {
         }
     });
 }
+
+async function topClout(arg, guild, callback) {
+    let rows = [];
+    let completedColsRes = await mongodb.collection('users').find(
+            { "completedCols": {$exists: true} },
+            { "username":true, "discord_id":true, "completedCols":true }).toArray();
+    for ( user of completedColsRes ) {
+        if ( guild.members[user.discord_id] ) {
+            let clout = 0;
+            for ( completedCol of user.completedCols ) 
+                clout += completedCol.timesCompleted;
+            rows.push({"score":clout, "text": '**'+ user.username +'** ('+ clout +' ✯)\n'});
+        }
+    }
+    // sort rows by score
+    for ( let i in rows ) {
+        for ( let j in rows ) {
+            if ( rows[j].score < rows[i].score ) {
+                let jj = {"score":rows[j].score, "text":rows[j].text};
+                let ii = {"score":rows[i].score, "text":rows[i].text};
+                rows[i] = jj;
+                rows[j] = ii;
+            }
+        }
+    }
+    let out = '';
+    let maxRows = 15;
+    let rowsAdded = 0;
+    for ( let r of rows ) {
+        if ( r.score > 0 && rowsAdded < maxRows )
+            out += ++rowsAdded +'. '+ r.text;
+    }
+    callback(utils.formatInfo(null, "Players with the most clout on this server:", out));
+}
+
 
 function award(uID, amout, callback) {
     let collection = mongodb.collection('users');
@@ -1402,16 +1437,16 @@ function isAdmin(sender) {
     return settings.admins.includes(sender);
 }
 
-async function pushCard(userID, card) {
+async function pushCard(userID, card, chanID=false) {
     let ucollection = mongodb.collection('users');
+    let success = true;
     let command = await ucollection.update(
         { discord_id: userID, cards: {$elemMatch: utils.getCardQuery(card)} }, 
         { $inc: {"cards.$.amount": 1} });
 
     if(!command.result.ok)
-        return false;
-
-    if(command.result.nModified == 0) {
+        success = false;
+    else if(command.result.nModified == 0) {
         card.obtained = new Date();
         card.amount = 1;
         command = await ucollection.update(
@@ -1419,10 +1454,39 @@ async function pushCard(userID, card) {
             { $push: { cards: card } });
 
         if(command.result.nModified == 0 || !command.result.ok)
-            return false;
+            success = false;
     }
 
-    return true;
+    if (success) {
+        // Check if this card completes the user's collection.
+        if ( await collections.userHasAllCards(userID, card.collection) ) {
+            let completedColsRes = await mongodb.collection('users').findOne(
+                    { "discord_id": userID, "completedCols": {$exists: true} },
+                    { "completedCols":true });
+            let completedCols = completedColsRes ? completedColsRes.completedCols : [];
+            //console.log(JSON.stringify(completedCols));
+            let completedCol = utils.obj_array_search(completedCols, card.collection, 'colID');
+            //console.log(JSON.stringify(completedCol));
+            if ( !completedCol ) {
+                completedCol = {"colID": card.collection, "timesCompleted":0, "notified":false};
+                completedCols.push(completedCol);
+            }
+            if ( completedCol.notified === false ) {
+                let msg = "<@"+ userID +">, You just completed the _"+ card.collection +"_ collection!\n"+
+                    "You now have the option to reset this collection in exchange for a clout star. One copy of each card will be consumed, if you do. To proceed, type:\n"+
+                   "`->col reset "+ card.collection +"`";
+                if ( chanID )
+                    client.sendMessage({"to":chanID, "embed":utils.formatConfirm(null, "Collection completed!", msg)});
+                else
+                    utils.sendDM(userID, utils.formatConfirm(null, "Collection completed!", msg));
+                completedCol.notified = true;
+                mongodb.collection('users').updateOne({"discord_id": userID}, 
+                        {$set: {"completedCols": completedCols}});
+             }
+        }
+    }
+
+    return success;
 }
 
 async function pullCard(userID, card) {
