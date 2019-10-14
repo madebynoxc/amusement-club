@@ -176,7 +176,7 @@ async function reset2(userID, col, callback) {
         let userDoc = await mongodb.collection('users').findOne({"discord_id": userID});
 
         // Take one copy of each card in this collection from the user.
-        for (let j=0; j<userDoc.cards.length; j++) {
+        for (let j=userDoc.cards.length -1; j>=0; j--) {
             if ( userDoc.cards[j].collection == col.id ) {
                 if ( userDoc.cards[j].amount > 1 )
                     userDoc.cards[j].amount--;
