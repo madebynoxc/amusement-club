@@ -130,8 +130,9 @@ async function claim(user, guild, channelID, arg, callback) {
 
         if(!dbUser.dailystats) dbUser.dailystats = {summon:0, send: 0, claim: 0, get: 0, quests: 0};
 
-        if(promo)
-            return claimPromotion(user, dbUser, Math.max(parseInt(amount), 1), callback);
+        if(promo && promotions.current == -1){
+            return callback("**" + user.username + "**, there are no promotional cards available now");
+        }
 
         let max = 20 - dbUser.dailystats.claim;
         if (max === 0)
@@ -142,16 +143,28 @@ async function claim(user, guild, channelID, arg, callback) {
             return callback(`**${user.username}**, you can't claim more than **${max}** cards today`);
 
         amount = Math.max(parseInt(amount), 1);
+        if(promo && !dbUser.dailystats.promoclaim)
+            dbUser.dailystats.promoclaim = 0;
+        
         let remainingAmount = amount; // This will decrement as cards are chosen.
-
-        let claimCost = getClaimsCost(dbUser, amount);
+        let claimCost = getClaimsCost(dbUser, amount, promo);
         let nextClaim = 50 * (dbUser.dailystats.claim + amount + 1);
-        if(dbUser.exp < claimCost) 
+        if(promo) {
+            nextClaim = 50 * (dbUser.dailystats.promoclaim + amount + 1);
+            console.log(claimCost);
+            console.log(nextClaim);
+            if(dbUser.promoexp < claimCost) 
+                return callback("**" + user.username + "**, you don't have enough "
+                    + promotions.list[promotions.current].currency + " "
+                    + ((amount == 1)? "to claim a card" : "to claim **" + amount + "** cards")
+                    + "\nYou need at least **" + claimCost + "**, but you have **" + Math.floor(dbUser.promoexp) + "**");
+
+        } else if(dbUser.exp < claimCost) 
             return callback("**" + user.username + "**, you don't have enough 🍅 "
                 + ((amount == 1)? "to claim a card" : "to claim **" + amount + "** cards")
                 + "\nYou need at least **" + claimCost + "**, but you have **" + Math.floor(dbUser.exp) + "**");
 
-        let collection = mongodb.collection('cards');
+        let collection = promo? mongodb.collection('promocards') : mongodb.collection('cards');
         let query = [ 
             { $match: { } },
             { $sample: { size: 1 } } 
@@ -160,12 +173,11 @@ async function claim(user, guild, channelID, arg, callback) {
         if(guild.blockany)
             any = false;
 
-
         // This var will store the claimed cards.
         let res = [];
 
         // Grab a random 3-star card for users with that effect card.
-        if(forge.getCardEffect(dbUser, 'claim', false)[0]) {
+        if(forge.getCardEffect(dbUser, 'claim', false)[0] && !promo) {
             let tohruGift = await collection.aggregate([ 
                      { $match: { level : 3, "collection": collections.getRandom().id } },
                      { $sample: { size: 1 } } 
@@ -174,10 +186,12 @@ async function claim(user, guild, channelID, arg, callback) {
             remainingAmount--;
         } 
 
-        while ( remainingAmount > 0 ) {
+        while (remainingAmount > 0) {
             let randomNum = Math.random();
             query[0].$match = {}; // reset the match query for each card
-            if ( boost && utils.randomChance(boost.chance) ) {
+            if(promo) {
+                query[0].$match.collection = promotions.list[promotions.current].name;
+            } else if (boost && utils.randomChance(boost.chance)) {
                 query[0].$match.boost = boost.id;
             } else if (guild && guild.lock && !any) {
                 query[0].$match.collection = guild.lock;
@@ -197,6 +211,7 @@ async function claim(user, guild, channelID, arg, callback) {
             } else {
                 query[0].$match.collection = collections.getRandom().id;
             }
+
             let cardRes = await collection.aggregate(query).toArray();
             if ( cardRes.length == 0 )
                 client.sendMessage({"to":settings.logchannel, "message":`Card claim query returned empty result: ${JSON.stringify(query)}`});
@@ -232,11 +247,14 @@ async function claim(user, guild, channelID, arg, callback) {
         }
 
         nextClaim = heroes.getHeroEffect(dbUser, 'claim_akari', nextClaim);
-        if(claimCost/amount >= 400) phrase += "-You are claiming for extremely high price-\n";            
-        phrase += "Your next claim will cost **" + nextClaim + "**🍅";
+        if(claimCost/amount >= 400) phrase += "-You are claiming for extremely high price-\n";    
+        if(promo) phrase += "Your next claim will cost **" + nextClaim + "**" + promotions.list[promotions.current].currency;    
+        else phrase += "Your next claim will cost **" + nextClaim + "**🍅";
 
         let incr = {exp: -claimCost};
-        if(promotions.current > -1) {
+        if(promo) incr = {promoexp: -claimCost};
+
+        if(promotions.current > -1 && !promo) {
             let prm = promotions.list[promotions.current];
             let addedpromo = Math.floor(claimCost / 3);
             incr = {exp: -claimCost, promoexp: addedpromo};
@@ -244,11 +262,12 @@ async function claim(user, guild, channelID, arg, callback) {
         }
 
         if(!dbUser.cards) dbUser.cards = [];
-        for ( r of res ) {
+        for (r of res) {
             await pushCard(user.id, r, channelID)
         }
 
-        dbUser.dailystats.claim += amount;
+        if(promo) dbUser.dailystats.promoclaim += amount;
+        else dbUser.dailystats.claim += amount;
         heroes.addXP(dbUser, .5 * amount);
         ucollection.update(
             { discord_id: user.id },
@@ -264,6 +283,7 @@ async function claim(user, guild, channelID, arg, callback) {
     });
 }
 
+//OBSOLETE. Promo claim is now checked in ordinary claim
 function claimPromotion(user, dbUser, amount, callback) {
     let ucollection = mongodb.collection('users');
 
@@ -1325,9 +1345,9 @@ function getClaimsAmount(dbUser, claims, exp) {
     return Math.min(res, allowed);
 }
 
-function getClaimsCost(dbUser, amount) {
+function getClaimsCost(dbUser, amount, promo) {
     let total = 0;
-    let claims = dbUser.dailystats.claim;
+    let claims = promo? dbUser.dailystats.promoclaim : dbUser.dailystats.claim;
     for (var i = 0; i < amount; i++) {
         claims++;
         total += heroes.getHeroEffect(dbUser, 'claim_akari', claims * 50);
@@ -1343,7 +1363,7 @@ function getPromoClaimsCost(dbUser, amount) {
     let claims = dbUser.dailystats.promoclaim;
     for (var i = 0; i < amount; i++) {
         claims++;
-        total += claims * 20;
+        total += claims * 50;
     }
     return total;
 }

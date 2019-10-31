@@ -1,5 +1,13 @@
 [
     {
+       "version": "1.14.5f2",
+        "changes": [
+            "Added halloween19 event",
+            "Changed how promo claim works",
+            "Added halloween19 into card list formatter"
+        ] 
+    },
+    {
        "version": "1.14.5b3",
         "changes": [
             "Added claim boost",
