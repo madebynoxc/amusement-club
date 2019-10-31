@@ -134,7 +134,10 @@ async function claim(user, guild, channelID, arg, callback) {
             return callback("**" + user.username + "**, there are no promotional cards available now");
         }
 
-        let max = 20 - dbUser.dailystats.claim;
+        if(promo && !dbUser.dailystats.promoclaim)
+            dbUser.dailystats.promoclaim = 0;
+
+        let max = promo? (50 - dbUser.dailystats.promoclaim) : (20 - dbUser.dailystats.claim);
         if (max === 0)
             return callback("**" + user.username + "**, you reached a limit of your daily claim. \n"
                 + "It will be reset next time you successfully run `->daily`");
@@ -143,9 +146,7 @@ async function claim(user, guild, channelID, arg, callback) {
             return callback(`**${user.username}**, you can't claim more than **${max}** cards today`);
 
         amount = Math.max(parseInt(amount), 1);
-        if(promo && !dbUser.dailystats.promoclaim)
-            dbUser.dailystats.promoclaim = 0;
-        
+
         let remainingAmount = amount; // This will decrement as cards are chosen.
         let claimCost = getClaimsCost(dbUser, amount, promo);
         let nextClaim = 50 * (dbUser.dailystats.claim + amount + 1);
