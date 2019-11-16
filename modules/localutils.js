@@ -416,6 +416,7 @@ function getFullCard(card) {
     else if(card.collection == "valentine") res += "🍫";
     else if(card.collection == "birthday") res += "🍰";
     else if(card.collection == "christmas18") res += "🎄";
+    else if(card.collection == "halloween19") res += "👻";
     else {
         for(let i=0; i<parseInt(card.level); i++) {
             if(card.collection == "christmas") 

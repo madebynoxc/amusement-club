@@ -1,5 +1,5 @@
 {
-    "current": 6,
+    "current": -1,
     "list": [
         {
             "name": "halloween",
@@ -35,6 +35,11 @@
             "name": "valentine19",
             "currency": "💗 Hearts",
             "ends": "2nd Mar 2019"
+        },
+        {
+            "name": "halloween19",
+            "currency": "👻 Ghosts",
+            "ends": "15th Nov 2019"
         }
     ]
 }
