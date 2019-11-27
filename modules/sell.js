@@ -75,6 +75,7 @@ async function processRequest(user, args, guild, channelID, callback) {
     }*/
 
     let match = query['cards.name'] ? dbmanager.getBestCardSorted(cards, query['cards.name'])[0] : cards[0];
+
     if(!match) return callback(utils.formatError(user, "Can't find cards", "can't find any card matching that request"));
     dbmanager.setLastQueriedCard(user,match);
 
@@ -111,7 +112,7 @@ async function processRequest(user, args, guild, channelID, callback) {
         transaction.to = targetUser.username;
         transaction.to_id = parse.id;
 
-        let ccollection = mongodb.collection('cards');
+        let ccollection = mongodb.collection(dbmanager.getCardDbColName(match));
         let cardQuery = utils.getCardQuery(match);
         transaction.price = await new Promise(resolve => {
             ccollection.findOne(cardQuery).then((match0) => {

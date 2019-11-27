@@ -322,7 +322,7 @@ async function info(user, args, channelID, callback) {
     if(auc.hidebid && user.id != auc.lastbidder) auc.price = "???";
     
     let cardQuery = utils.getCardQuery(auc.card);
-    let ccollection = mongodb.collection('cards');
+    let ccollection = mongodb.collection(dbManager.getCardDbColName(auc.card));
     ccollection.findOne(cardQuery).then((match) => {
         dbManager.getCardValue(match, auc.card, (eval) => {
             let resp = "";
