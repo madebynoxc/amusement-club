@@ -1,5 +1,5 @@
 {
 	"id":"vote2019",
 	"title":"Vote for the best card of 2019!",
-	"body":"you can vote for any card in the game after every daily. The voting stops on **December 31st** and the best card will be chosen on **January 3rd 2020**"
+	"body":"use `->vote [card name]` after every daily to cast your vote for any card in the game. The voting stops on **December 31st 2019** and the best card will be chosen on **January 3rd 2020**"
 }
