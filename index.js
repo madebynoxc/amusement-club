@@ -158,7 +158,7 @@ async function getCommand(user, channel, guild, message, event, callback) {
                 helpMod.processRequest(user, channel, cnt, curg.prefix, callback);
                 return;
             case 'vote': 
-                vote.processRequest(user, channel, cnt, callback);
+                vote.processRequest(user, cnt, callback);
                 return;
             case 'admin':
                 if(dbManager.isAdmin(user.id))

@@ -33,7 +33,7 @@ const inv = require('./inventory.js');
 const stats = require('./stats.js');
 const invite = require('./invite.js');
 const helpMod = require('./help.js');
-//const vote = require('./vote.js');
+const vote = require('./vote.js');
 const transactions = require('./transactions.js');
 const ratioInc = require('./ratioincrease.json');
 const lev = require('js-levenshtein');
@@ -68,7 +68,7 @@ function connect(bot, shard, shardCount, callback) {
         transactions.connect(db);
         invite.connect(db, client);
         helpMod.connect(db, client);
-        //vote.connect(db, client);
+        vote.connect(db, client);
         sellManager.connect(db);
         auctions.connect(db, client, shard);
         collections.connect(db);
