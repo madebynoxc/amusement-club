@@ -3,6 +3,7 @@ module.exports = {
 }
 
 const utils = require('./localutils.js');
+const _ = require("lodash");
 
 var mongodb, bot;
 
@@ -13,8 +14,9 @@ function connect(db, client) {
 
 function processRequest(user, args, callback) {
     mongodb.collection("users").findOne({discord_id: user.id}).then(dbUser => {
-        if(!dbUser) return;
-        
+        if(!dbUser)
+            return;
+
         if(!dbUser.hero) 
             return callback(utils.formatError(user, null, "you need a hero in order to vote"));
 
@@ -22,6 +24,9 @@ function processRequest(user, args, callback) {
             return callback(utils.formatError(user, null, "you already voted today. You can vote again after `->daily`"));
 
         const req = utils.getRequestFromFiltersNoPrefix(args);
+        if(_.isEmpty(req))
+            return callback(utils.formatError(user, null, "please specify a card"));
+
         mongodb.collection("cards").findOne(req).then(card => {
             if(!card)
                 return callback(utils.formatError(user, null, "card wasn't found"));
