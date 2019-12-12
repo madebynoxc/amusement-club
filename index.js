@@ -1,4 +1,5 @@
 const Discord = require("discord.io");
+const Eris = require("eris");
 const dbManager = require("./modules/dbmanager.js");
 const utils = require("./modules/localutils.js");
 const logger = require('./modules/log.js');
@@ -29,10 +30,12 @@ var restartChannelID;
 curShard = parseInt(process.argv[2]) || 0;
 shards = parseInt(process.argv[3]) || 1;
 
-bot = new Discord.Client({
-    token: settings.token,
-    shard: [curShard, shards]
-});
+// bot = new Discord.Client({
+//     token: settings.token,
+//     shard: [curShard, shards]
+// });
+
+bot = new Eris(settings.token);
 
 console.log("Started bot instance " + curShard + "/" + shards);
 
@@ -44,10 +47,10 @@ function _init() {
     react.setBot(bot);
 
     bot.on("ready", (event) => {
-        console.log(`[${curShard}] Found ${Object.keys(bot.servers).length} guilds`)
-        console.log(`[${curShard}] Logged in as ${bot.username} ${bot.id}\n`);
-        bot.getAllUsers();
-        bot.setPresence({game: {name: "->help"}});
+        //console.log(`[${curShard}] Found ${Object.keys(bot.servers).length} guilds`)
+        //console.log(`[${curShard}] Logged in as ${bot.username} ${bot.id}\n`);
+        //bot.getAllUsers();
+        //bot.setPresence({game: {name: "->help"}});
         if(restartChannelID) {
             bot.sendMessage({to: restartChannelID, message: "Discord.io websocket connection was restarted. Connected to discord"});
             restartChannelID = null;
@@ -69,7 +72,7 @@ function _init() {
         guilds.check(g);
     });
 
-    bot.on("message", (username, userID, channelID, message, event) => {
+    bot.on("messageCreate", (username, userID, channelID, message, event) => {
         var channel = bot.channels[channelID];
         var guild = channel? bot.servers[channel.guild_id] : null;
         var user = bot.users[userID];
