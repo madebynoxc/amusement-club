@@ -17,7 +17,7 @@ function processRequest(user, args, callback) {
         if(!dbUser)
             return;
 
-        mongodb.collection("votes").find({user: user.id}).then(votes => {
+        mongodb.collection("votes").find({user: user.id}).toArray((err, votes) => {
             if(votes && votes.length > 0)
                 return callback(utils.formatConfirm(user, null, "thank you for voting! We got **" + votes.length + "** votes from you in total"));
             else return callback(utils.formatError(user, null, "the voting for 2019 has been closed"));
