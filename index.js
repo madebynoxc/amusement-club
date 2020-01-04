@@ -70,16 +70,16 @@ function _init() {
     });
 
     bot.on("message", (username, userID, channelID, message, event) => {
-        var channel = bot.channels[channelID];
-        var guild = channel? bot.servers[channel.guild_id] : null;
-        var user = bot.users[userID];
+        let channel = bot.channels[channelID];
+        let guild = channel? bot.servers[channel.guild_id] : null;
+        let user = bot.users[userID];
         if(!user && guild) user = guild.members[userID];
         if(!user) return;
         user.username = username;
 
         if(user.bot || cooldownList.includes(userID)) return;
         cooldownList.push(userID);
-        setTimeout(() => removeFromCooldown(userID), 1000);
+        let tm = setTimeout(() => removeFromCooldown(userID), 10000);
 
         getCommand(user, channel, guild, message, event, (res, obj) => {
             if(!channelID)
@@ -87,6 +87,8 @@ function _init() {
                     reply(newChannel.id, res, obj);          
                 });
             else reply(channelID, res, obj);
+            cooldownList = cooldownList.filter(x => x != userID)
+            clearTimeout(tm)
         });
     });
 
@@ -120,8 +122,7 @@ function reply(toID, res, obj) {
 }
 
 function removeFromCooldown(userID) {
-    let i = cooldownList.indexOf(userID);
-    cooldownList.splice(i, 1);
+    cooldownList = cooldownList.filter(x => x != userID)
 }
 
 function _stop() {
