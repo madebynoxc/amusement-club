@@ -1,4 +1,5 @@
 const Discord = require("discord.io");
+const asdate = require('add-subtract-date');
 const dbManager = require("./modules/dbmanager.js");
 const utils = require("./modules/localutils.js");
 const logger = require('./modules/log.js');
@@ -77,9 +78,8 @@ function _init() {
         if(!user) return;
         user.username = username;
 
-        if(user.bot || cooldownList.includes(userID)) return;
-        cooldownList.push(userID);
-        let tm = setTimeout(() => removeFromCooldown(userID), 10000);
+        if(user.bot || cooldownList.filter(x => x.id === userID)[0]) return;
+        cooldownList.push({id: userID, expires: asdate.add(new Date(), 5, 'seconds')});
 
         getCommand(user, channel, guild, message, event, (res, obj) => {
             if(!channelID)
@@ -87,8 +87,7 @@ function _init() {
                     reply(newChannel.id, res, obj);          
                 });
             else reply(channelID, res, obj);
-            cooldownList = cooldownList.filter(x => x != userID)
-            clearTimeout(tm)
+            removeFromCooldown(userID);
         });
     });
 
@@ -121,6 +120,13 @@ function reply(toID, res, obj) {
     } 
 }
 
+const tick = () => {
+    const now = new Date();
+    cooldownList = cooldownList.filter(x => x.expires < now);
+}
+
+setInterval(tick.bind(this), 1000);
+
 function removeFromCooldown(userID) {
     cooldownList = cooldownList.filter(x => x != userID)
 }
@@ -146,7 +152,7 @@ async function getCommand(user, channel, guild, message, event, callback) {
     let channelType = channel? 1 : 0; //0 - DM, 1 - channel, 2 - bot channel
     if(channelType == 1 && curg.botChannels.includes(channel.id)) 
         channelType = 2; 
-            
+
     if(message.startsWith(curg.prefix)) {
         log(user.username, channel, guild, message);
         let chanID = channel? channel.id : user.id;
@@ -200,6 +206,7 @@ async function getCommand(user, channel, guild, message, event, callback) {
                             react.addNewPagination(user.id, 
                                 user.username + ", your card difference with " + found + " (" + data.length + " results):", 
                                 cardList.getPages(data), chanID);
+                            removeFromCooldown(user.id);
                         }
                     });
                 }
@@ -273,6 +280,7 @@ async function getCommand(user, channel, guild, message, event, callback) {
                             react.addNewPagination(user.id, 
                                 user.username + ", your cards (" + data.length + " results):", 
                                 cardList.getPages(data), chanID);
+                            removeFromCooldown(user.id);
                         }
                   });
                 }
@@ -387,6 +395,7 @@ async function getCommand(user, channel, guild, message, event, callback) {
                             react.addNewPagination(user.id, 
                                 "You are missing these cards (" + data.length + " results):", 
                                 cardList.getPages(data), chanID);
+                            removeFromCooldown(user.id);
                         }
                     });
                 }
@@ -436,20 +445,6 @@ async function getCommand(user, channel, guild, message, event, callback) {
                 return;
             case 'invite':
                 invite.getLink(user, callback);
-                return;
-            case 'kill': 
-                if(dbManager.isAdmin(user.id)) {
-                    callback("Shutting down now");
-                    setTimeout(() => { _stop(); }, 2000); 
-                }
-                return;
-            case 'restart': 
-                if(dbManager.isAdmin(user.id)) {
-                    restartChannelID = channel.id;
-                    callback("Restarting websocket connection in 2 seconds...");
-                    _stop();
-                    setTimeout(() => bot.connect(), 2000);
-                }
                 return;
             case 'version':
             case 'updates':
