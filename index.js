@@ -122,13 +122,14 @@ function reply(toID, res, obj) {
 
 const tick = () => {
     const now = new Date();
-    cooldownList = cooldownList.filter(x => x.expires < now);
+    cooldownList = cooldownList.filter(x => x.expires > now);
+
 }
 
 setInterval(tick.bind(this), 1000);
 
 function removeFromCooldown(userID) {
-    cooldownList = cooldownList.filter(x => x != userID)
+    cooldownList = cooldownList.filter(x => x.id != userID)
 }
 
 function _stop() {
@@ -190,8 +191,9 @@ async function getCommand(user, channel, guild, message, event, callback) {
             case 'server': 
             case 'guild': 
                 if(channelType == 0) callback('This operation is possible only on server');
-                else 
+                else {
                     guilds.processRequest(user, guild, chanID, cnt, callback);
+                }
                 return;
             case 'dif':
             case 'diff':
