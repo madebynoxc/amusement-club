@@ -6,12 +6,12 @@ module.exports = {
     getCardFile, getDefaultChannel, isAdmin, needsCards, getCardURL,
     removeCardFromUser, addCardToUser, eval, whohas, block, fav, track, getDB,
     pushCard, pullCard, getCard, getCardDbColName, removeCardRatingFromAve,
-    getLastQueriedCard, setLastQueriedCard, topClout
+    getLastQueriedCard, setLastQueriedCard, topClout, setDailyCol
 }
 
 var MongoClient = require('mongodb').MongoClient;
 var ObjectId = require('mongodb').ObjectID;
-var mongodb, client, userCount, dblapi;
+var mongodb, client, userCount;
 var dailyCol, evalLastDaily;
 var cooldownList = [];
 var modifyingList = [];
@@ -794,13 +794,17 @@ async function daily(u, callback) {
             callback(utils.formatInfo(user, dailymessage.title, dailymessage.body));
         }
 
-        let scollection = mongodb.collection('system');
-        scollection.findOne({type: "dailycard"}).then(async c => {
-            if(c && dailyCol != c.card.collection) {
-                dailyCol = c.card.collection;
-                client.editChannelInfo({channelID: settings.lockChannel, name: dailyCol});
-            }
-        });
+        setDailyCol();
+    });
+}
+
+function setDailyCol() {
+    let scollection = mongodb.collection('system');
+    scollection.findOne({type: "dailycard"}).then(c => {
+        if(c && dailyCol != c.card.collection) {
+            dailyCol = c.card.collection;
+            client.editChannelInfo({channelID: settings.lockChannel, name: dailyCol});
+        }
     });
 }
 

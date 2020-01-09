@@ -53,6 +53,9 @@ function _init() {
             bot.sendMessage({to: restartChannelID, message: "Discord.io websocket connection was restarted. Connected to discord"});
             restartChannelID = null;
         }
+
+        if(curShard === 0)
+            dbManager.setDailyCol();
     });
 
     bot.on("disconnect", (errMsg, code) => {
