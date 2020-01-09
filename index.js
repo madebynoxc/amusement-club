@@ -54,8 +54,7 @@ function _init() {
             restartChannelID = null;
         }
 
-        if(curShard === 0)
-            dbManager.setDailyCol();
+        dbManager.setDailyCol();
     });
 
     bot.on("disconnect", (errMsg, code) => {
