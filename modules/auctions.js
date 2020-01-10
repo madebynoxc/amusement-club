@@ -133,17 +133,17 @@ async function bid(user, args, callback) {
     if ( dbUser.embargo ) {
         return callback(utils.formatError(user, "Embargo", 
             "you are banned from bidding on auctions. "+
-            "Your dealings were found to be in violation of our communiy rules. "+
+            "Your dealings were found to be in violation of our community rules. "+
             "You can inquire further on our [Bot Discord](https://discord.gg/kqgAvdX)"));
     }
     if(!dbUser.hero)
-        return callback(utils.formatError(user, null, "you have to have a hero in order to take part in auction"));
+        return callback(utils.formatError(user, null, "you have to have a hero in order to take part in auctions"));
 
     if(dbUser.exp < price)
         return callback(utils.formatError(user, null, "you do not have enough tomatoes for that bid"));
 
     if(auc.lastbidder && auc.lastbidder == user.id) 
-        return callback(utils.formatError(user, null, "you already bidded on that auction"));
+        return callback(utils.formatError(user, null, "you have already bid on that auction"));
 
     let hidebid = heroes.getHeroEffect(dbUser, 'auc', false);
     addExtraTime(auc);
@@ -264,7 +264,7 @@ async function sell(user, incArgs, channelID, callback) {
                 if ( dbUser.embargo ) {
                     return callback(utils.formatError(user, "Embargo", 
                         "you are not allowed to list cards at auction. "+
-                        "Your dealings were found to be in violation of our communiy rules. "+
+                        "Your dealings were found to be in violation of our community rules. "+
                         "You can inquire further on our [Bot Discord](https://discord.gg/kqgAvdX)"));
                 }
 
