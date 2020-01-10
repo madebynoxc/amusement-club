@@ -112,6 +112,7 @@ async function info(user, targetUserID, auditMode, args, callback) {
 
     let resp = "Card: **" + name + "**\n";
     resp += "Price: **" + transaction.price + "** 🍅\n";
+    resp += "Time: **" + utils.formatDate(transaction.time) + "**\n";
     resp += "From: **" + transaction.from + "**\n";
     if ( auditMode )
         resp+= "(Discord ID: **"+ transaction.from_id +"**)\n";
@@ -124,10 +125,14 @@ async function info(user, targetUserID, auditMode, args, callback) {
         resp += "Status: **" + transaction.status + "**\n";
     }
     if ( auditMode && transaction.bids ) {
-        resp += "Bids ("+ transaction.bids.length +", newest first):\n";
+		  let printLimit = 20;
+		  let showingCount = transaction.bids.length <= printLimit ? transaction.bids.length : printLimit;
+        resp += "Bids ("+ showingCount +"/"+ transaction.bids.length +", last bids first):\n";
         for(let bid of transaction.bids) {
             let date = new Date(bid.date);
             resp += bid.amount +"🍅: <@"+ bid.bidder +"> @ "+ utils.formatDate(date) +"\n";
+				if (--printLimit <= 0)
+					break;
         }
     }
 
