@@ -81,7 +81,6 @@ function _init() {
         user.username = username;
 
         if(user.bot || cooldownList.filter(x => x.id === userID)[0]) return;
-        cooldownList.push({id: userID, expires: asdate.add(new Date(), 5, 'seconds')});
 
         getCommand(user, channel, guild, message, event, (res, obj) => {
             if(!channelID)
@@ -157,7 +156,9 @@ async function getCommand(user, channel, guild, message, event, callback) {
         channelType = 2; 
 
     if(message.startsWith(curg.prefix)) {
+        cooldownList.push({id: user.id, expires: asdate.add(new Date(), 5, 'seconds')});
         log(user.username, channel, guild, message);
+        
         let chanID = channel? channel.id : user.id;
         let cnt = message.toLowerCase().substring(curg.prefix.length).split(' ');
         let sb = cnt.shift();
