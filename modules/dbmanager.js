@@ -145,6 +145,9 @@ async function claim(user, guild, channelID, arg, callback) {
         if(amount > max)
             return callback(`**${user.username}**, you can't claim more than **${max}** cards today`);
 
+        if(amount > 5)
+            return callback(`**${user.username}**, claim is limited to 5 cards per request. Please specify number lower than 6`);
+
         amount = Math.max(parseInt(amount), 1);
 
         let remainingAmount = amount; // This will decrement as cards are chosen.

@@ -156,7 +156,7 @@ async function getCommand(user, channel, guild, message, event, callback) {
         channelType = 2; 
 
     if(message.startsWith(curg.prefix)) {
-        cooldownList.push({id: user.id, expires: asdate.add(new Date(), 5, 'seconds')});
+        cooldownList.push({id: user.id, expires: asdate.add(new Date(), 10, 'seconds')});
         log(user.username, channel, guild, message);
         
         let chanID = channel? channel.id : user.id;
