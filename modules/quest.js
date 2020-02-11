@@ -38,6 +38,7 @@ function checkClaim(user, callback) {
     if(!q || !user.dailystats) return;
 
     if((q.name == 'claim4' && user.dailystats.claim >= 4) || 
+    (q.name == 'claim5' && user.dailystats.claim >= 5) ||
     (q.name == 'claim6' && user.dailystats.claim >= 6)) {
         callback(completeMsg(user, q));
         removeQuest(user, q, callback);

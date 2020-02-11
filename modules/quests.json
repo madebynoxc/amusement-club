@@ -5,8 +5,8 @@
         "award" : 400
     },
     {
-        "name" : "claim6",
-        "description" : "Claim at least 6 cards today (`->claim`)",
+        "name" : "claim5",
+        "description" : "Claim at least 5 cards today (`->claim`)",
         "award" : 500
     },
     {
