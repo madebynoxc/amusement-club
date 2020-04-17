@@ -26,8 +26,10 @@ async function processRequest(user, channelID, args, callback) {
             break;
         case 'embargo':
             embargoUser(args, callback);
+            break;
         case 'daily':
             resetDaily(args, callback);
+            break;
     }
 }
 
