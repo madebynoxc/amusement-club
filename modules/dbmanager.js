@@ -793,7 +793,7 @@ async function daily(u, callback) {
         //msg += "[Vote for free card](https://discordbots.org/bot/340988108222758934)";
         callback(utils.formatInfo(user, null, msg));
 
-        if(user.hero && user.lastmsg != dailymessage.id) {
+        if(user.lastmsg != dailymessage.id) {
             callback(utils.formatInfo(user, dailymessage.title, dailymessage.body));
         }
 

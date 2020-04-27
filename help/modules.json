@@ -689,5 +689,28 @@
                 "description": "Shows a list of all cards included in the specified boost."
             }
         ]
+    },
+    {
+        "type": ["upgrade"],
+        "title": "Guide to bot upgrade",
+        "description": "At the start of June 2020 Amusement Club will be upgraded to new version containing multiple improvements and features. However, a lot of current functionality will be replaced and changed. This list contains a TL;DR of some major changes. Full list of changes and features is available at: https://club.amusement.cafe/upgrade \n> Note that this list might update and you will be notified via daily message.",
+        "fields": [
+            {
+                "title": "Craft cards",
+                "description": "Crafts are being removed in favor of new effect recipes. Crafted effects will become effect cards (same one or alternative) and 1x free recipe for the normal effect.\nWith usable effects its 3 times more uses + free recipes\nYou will also receive the special 4*s based on the crafts used to forge your current effects. These are cards that will not be claimable normally"
+            },
+            {
+                "title": "General additions",
+                "description": "You can now tag cards with `->tag [card] #tag`\nClaim is limited to 10 at a time, daily limit is gone, and cost can be affected by guild\nYou cannot claim 4 stars without an upgraded guild, you cannot claim 5 stars at all\nView claimed cards without clicking links, click left/right arrows\nClout collections for 5 stars"
+            },
+            {
+                "title": "Draw and Liquify",
+                "description": "You can liquify(delete) cards to gain a new currency\nThat currency can be used to draw(make) specified cards\nNo craft card drawing, crafts are dead, long live craft cards"
+            },
+            {
+                "title": "Guilds",
+                "description": "Guilds (servers) can be upgraded with buildings to provide more features\nGuilds (servers) can have tax to pay for building upkeep\nPersonal guilds can be locked for a hefty price"
+            }
+        ]
     }
 ]
