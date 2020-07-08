@@ -142,7 +142,7 @@ function getRandom() {
     //let cache2 = [{ "id" : "sailormoon" , "special":false}, { "id" : "attackontitan" , "special":false}, { "id" : "rezero" , "special":false}, { "id" : "steinsgate" , "special":false}, { "id" : "gochiusa" , "special":false}, { "id" : "dragonmaid" , "special":false}, { "id" : "clannad" , "special":false}, { "id" : "blends" , "special":false}, { "id" : "toarumajutsunoindex" , "special":false}, { "id" : "mahoutsukai" , "special":false}, { "id" : "special" , "special":false}, { "id" : "newgame" , "special":false}, { "id" : "yurucamp" , "special":false}, { "id" : "kakegurui" , "special":false}, { "id" : "nogamenolife" , "special":false}, { "id" : "housekinokuni" , "special":false}, { "id" : "killlakill" }];
     //do { r = cache2[Math.floor(Math.random()*cache2.length)]; }
     do { r = cache[Math.floor(Math.random()*cache.length)]; }
-    while ( r.special || r.id == "special");
+    while ( r.special || r.id == "special" || r.id == "limitedcraft");
     return r;
 }
 

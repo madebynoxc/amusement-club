@@ -191,8 +191,8 @@ async function claim(user, guild, channelID, arg, callback) {
         } 
 
         while (remainingAmount > 0) {
-            let randomNum = Math.random();
-            query[0].$match = {}; // reset the match query for each card
+            //let randomNum = Math.random();
+            query[0].$match = { level: { $lt: 4 } }; // reset the match query for each card
             if(promo) {
                 query[0].$match.collection = promotions.list[promotions.current].name;
             } else if (boost && utils.randomChance(boost.chance)) {
@@ -203,21 +203,12 @@ async function claim(user, guild, channelID, arg, callback) {
             } else if (settings.lockChannel && channelID == settings.lockChannel && dailyCol) {
                 query[0].$match.collection = dailyCol;
                 query[0].$match.craft = {$in: [null, false]};
-            } else if ( randomNum < 0.005 ) {
-                query[0].$match.collection = "special";
-                // note: if you want to add another random condition,
-                // you need to account for previously tested cases by
-                // adding their probability into the new probability
-                // and check against the same random number.
-                // e.g. to give the player a 5 star card with probability
-                // equal to 0.1%, check if randomNum < 0.006, in a else
-                // if statement after this one.
             } else {
                 query[0].$match.collection = collections.getRandom().id;
             }
 
             let cardRes = await collection.aggregate(query).toArray();
-            if ( cardRes.length == 0 )
+            if (cardRes.length == 0)
                 client.sendMessage({"to":settings.logchannel, "message":`Card claim query returned empty result: ${JSON.stringify(query)}`});
             res.push(cardRes[0]);
             remainingAmount--;
