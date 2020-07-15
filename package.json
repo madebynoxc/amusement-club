@@ -16,7 +16,7 @@
     "discord.io": "github:Woor/discord.io#gateway_v6",
     "forever-monitor": "^1.7.1",
     "js-levenshtein": "^1.1.2",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "mkdirp": "^0.5.1",
     "mongodb": "^2.2.30"
   },
